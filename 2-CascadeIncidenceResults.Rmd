@@ -1,0 +1,100 @@
+HIV Cascade Incidence Results
+=============================
+  
+This script is used to generate the results and pretty plots used for the
+analysis
+
+
+```{r prettyplots}
+# Create a pretty plot to show proportion of infections due to each stage 
+# of the cascade for the results selected in "extractresults" chunk
+graphics.off()
+
+# Organize the results
+pldhivFrame <- cascadeSample[c(1,3:6)]  %>% 
+  group_by(year) %>% 
+  summarise_each(funs(mean))
+
+infectsFrame <- stageInfects %>% 
+  group_by(year) %>% 
+  summarise_each(funs(mean)) 
+
+# Melt data into right format 
+plhivResults <- gather(pldhivFrame,"stage","number",2:5) %>%
+  group_by(year) %>%
+  mutate(cumsum=cumsum(number))
+
+infectsResults <- gather(infectsFrame,"stage","number",2:5) %>%
+  group_by(year) %>%
+  mutate(cumsum=cumsum(number))
+
+## Now create plots 
+legendLabels <- c("Undiagnosed", "Diagnosed no ART", 
+                  "On ART unsuppressed VL", "On ART suppressed VL")
+xValues <- seq(2005,2014, by = 3)
+
+# PLDHIV overall
+plhivPlotBase <- ggplot(data = plhivResults, aes(x = year, y = number, 
+                                                 fill = stage)) + xlab("Year") + labs(fill = 'Cascade stage') +
+  scale_fill_manual(values = asrcols, name = "", labels = legendLabels, 
+                    guide = guide_legend(reverse=TRUE, nrow = 2)) +  
+  scale_x_continuous(breaks = xValues) + plotOpts 
+
+
+plhivPlotNum <- plhivPlotBase + geom_bar(stat="identity") + 
+  ylab("Number PLHIV") 
+plhivPlotProp <- plhivPlotBase + geom_bar(stat="identity", 
+                                          position= "fill") + ylab("Proportion PLHIV")
+
+# New infections/diagnoses
+infectsPlotBase <- ggplot(data = infectsResults, aes(x = year, y = number, 
+                                                     fill = stage)) + xlab("Year") +  labs(fill = 'Cascade stage') +
+  scale_fill_manual(values = asrcols, name = "", labels = legendLabels, 
+                    guide = guide_legend(reverse=TRUE, nrow = 2)) + 
+  scale_x_continuous(breaks = xValues) + plotOpts
+
+if(useDiagnoses){
+  infectsPlotNum <- infectsPlotBase + geom_bar(stat = "identity") + 
+    ylab("Number new infections")
+  infectsPlotProp <- infectsPlotBase + 
+    geom_bar(stat="identity", position = "fill") + 
+    ylab("Proportion new infections")
+} else {
+  infectsPlotNum <- infectsPlotBase + geom_bar(stat = "identity") + 
+    ylab("Number Diagnoses")
+  infectsPlotProp <- infectsPlotBase + 
+    geom_bar(stat = "identity", position = "fill") +
+    ylab("Proportion Diagnoses") 
+}
+
+# Print figures to separate files
+if (saveplots) {
+  # Plot specs
+  plotWidth <- 12
+  plotHeight <- 10
+  plotUnits <- "cm"
+  
+  # Do the plots
+  ggsave(file.path(resultsFolder, paste("cascadeIncidence-", "numPLHIV", 
+                                        "-", toString(max(countClean$year)), ".png",sep ="")),
+         plot = plhivPlotNum, width = plotWidth, height = plotHeight, 
+         units = plotUnits)
+  
+  
+  ggsave(file.path(resultsFolder, paste("cascadeIncidence-", "numDiags",
+                                        "-", toString(max(countClean$year)), ".png",sep ="")), 
+         plot = infectsPlotNum, width = plotWidth, height = plotHeight, 
+         units = plotUnits)
+  
+  ggsave(file.path(resultsFolder, paste("cascadeIncidence-", "propPLHIV", 
+                                        "-", toString(max(countClean$year)), ".png",sep ="")), 
+         plot = plhivPlotProp, width = plotWidth, height = plotHeight, 
+         units = plotUnits)
+  
+  ggsave(file.path(resultsFolder, paste("cascadeIncidence-", "propDiags",
+                                        "-", toString(max(countClean$year)), ".png",sep ="")), 
+         plot = infectsPlotProp, width = plotWidth, height = plotHeight, 
+         units = plotUnits)
+}
+
+```
