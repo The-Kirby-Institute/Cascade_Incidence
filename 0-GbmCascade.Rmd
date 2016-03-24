@@ -1,0 +1,265 @@
+GBM HIV Cascade Estimates
+=========================
+
+This Rmarkdown script is used to generate estimates for a HIV care and 
+diagnosis cascade for Australian gay and bisexual men. 
+
+```{r initialization}
+# Clear workspace
+rm(list=ls()) 
+
+# Source to current directory and set working directory
+basePath <- getwd()
+
+# Various directories
+dataFolder <- file.path(basePath, "data")
+resultsFolder <- file.path(basePath, "output")
+Rcode <- file.path(basePath, "code") 
+
+# Load standard libraries, key functions and options
+source(file.path(Rcode, "LoadLibrary.R"), echo=TRUE)
+source(file.path(Rcode, "DataLibraries.R"), echo=TRUE)
+```
+
+```{r scriptdetails}
+#Script parameters
+saveplots <- TRUE
+startYear <- 2005 # minimum assumed to be 2004 used for plotting
+try(if (startYear < 2004) stop("Start year before 2004"))
+analysisYear <- 2014
+
+years <- 2004:analysisYear
+nYears <- length(years)
+
+# Input file - this file contains preprepared estimates for the number of 
+# gay and bisexual men living with diagnosed HIV since 2004. These 
+# estimates were obtained using the Australian HIV cascade methodology 
+# described in the Annual Surveillance Report applied to gay and bisexual 
+# men.
+pldhivFile <- file.path(dataFolder, "pldhiv_estimates_gbm.csv")
+
+# # File containing new diagnosis and estimated new infections for GBM
+# newInfectionsFile <- file.path(dataFolder, "new_infections_gbm.csv")
+
+# Save and plot
+saveCascade <- TRUE
+plotCascade <- TRUE
+savePlots <- TRUE
+```
+
+```{r data}
+# Load data and create all our data inputs for our estimates
+# Assumed to start from 2004
+
+pldhiv <- read.csv(pldhivFile)
+# newInfects <- read.csv(newInfectionsFile)
+
+# Hard coded data values --------------------------------------------------
+
+# Proportion undiagnosed from COUNT results (2014)
+undiagnosedProp <- c(0.089, 0.058, 0.135)
+
+# Proportion on treatment from Gay Community Periodic Surveys for
+# 2004-2014. Note first value is an assumption 
+propTreat <- c(0.601, 0.601, 0.601, 0.573, 0.686, 0.671, 0.698, 0.717, 
+               0.779, 0.764, 0.83)
+
+# Proportion of people on treatment with suppressed VL at last test
+# From Australian HIV Observational Database (AHOD) for 2000-2014.
+# Rather than a single estimate we use a range from minimum to maximum
+# proportion
+propSuppressedMin <- c(0.52, 0.55, 0.65, 0.69,	0.71,	0.75,	0.76,	0.78,
+                       0.81, 0.85, 0.88)
+propSuppressedMax <- c(0.68, 0.71, 0.76, 0.78, 0.81, 0.83, 0.85, 0.86, 
+                       0.89, 0.91, 0.925)
+
+# Assume best estimate is in the middle
+propSuppressed <- (propSuppressedMin + propSuppressedMax)/2
+
+# Some error checking to make sure everything aligns ----------------------
+
+try(if(nrow(pldhiv) < nYears) 
+  stop("Analysis year older than available data"))
+# try(if(nrow(pldhiv) != nrow(newInfects)) 
+#   stop("Insufficient new infections data"))
+try(if(length(propTreat) != nYears) 
+  stop("Incorrect number of data points or proportion on ART"))
+try(if(length(propTreat) != nYears) 
+  stop("Incorrect number of data points for proportion on ART"))
+try(if((length(propSuppressedMin) != nYears) || 
+       (length(propSuppressedMin) != nYears)) 
+  stop("Incorrect number of data points for proportion suppressed"))
+```
+
+```{r createstimates}
+# Initialize data frame for storage
+hivCascade <- data.frame(year = integer(), 
+                         stage = character(),
+                         value = double(),
+                         lower = double(),
+                         upper = double())
+
+# Calculate each stage of the cascade -------------------------------------
+# Add to our hivCascade data frame as we go
+
+# First extract the years we want
+pldhiv <- filter(pldhiv, year <= analysisYear)
+
+# People living with HIV
+plhiv <- pldhiv$value / (1 - undiagnosedProp[1])
+plhivLower <- pldhiv$lower / (1 - undiagnosedProp[2])
+plhivUpper <- pldhiv$upper / (1 - undiagnosedProp[3])
+
+hivCascade <- rbind(hivCascade, 
+                    data.frame(year = years,
+                               stage = "plhiv",
+                               value = plhiv,
+                               lower = plhivLower,
+                               upper = plhivUpper))
+
+# Number undiagnosed
+undiagnosed <- plhiv * undiagnosedProp[1]
+undiagnosedLower <- plhivLower * undiagnosedProp[2]
+undiagnosedUpper <- plhivUpper * undiagnosedProp[3]
+
+hivCascade <- rbind(hivCascade, 
+                    data.frame(year = years,
+                               stage = "undiagnosed",
+                               value = undiagnosed,
+                               lower = undiagnosedLower,
+                               upper = undiagnosedUpper))
+
+# Add people living with diagnosed HIV after adding a stage description
+# and reorder
+pldhiv$stage <- "pldhiv"
+hivCascade <- rbind(hivCascade, pldhiv)
+hivCascade <- select(hivCascade, year, stage, everything())
+
+# Number on treatment
+treated <- pldhiv$value * propTreat
+treatedLower <- pldhiv$lower * propTreat
+treatedUpper <- pldhiv$upper * propTreat
+
+# Number diagnosed not on treatment - have to be careful the minimum value # is not less than zero
+diagnosed <- pldhiv$value - treated
+diagnosedLower <- pmax(pldhiv$lower - treatedUpper, 0)
+diagnosedUpper <- pldhiv$upper - treatedLower 
+
+hivCascade <- rbind(hivCascade, 
+                    data.frame(year = years,
+                               stage = "diagnosed",
+                               value = diagnosed,
+                               lower = diagnosedLower,
+                               upper = diagnosedUpper))
+
+hivCascade <- rbind(hivCascade, 
+                    data.frame(year = years,
+                               stage = "treated",
+                               value = treated,
+                               lower = treatedLower,
+                               upper = treatedUpper))
+
+# Number on treatment suppressed at last test
+suppressed <- treated * propSuppressed
+suppressedLower <- treatedLower * propSuppressedMin
+suppressedUpper <- treatedUpper * propSuppressedMax
+
+# Number with unsuppressed virus-have to be careful the minimum value is 
+# not less than zero
+unsuppressed <- treated - suppressed
+unsuppressedLower <- pmax(treatedLower - suppressedUpper, 0)
+unsuppressedUpper <- treatedUpper - suppressedLower
+
+hivCascade <- rbind(hivCascade, 
+                    data.frame(year = years,
+                               stage = "unsuppressed",
+                               value = unsuppressed,
+                               lower = unsuppressedLower,
+                               upper = unsuppressedUpper))
+
+hivCascade <- rbind(hivCascade, 
+                    data.frame(year = years,
+                               stage = "suppressed",
+                               value = suppressed,
+                               lower = suppressedLower,
+                               upper = suppressedUpper))
+
+# Output some stuff for the final year
+results <- hivCascade %>%
+  filter(year == analysisYear) %>%
+  filter(stage %in% c("undiagnosed", "diagnosed","unsuppressed", 
+                        "suppressed"))
+
+cat(paste("HIV cascade numbers for", toString(analysisYear), "..."))
+print(results)
+cat(paste("HIV cascade proportions for", toString(analysisYear), "..."))
+print(results$value/sum(results$value))
+
+# Save our HIV cascade to a csv file
+if (saveCascade) {
+  saveString <- file.path(resultsFolder, paste("gbm_hiv_cascade-", ... = 
+    toString(analysisYear), sep = ""))
+  
+  write.csv(hivCascade, file = paste(saveString, ".csv", sep =""), 
+            row.names = FALSE)
+}
+```
+
+```{r plot results}
+# Plot some figures of our cascade
+if (plotCascade) {
+  # Load default plot options
+  source(file.path(Rcode, "PlotOptions.R"), echo=TRUE)
+  
+  # Tidy up data for plotting
+  plotData <- hivCascade %>%
+    filter(year >= startYear, year <= analysisYear) %>%
+    filter(stage %in% c("undiagnosed", "diagnosed","unsuppressed", 
+                        "suppressed"))
+  
+  # Set up plot variables
+  plotCols <- asrcols[c(1, 2, 4, 5)]
+  
+  plotLabels <- c("Undiagnosed", 
+                  "Diagnosed no ART", 
+                  "On ART detectable VL", 
+                  "On ART undetectable VL")
+  
+  xValues <- seq(startYear, analysisYear, by = 3)
+  
+  # PLDHIV overall and by proportion 
+  plhivPlotBase <- ggplot(data = plotData, aes(x = year, y = value, 
+    fill = stage)) + xlab("Year") + # labs(fill = "Cascade stage") +
+    scale_fill_manual(values = plotCols, name = "", labels = plotLabels, 
+      guide = guide_legend(reverse=TRUE, nrow = 2)) +  
+    scale_x_continuous(breaks = xValues) + plotOpts 
+
+  plhivPlotNum <- plhivPlotBase + geom_bar(stat="identity") + 
+    ylab("Number of PLHIV") 
+  plhivPlotProp <- plhivPlotBase + geom_bar(stat="identity", 
+    position= "fill") + ylab("Proportion of PLHIV")
+  
+  # Display plots
+  print(plhivPlotNum)
+  print(plhivPlotProp)
+  
+  if (savePlots) {
+    # Plot specs
+    plotWidth <- 12
+    plotHeight <- 10
+    plotUnits <- "cm"
+    
+    # Do the plots
+    ggsave(file.path(resultsFolder, paste("cascadeIncidence-", "numPLHIV", 
+      "-", toString(analysisYear), ".png",sep ="")),
+      plot = plhivPlotNum, width = plotWidth, height = plotHeight, 
+      units = plotUnits)
+    
+    ggsave(file.path(resultsFolder, paste("cascadeIncidence-", "numDiags",
+      "-", toString(analysisYear), ".png",sep ="")), 
+      plot = plhivPlotProp, width = plotWidth, height = plotHeight, 
+      units = plotUnits)
+  }
+}
+```
+
