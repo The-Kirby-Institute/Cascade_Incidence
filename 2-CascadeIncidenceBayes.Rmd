@@ -29,12 +29,12 @@ useSubset <- TRUE # take a subset of our big sample of the cascade
 if (useSubset) {
     subSamples <- 100000
 }
-useSaved <- FALSE  # use previous set of sampled priors
-saveSims <- TRUE   # save sample priors and weights
+useSaved <- TRUE  # use previous set of sampled priors
+saveSims <- FALSE   # save sample priors and weights
 
 # Details of inputs if required
 if (useSaved) {
-  simTime <- "2016-03-23(15-17)" # in %Y-%m-%d(%H-%M) format 
+  simTime <- "2016-03-23(17-56)" # in %Y-%m-%d(%H-%M) format 
                                  # or some other name
   folder <- paste("CascadeBayes_", simTime, sep = "")
   inputFolder <- file.path(resultsFolder, folder)
@@ -55,11 +55,13 @@ if (saveSims) {
 
 # Set up a function so we can eaily calculate the incidence values
 # for each sample
-incFunc <- function(data, beta, f1, f3, f4) {
+incFunc <- function(data, beta, f1, f3, f4, err = c(1, 1, 1, 1)) {
   # data is a data frame with the countSample data for each year
   
-  return(beta * (f1 * data$undiag + data$diag + f3 * data$unsuppressed + 
-                   f4 * data$suppressed))
+  return(beta * (f1 * data$undiag * err[1] + 
+                   data$diag * err[2] + 
+                   f3 * data$unsuppressed * err[3] + 
+                   f4 * data$suppressed * err[4]))
 }
 
 # Setup the likelihood function for calculating the weight
@@ -118,21 +120,29 @@ if (useSaved) {
   load(file.path(inputFolder, savedFile))
 } else {
   # Initialize the method parameters
-  numBayesSamples <- 1e5  # number of prior samples
-  numCascadeSamples <- 100   # number of cascade samples for each param set
+  numBayesSamples <- 50000 # number of prior samples
+  numCascadeSamples <- 1   # number of cascade samples for each param set
   
   # Set up priors --------------------------------------------------------
   
   # Priors for f1, f3, f4, and beta - at this stage assume uniform priors
   # but we need to be more rigorous about this I think
   
-  f1 <- runif(numBayesSamples, 0.9, 5)        # uniform 
+  f1 <- runif(numBayesSamples, 0.9, 15)        # uniform 
   f3 <- runif(numBayesSamples, 0.5, 1.1)      # uniform
-  f4 <- rbeta(numBayesSamples, 0.85, 10.76)   # beta: same as above
+  f4 <- rbeta(numBayesSamples, 0.85, 10.76)   # beta fitted to data
   beta <- runif(numBayesSamples, 0.02, 0.1)   # uniform: need to 
                                               # recalculate
   
+  # Priors for our error estimates
+  errf1 <- runif(numBayesSamples, 0.9, 1.1)
+  errf2 <- runif(numBayesSamples, 0.9, 1.1)
+  errf3 <- runif(numBayesSamples, 0.9, 1.1)
+  errf4 <- runif(numBayesSamples, 0.9, 1.1)
+  
   # Sampling and run simulations -----------------------------------------
+  
+  cascadeSample <- cascadeAverage
   
   # Initialize outputs
   incidenceMatrix <- matrix(0, numBayesSamples, numYears)
@@ -140,7 +150,8 @@ if (useSaved) {
   
   # Extract our incidence data we want to fit to
   firstIndex <- seq(1, nrow(cascadeSample), by = numSamples)
-  infectionsData <- cascadeSample[firstIndex, ]$infections
+  # infectionsData <- cascadeSample[firstIndex, ]$infections
+  infectionsData <- cascadeAverage$infections
   
   # Loop through samples and calculate infections over time
   # This could take a long time so time it, keep track and save it
@@ -158,20 +169,29 @@ if (useSaved) {
     }
     
     # Do this for mutiple samples of the cascade estimates
-    indexSamples <- sample(numSamples, numCascadeSamples)
-    indices <- sapply(indexSamples, 
-                      function(x) seq(x, numSamples * numYears, 
-                                      by = numSamples))
+    # indexSamples <- sample(numSamples, numCascadeSamples)
+    # indices <- sapply(indexSamples, 
+    #                   function(x) seq(x, numSamples * numYears, 
+    #                                   by = numSamples))
     
     # Apply incidence function to each set of cascade samples
-    resultsMatrix <- t(apply(indices, 2, 
-      function(inVector) incFunc(cascadeSample[inVector, ], 
-        beta[bayesSample], f1[bayesSample], 
-        f3[bayesSample], f4[bayesSample])))
+    # resultsMatrix <- t(apply(indices, 2, 
+    #   function(inVector) incFunc(cascadeSample[inVector, ], 
+    #     beta[bayesSample], f1[bayesSample], 
+    #     f3[bayesSample], f4[bayesSample])))
 
+    # resultsMatrix <- incFunc(cascadeAverage, 
+    #     beta[bayesSample], f1[bayesSample], 
+    #     f3[bayesSample], f4[bayesSample])
+    
     # Store incidence output for this set of parameters
-    incidenceSample <- colMeans(resultsMatrix)
-    incidenceMatrix[bayesSample, ] <- incidenceSample
+    # incidenceSample <- colMeans(resultsMatrix)
+    # incidenceMatrix[bayesSample, ] <- incidenceSample
+    incidenceSample <- incFunc(cascadeAverage, 
+        beta[bayesSample], f1[bayesSample], f3[bayesSample], f4[bayesSample], 
+        err = c(errf1[bayesSample], errf2[bayesSample], errf3[bayesSample],
+        errf4[bayesSample]))
+    incidenceMatrix[bayesSample, ] < - incidenceSample
     
     # For each sample calculate the weights using the likelihood function
     trend <- coef(lm(incidenceSample ~ years))["years"]
@@ -229,7 +249,21 @@ bestFit <- getmode(resampleIndices)
 # What the best fit looks like
 betaBestRel <- c(f1[bestFit], 1, f3[bestFit], f4[bestFit])
 betaBest <- beta[bestFit] * betaBestRel
+errBest <- c(errf1[bestFit], errf2[bestFit], errf3[bestFit], errf4[bestFit])
 
 ```
 
-Generate some results
+Generate some 
+
+```{r quickresults}
+hist(f1[resampleIndices])
+
+apply(cascadeAverage[, 2:5], 1, function(x) x * betaBest/sum(x * betaBest))
+
+incFunc(cascadeAverage, betaBest[2], betaBestRel[1], 
+        betaBestRel[3], betaBest[4], 
+        err = errBest)
+
+cascadeAverage$infections
+
+```

@@ -33,7 +33,7 @@ source(file.path(Rcode, "PlotOptions.R"), echo=TRUE)
 # Script parameters ------------------------------------------------------
 
 # Options for running and saving things
-saveCascadeSample <- TRUE  # save sample from cascade
+saveCascadeSample <- FALSE  # save sample from cascade
 saveRegression <- FALSE     # save regression results
 runExperiments <- FALSE     # run experimental fitting
 saveplots <- FALSE
@@ -84,6 +84,14 @@ numYears <- nrow(newInfects)
 
 # Years 
 years <- newInfects$year
+
+# Create a best estimate cascade
+cascadeBest <- hivCascade[, 1:3] %>% 
+  spread(stage, value) %>% 
+  select(year, undiagnosed, diagnosed, unsuppressed, suppressed)
+
+cascadeBest$infections <- newInfects$diagnoses
+
 ```
 
 ```{r sampling}
@@ -236,11 +244,14 @@ numRows <- nrow(cascadeAdjust)
 sampleBeta <- rbeta(numSamples, 0.85, 10.76)
 # numYears <- length(unique(cascadeSample$year))
 cascadeAdjust$beta4 <- rep(sampleBeta, numYears)
+# cascadeBest$beta4 <- 0.05
 
 # Adjust the undetecable numbers for regression analysis with this
 # new parameter
 cascadeAdjust$undetect <- cascadeAdjust$diagnosed + cascadeAdjust$beta4 * 
                            cascadeAdjust$suppressed
+# cascadeBest$undetect <- cascadeBest$diagnosed + cascadeBest$beta4 * 
+#                            cascadeBest$suppressed
 
 # Use reported notifications or estimated new infections and perform the 
 # regression analysis for the entire sample
@@ -362,7 +373,7 @@ for (sample in 1:numSamples) {
   sampleData <- cascadeAdjust[indices, ]
   
   lmUndetect <- lm(infections ~ 0 + undiagnosed + undetect + 
-                   unsuppressed, data = sampleData)
+                   unsuppressed, data = cascadeBest) #sampleData)
   
   coefAdjustedUndetect <- unname(coef(lmUndetect))
   
@@ -387,8 +398,8 @@ print(aveBetas/aveBetas[2])
 ```{r saveregression}
 # Save regression results
 if (saveRegression) {
-  save(coefUnadjustedOverall, cascadeAdjust, undetectAdjustAnalysis,
-       artAdjustAnalysis, sampleAnalysis,
+  save(coefUnadjustedOverall, cascadeAdjust, cascadeBest, 
+       undetectAdjustAnalysis, artAdjustAnalysis, sampleAnalysis,
     file = file.path(outputFolder, paste(currTime, 
     "_Cascade_Regression_Results.rda", sep ="")))
 }
@@ -533,8 +544,6 @@ if (saveExptResults) {
   
 }
 ```
-
-
 
 # Results
 
