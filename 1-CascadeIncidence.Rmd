@@ -12,12 +12,17 @@ notifications.
 
 This script is designed to be as self contained as possible. 
 
+UPDATE 2016-03-24: Decided the sampling approach doesn't work and is 
+incorrect generally. I am pretty sure it is okay when just using the best 
+estimates. Overall I am replacing the analysis with a Bayesian approach
+
 ```{r initialization}
 # Clear workspace
 rm(list=ls()) 
 options(scipen=999)  # To get rid of scientific notation
 
 # Source to current directory and set working directory
+setwd("~/Research/!Evaluation_Modelling/subprojects/2015_cascade_incidence")
 basePath <- getwd()
 
 # Various directories
@@ -37,6 +42,7 @@ saveCascadeSample <- FALSE  # save sample from cascade
 saveRegression <- FALSE     # save regression results
 runExperiments <- FALSE     # run experimental fitting
 saveplots <- FALSE
+useSampling <- FALSE        # use a sampled range or the best estimates
 
 # Years of analysis
 startYear <- 2005 # minimum assumed to be 2004
@@ -97,7 +103,11 @@ cascadeBest$infections <- newInfects$diagnoses
 ```{r sampling}
 # Produce a randomly sampled set of numbers for fitting from the ranges in 
 # the countClean dataframe. The data comes in long foramt and we store the 
-# samples in wide format
+# samples in wide format. 
+
+# Can decide not to sample and use best estimates instead
+
+if (useSampling) {
 
 # Set up a sub cascade we want
 selectHivCascade <- filter(hivCascade, stage %in% c("undiagnosed", 
@@ -144,6 +154,14 @@ if (saveCascadeSample){
 # Display some output
 print(head(cascadeSample))
 print(cascadeAverage)
+
+} else {
+  # Use best estimates
+  cascadeSample <- cascadeBest
+  cascadeAverage <- cascadeBest
+  
+  numSamples <- 1
+}
 
 ```
 
@@ -241,7 +259,12 @@ numRows <- nrow(cascadeAdjust)
 
 # Now create a beta4 value where the same value should be used for 
 # cascadeAdjust$beta4 <- rbeta(numRows, 0.85, 10.76)
-sampleBeta <- rbeta(numSamples, 0.85, 10.76)
+if (useSampling) {
+  sampleBeta <- rbeta(numSamples, 0.85, 10.76)
+} else {
+  sampleBeta <- 0.05
+}
+  
 # numYears <- length(unique(cascadeSample$year))
 cascadeAdjust$beta4 <- rep(sampleBeta, numYears)
 # cascadeBest$beta4 <- 0.05
@@ -265,27 +288,37 @@ if(useDiagnoses){
 print(lmUndetect)
 coefAdjustedUndetect <- unname(coef(lmUndetect)) # Resulting coefficients
 
-# Sample from coefficents to create uncertainty in the estimates.
-coefLowerTemp <- c(confint(lmUndetect)[1,1], 
-                   confint(lmUndetect)[2,1], 
-                   confint(lmUndetect)[3,1])
-
-coefUpperTemp <- c(confint(lmUndetect)[1,2], 
-                   confint(lmUndetect)[2,2], 
-                   confint(lmUndetect)[3,2])
-
-sampleDiag <- runif(numRows,coefLowerTemp[2], coefUpperTemp[2])
-
-# Store resulting samples for the cascade beta values
-undetectAdjustAnalysis <- data.frame(undiag = runif(numRows,
-                                              coefLowerTemp[1],
-                                              coefUpperTemp[1]),
-                               diag = sampleDiag,
-                               detect = runif(numRows, 
-                                              coefLowerTemp[3],
-                                              coefUpperTemp[3]),
-                               undetect = cascadeAdjust$beta4 * sampleDiag)
-
+if (useSampling) {
+  # Sample from coefficents to create uncertainty in the estimates.
+  coefLowerTemp <- c(confint(lmUndetect)[1,1], 
+                     confint(lmUndetect)[2,1], 
+                     confint(lmUndetect)[3,1])
+  
+  coefUpperTemp <- c(confint(lmUndetect)[1,2], 
+                     confint(lmUndetect)[2,2], 
+                     confint(lmUndetect)[3,2])
+  
+  sampleDiag <- runif(numRows,coefLowerTemp[2], coefUpperTemp[2])
+  
+  # Store resulting samples for the cascade beta values
+  undetectAdjustAnalysis <- data.frame(undiag = runif(numRows,
+                                                      coefLowerTemp[1],
+                                                      coefUpperTemp[1]),
+                                       diag = sampleDiag,
+                                       detect = runif(numRows, 
+                                                      coefLowerTemp[3],
+                                                      coefUpperTemp[3]),
+                                       undetect = cascadeAdjust$beta4 * sampleDiag)
+  
+  
+} else {
+  undetectAdjustAnalysis <-  data.frame(undiag = coefAdjustedUndetect[1],
+                                       diag = coefAdjustedUndetect[2],
+                                       detect = coefAdjustedUndetect[3],
+                                       undetect = cascadeAdjust$beta4[1]
+                                         *coefAdjustedUndetect[2])
+  
+}
 # Display some summary stats
 aveBetas <- colMeans(undetectAdjustAnalysis)
 print(aveBetas)
@@ -307,7 +340,13 @@ beta for those on ART with detectable viral load.
 # between 0.5 and 1 of diagnosed 
 
 # Set up a distribution for the reduction multiplicative factor
-cascadeAdjust$beta2 <- runif(numRows, 0.5,1)
+
+if (useSampling) {
+  sampleBeta2 <- runif(numRows, 0.5,1)
+} else {
+  sampleBeta2 <- 0.75
+}
+cascadeAdjust$beta2 <- sampleBeta2
 
 # Adjust the detecable numbers for regression analysis with this new 
 # parameter
@@ -326,18 +365,27 @@ print(lmArt)
 coefAdjustedArt<- unname(coef(lmArt)) # Resulting coefficients
 
 # Sample from coefficents to create uncertainty in the estimates.
-coefLowerTemp <- c(confint(lmArt)[1, 1], confint(lmArt)[2, 1])
-coefUpperTemp <- c(confint(lmArt)[1, 2], confint(lmArt)[2, 2])
-
-sampleDiag2 <- runif(numRows, coefLowerTemp[2], coefUpperTemp[2])
-
-# Store resulting samples for the cascade beta values
-artAdjustAnalysis <- data.frame (undiag = runif(numRows, coefLowerTemp[1],
-                                          coefUpperTemp[1]),
-                           diag = sampleDiag2,
-                           detect = cascadeAdjust$beta2 * sampleDiag2, 
-                           undetect = cascadeAdjust$beta4 * sampleDiag2)
-
+if (useSampling) {
+  coefLowerTemp <- c(confint(lmArt)[1, 1], confint(lmArt)[2, 1])
+  coefUpperTemp <- c(confint(lmArt)[1, 2], confint(lmArt)[2, 2])
+  
+  sampleDiag2 <- runif(numRows, coefLowerTemp[2], coefUpperTemp[2])
+  
+  # Store resulting samples for the cascade beta values
+  artAdjustAnalysis <- data.frame (undiag = runif(numRows, coefLowerTemp[1],
+                                                  coefUpperTemp[1]),
+                                   diag = sampleDiag2,
+                                   detect = cascadeAdjust$beta2 * sampleDiag2, 
+                                   undetect = cascadeAdjust$beta4 * sampleDiag2)
+  
+  
+} else {
+  artAdjustAnalysis <- data.frame (undiag = coefAdjustedArt[1],
+                                   diag = coefAdjustedArt[2],
+                                   detect = cascadeAdjust$beta2[1] * coefAdjustedArt[2], 
+                                   undetect = cascadeAdjust$beta4[1] * coefAdjustedArt[2])
+  
+}
 # Display some summary stats
 aveBetas <- colMeans(artAdjustAnalysis)
 print(aveBetas)
@@ -554,7 +602,7 @@ The final results are presented in this section.
 # thorough analysis is done separately. 
 
 # Specify the results we want
-results <- "undetect"
+results <- "art"
 
 if (results == "undetect") {
   resultsCoefs <- undetectAdjustAnalysis
