@@ -4,3 +4,5 @@ misc/
 output/
 .Rhistory
 .Rdata
+1-CascadeIncidence_new.Rmd
+2-CascadeIncidenceBayes_new.Rmd
