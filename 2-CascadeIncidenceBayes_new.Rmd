@@ -1,0 +1,269 @@
+HIV Cascade Incidence - Bayesian Approach
+=========================================
+  
+This Rmarkdown script builds on the cascade incidence regression analysis and 
+applies a Bayesian Melding approach. 
+
+```{r initialization}
+rm(list=ls()) 
+
+# Source to current directory and set working directory
+basePath <- getwd()
+
+# Various directories
+sampleTime <- "Million" # defined by user in %Y-%m-%d(%H-%M) 
+                                  # format or some other name
+sampleFolder <- file.path(basePath, "output", 
+                         paste("CountAnalysis_", sampleTime, sep = ""))
+resultsFolder <- file.path(basePath, "output")
+Rcode <- file.path(basePath, "code") 
+
+# Load standard libraries, key functions and options
+source(file.path(Rcode, "LoadLibrary.R"), echo=TRUE)
+source(file.path(Rcode, "DataLibraries.R"), echo=TRUE)
+
+# Script parameters ------------------------------------------------------
+
+# Options for running and saving things
+useSubset <- TRUE # take a subset of our big sample of the cascade
+if (useSubset) {
+    subSamples <- 100000
+}
+useSaved <- TRUE  # use previous set of sampled priors
+saveSims <- FALSE   # save sample priors and weights
+
+# Details of inputs if required
+if (useSaved) {
+  simTime <- "2016-03-23(17-56)" # in %Y-%m-%d(%H-%M) format 
+                                 # or some other name
+  folder <- paste("CascadeBayes_", simTime, sep = "")
+  inputFolder <- file.path(resultsFolder, folder)
+  savedFile <- paste(simTime, "_CascadeBayes.rda", sep = "")
+}
+
+# Details of where to store outputs if desired
+if (saveSims) {
+  currTime <- format(Sys.time(), "%Y-%m-%d(%H-%M)") # to append to files
+  folder <- paste("CascadeBayes_", currTime, sep="")
+  
+  # Create directory
+  dir.create(file.path(resultsFolder,folder), showWarnings = FALSE)
+  outputFolder <- file.path(resultsFolder, folder)
+}
+
+# Useful functions --------------------------------------------------------
+
+# Set up a function so we can eaily calculate the incidence values
+# for each sample
+incFunc <- function(data, beta, f1, f3, f4, err = c(1, 1, 1, 1)) {
+  # data is a data frame with the countSample data for each year
+  
+  return(beta * (f1 * data$undiag * err[1] + 
+                   data$diag * err[2] + 
+                   f3 * data$unsuppressed * err[3] + 
+                   f4 * data$suppressed * err[4]))
+}
+
+# Setup the likelihood function for calculating the weight
+
+WeightError <- function(data, estimate, err) {
+  nn <- length(data)
+  x <- data - estimate # difference between observed and simulated
+  
+  sigma <- data * err/100 # standard deviation
+  mu <- rep(0, nn) # mean of x is zero if same
+  w <- prod(dnorm(x, mu, sigma) / dnorm(mu, mu, sigma))
+  return(w)
+}
+
+```
+
+## Load previously created cascade samples 
+
+```{r loaddata}
+# Need to load previoulsy generated cascadeSample
+baseFile <- paste(sampleTime, "_Cascade_Sample.rda", sep = "")
+load(file.path(sampleFolder, baseFile)) # load cascadeSample and
+                                       # cascadeAverage
+
+# Create some useful parameters
+years <- cascadeAverage$year
+numYears <- length(years)
+numSamples <- nrow(cascadeSample) / numYears
+
+# Subset to a smaller sample space if desired
+if (useSubset) {
+  indices <- sapply(sample.int(numSamples, subSamples),
+                    function(x) seq(x, numSamples * numYears,
+                                    by = numSamples))
+  
+  cascadeSample <- cascadeSample[as.vector(indices), ]
+  numSamples <- nrow(cascadeSample) / numYears
+}
+
+```
+
+## Bayesian melding approach
+
+```{r bayessims}
+# In this chunk we apply a Bayesian melding methodology by sampling from 
+# priors and running the samples in our model. It takes a long 
+# time so it is set up to be optional.
+
+# We slightly recast the equation to make it easier for setting up 
+# the priors. 
+# I = beta * (f1 * N1 + f2 * N2 + f2 * N3 + f4 * N4) 
+# Generally we set f2 = 1 so we still have an equation with four 
+# parameters.
+
+if (useSaved) {
+  load(file.path(inputFolder, savedFile))
+} else {
+  # Initialize the method parameters
+  numBayesSamples <- 50000 # number of prior samples
+  numCascadeSamples <- 1   # number of cascade samples for each param set
+  
+  # Set up priors --------------------------------------------------------
+  
+  # Priors for f1, f3, f4, and beta - at this stage assume uniform priors
+  # but we need to be more rigorous about this I think
+  
+  f1 <- runif(numBayesSamples, 0.9, 15)        # uniform 
+  f3 <- runif(numBayesSamples, 0.5, 1.1)      # uniform
+  f4 <- rbeta(numBayesSamples, 0.85, 10.76)   # beta fitted to data
+  beta <- runif(numBayesSamples, 0.02, 0.1)   # uniform: need to 
+                                              # recalculate
+  
+  # Priors for our error estimates
+  errf1 <- runif(numBayesSamples, 0.9, 1.1)
+  errf2 <- runif(numBayesSamples, 0.9, 1.1)
+  errf3 <- runif(numBayesSamples, 0.9, 1.1)
+  errf4 <- runif(numBayesSamples, 0.9, 1.1)
+  
+  # Sampling and run simulations -----------------------------------------
+  
+  cascadeSample <- cascadeAverage
+  
+  # Initialize outputs
+  incidenceMatrix <- matrix(0, numBayesSamples, numYears)
+  weights <- rep(0, numBayesSamples)
+  
+  # Extract our incidence data we want to fit to
+  firstIndex <- seq(1, nrow(cascadeSample), by = numSamples)
+  # infectionsData <- cascadeSample[firstIndex, ]$infections
+  infectionsData <- cascadeAverage$infections
+  
+  # Loop through samples and calculate infections over time
+  # This could take a long time so time it, keep track and save it
+  
+  tic <- proc.time()
+  sizeSamples <- nrow(cascadeSample)
+  
+  # Initialize a results matrix
+  resultsMatrix <- matrix(0, numCascadeSamples, numYears)
+  
+  for (bayesSample in 1:numBayesSamples) {
+    # Likely to take a while so let us know where we are up to
+    if (bayesSample %% 1000 == 1) {
+      print(bayesSample)
+    }
+    
+    # Do this for mutiple samples of the cascade estimates
+    # indexSamples <- sample(numSamples, numCascadeSamples)
+    # indices <- sapply(indexSamples, 
+    #                   function(x) seq(x, numSamples * numYears, 
+    #                                   by = numSamples))
+    
+    # Apply incidence function to each set of cascade samples
+    # resultsMatrix <- t(apply(indices, 2, 
+    #   function(inVector) incFunc(cascadeSample[inVector, ], 
+    #     beta[bayesSample], f1[bayesSample], 
+    #     f3[bayesSample], f4[bayesSample])))
+
+    # resultsMatrix <- incFunc(cascadeAverage, 
+    #     beta[bayesSample], f1[bayesSample], 
+    #     f3[bayesSample], f4[bayesSample])
+    
+    # Store incidence output for this set of parameters
+    # incidenceSample <- colMeans(resultsMatrix)
+    # incidenceMatrix[bayesSample, ] <- incidenceSample
+    incidenceSample <- incFunc(cascadeAverage, 
+        beta[bayesSample], f1[bayesSample], f3[bayesSample], f4[bayesSample], 
+        err = c(errf1[bayesSample], errf2[bayesSample], errf3[bayesSample],
+        errf4[bayesSample]))
+    incidenceMatrix[bayesSample, ] < - incidenceSample
+    
+    # For each sample calculate the weights using the likelihood function
+    trend <- coef(lm(incidenceSample ~ years))["years"]
+    maxInc <- max(incidenceSample)
+    minInc <- min(incidenceSample)
+
+    if ((trend < 0 || maxInc > 1000) || minInc < 400) {
+      weights[bayesSample] <- 0
+    } else {
+      # TODO: Replace with correct correct weighting calculation
+      weights[bayesSample] <- WeightError(infectionsData,
+        incidenceSample, 10)
+    }
+    
+  }
+  
+  toc <- proc.time() - tic
+  
+  # Save results and Bayes parameters
+  if (saveSims){
+    # Save the output
+    save(numBayesSamples, numCascadeSamples, f1, f3, f4, beta,
+      incidenceMatrix, weights,
+        file = file.path(outputFolder, paste(currTime, 
+          "_CascadeBayes.rda", sep = "")))
+  }
+}
+
+```
+
+```{r bayesposteriors}
+# Using the results from runsims resample with replacement to create 
+# psoteriors
+
+resamples <- 10000
+
+# Resample by weight with replacement -------------------------------------
+resampleIndices <- sample(1:numBayesSamples, resamples, prob = weights, 
+                          replace = TRUE) 
+
+# Generate some stats -----------------------------------------------------
+
+# Need a function for mode! - 
+getmode <- function(vector) {
+  uniqueElements <- unique(vector)
+  uniqueElements[which.max(tabulate(match(vector, uniqueElements)))]
+}
+
+# Number unique paramter sets resampled
+numUniques <- length(unique(resampleIndices))
+
+# Best fitting parameter sets
+bestFit <- getmode(resampleIndices)
+
+# What the best fit looks like
+betaBestRel <- c(f1[bestFit], 1, f3[bestFit], f4[bestFit])
+betaBest <- beta[bestFit] * betaBestRel
+errBest <- c(errf1[bestFit], errf2[bestFit], errf3[bestFit], errf4[bestFit])
+
+```
+
+Generate some 
+
+```{r quickresults}
+hist(f1[resampleIndices])
+
+apply(cascadeAverage[, 2:5], 1, function(x) x * betaBest/sum(x * betaBest))
+
+incFunc(cascadeAverage, betaBest[2], betaBestRel[1], 
+        betaBestRel[3], betaBest[4], 
+        err = errBest)
+
+cascadeAverage$infections
+
+```
