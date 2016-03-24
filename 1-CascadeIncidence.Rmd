@@ -1,0 +1,614 @@
+HIV Cascade Incidence Analsysis
+===============================
+
+This Rmarkdown script looks at various approaches of estimating the 
+proportion of new HIV infections in the overall population due to due to 
+each stage of the HIV diagnosis and care cascade. For this analysis the 
+stages I use are: people living with undiagnosed HIV (PLUHIV); people 
+living with diagnosed HIV (PLDHIV); people receiving ART with detectable 
+viral load; and people recieving ART with undetectable viral load. The 
+analysis either uses annual estimates for new infections or recorded HIV 
+notifications. 
+
+This script is designed to be as self contained as possible. 
+
+```{r initialization}
+# Clear workspace
+rm(list=ls()) 
+options(scipen=999)  # To get rid of scientific notation
+
+# Source to current directory and set working directory
+basePath <- getwd()
+
+# Various directories
+dataFolder <- file.path(basePath, "data")
+resultsFolder <- file.path(basePath, "output")
+Rcode <- file.path(basePath, "code") 
+
+# Load standard libraries, key functions and options
+source(file.path(Rcode, "LoadLibrary.R"), echo=TRUE)
+source(file.path(Rcode, "DataLibraries.R"), echo=TRUE)
+source(file.path(Rcode, "PlotOptions.R"), echo=TRUE)
+
+# Script parameters ------------------------------------------------------
+
+# Options for running and saving things
+saveCascadeSample <- TRUE  # save sample from cascade
+saveRegression <- FALSE     # save regression results
+runExperiments <- FALSE     # run experimental fitting
+saveplots <- FALSE
+
+# Years of analysis
+startYear <- 2005 # minimum assumed to be 2004
+try(if (startYear < 2004) stop("Start year before 2004"))
+analysisYear <- 2014
+
+# Input data 
+inputFile <- paste("gbm_hiv_cascade-", toString(analysisYear), 
+                   ".csv", sep = "")
+
+# Details of where to store outputs if desired
+if (saveCascadeSample) {
+  currTime <- format(Sys.time(), "%Y-%m-%d(%H-%M)") # to append to files
+  folder <- paste("CountAnalysis_",currTime,sep="")
+  
+  # Create directory
+  dir.create(file.path(resultsFolder,folder), showWarnings = FALSE)
+  outputFolder <- file.path(resultsFolder, folder)
+}
+
+# Analysis parameters ----------------------------------------------------
+
+numSamples <- 10000   # number of sampled cascades for each year
+useDiagnoses <- TRUE  # use reported notifications or estimated incidence
+
+if (runExperiments) {
+  numInits <- 1000  # number of initial starting points for optimization 
+  saveExptResults <- FALSE # save experimental results 
+}
+```
+
+```{r loaddata}
+# Load hivCascade data
+hivCascade <- read.csv(file.path(resultsFolder, inputFile), as.is = c(2))
+
+# Load new infections data 
+newInfectionsFile <- file.path(dataFolder, "new_infections_gbm.csv")
+newInfects <- read.csv(newInfectionsFile)
+
+# Display some output
+print(head(hivCascade, n=2))
+
+# Extract some useful numbers
+numYears <- nrow(newInfects)
+
+# Years 
+years <- newInfects$year
+```
+
+```{r sampling}
+# Produce a randomly sampled set of numbers for fitting from the ranges in 
+# the countClean dataframe. The data comes in long foramt and we store the 
+# samples in wide format
+
+# Set up a sub cascade we want
+selectHivCascade <- filter(hivCascade, stage %in% c("undiagnosed", 
+                           "diagnosed","unsuppressed", "suppressed"))
+
+# Add number of new infections each year
+numStages <- 4
+selectHivCascade$infections <- rep(newInfects$diagnoses, numStages) 
+
+# Use apply to loop through every row of the cascade data frame and sample 
+# from lower and upper bounds. Return a matrix with samples from each row 
+# as columns.
+sampleMatrix <- t(apply(selectHivCascade[,c("lower", "upper")], 1, 
+                        function(x) runif(numSamples, x[1], x[2])))
+
+# Bind sample matrix with original data frame
+sampleDf <- cbind(selectHivCascade, as.data.frame(sampleMatrix))
+
+# Rearrange data frame to pull out each sample as a row for each year and 
+# stage of the cascade and reorder into the cascade order.
+cascadeSample <- sampleDf %>%
+  gather("sim", "sample", 7:(7 + numSamples - 1)) %>%
+  select(year, stage, infections, sim, sample) %>%
+  spread(stage, sample) %>%
+  select(-sim)
+cascadeSample <- cascadeSample[, c("year","undiagnosed", 
+                                   "diagnosed", "unsuppressed",
+                                   "suppressed", "infections")]
+
+# Create average matrix for each year ofcascadeSample
+cascadeAverage <- cascadeSample %>%
+  group_by(year) %>%
+  summarise_each(funs(mean)) 
+
+# Save cascade sample and average variables for later use (if required)
+# This is primarily for the Bayesian work
+if (saveCascadeSample){
+  # Save the output
+  save(cascadeSample, cascadeAverage, 
+    file = file.path(outputFolder, paste(currTime, 
+    "_Cascade_Sample.rda", sep ="")))
+}
+
+# Display some output
+print(head(cascadeSample))
+print(cascadeAverage)
+
+```
+
+```{r exploration}
+# Before we get serious lets have a look at the data and what we are trying
+# to do
+
+# Melt data into a plotting data frame
+plotDataAve <- gather(cascadeAverage, "stage", "average", 3:6)
+# plotDataAve$diagnoses <- newInfects$diagnoses
+
+# Create a plot looking at the relationships
+countplotAve <- ggplot(data = plotDataAve, 
+                       aes(x = average, y = diagnoses)) + geom_point() + 
+  facet_wrap(~stage, scales = "free_x") + theme_bw()
+
+countplotAve <- ggplot(data = plotDataAve, 
+                       aes(x = year, y = average, colour = stage)) +
+                  geom_point() 
+
+# Plot and save
+print(countplotAve)
+if (saveCascadeSample){
+  ggsave(file.path(outputFolder, 
+                   paste(currTime, "_CountPlot.png", sep = "")))
+}
+
+```
+
+# Analysis
+
+This section describes the various calculations and approaches. Each should
+be run independently unless otherwise indicated
+
+## Simple regression analysis
+
+I tried a standard linear regresiion first without adjusting for 
+known/expected biological effects. 
+
+```{r simpleanalysis}
+
+if(useDiagnoses) {
+  lm <- lm(infections ~ 0 + undiagnosed + diagnosed + unsuppressed + 
+             suppressed, data = cascadeSample)
+} else { 
+#   lm <- lm(newinfects ~ 0 + undiagnosed + diagnosed + detectable + undetectable, data = countSample)
+}
+
+print(lm)
+coefUnadjustedOverall <- unname(coef(lm))
+
+```
+
+This analysis produced unrealistic results with the beta value for those
+with suppressed virus too high compared to the undiagnosed population. 
+
+## Constrained regression 
+
+I then tried some simple constraints on the beta parameters for those 
+on ART to reflect the lower transmission probability (especially for 
+suppressed) virus. This was done using an adjusted regression analysis.
+
+The first analysis was just for those with undetectable viral load leaving
+the beta for those on ART but with detectable viral load free to be fitted 
+by the regression. 
+
+```{r suppressedconstraint}
+# Perform an adjusted regression analysis were we contrain the beta values 
+# for those on ART to better reflect known biological data
+
+# Biogically we know undiagnosed people are more infectious due to acute 
+# infection or at least as infectious as diagnosed people. We also know 
+# undetectable PLHIV are 71 to 99% less infectious than diagnosed people. 
+
+# Use a constraint on the beta for undetectable viral load so it is forced
+# to be much less than undiagnosed proportion. 
+
+cascadeAdjust <- cascadeSample # [5001:nrow(countSample)]
+numRows <- nrow(cascadeAdjust)
+
+# Set up a distribution for the reduction multiplicative factor
+
+# Uniform distribution
+# cascadeAdjust$beta4 <- runif(numRows, 0.01,0.3) # HPTN-052 transmission rate
+
+# Beta distribution
+# source('~/Research/!Evaluation_Modelling/project_care_cascades/code/FindBeta.R')
+# quantile1 <- list(p=0.5, x=0.03)
+# quantile2 <- list(p=0.975, x=0.27)
+# quantile3 <- list(p=0.025, x=0.01)
+# require(LearnBayes)
+# findBeta(quantile1, quantile2, quantile3)
+# # "The best beta prior has a= 0.85 b= 10.76"
+# curve(dbeta(x, 0.85, 10.76))# plot the prior
+
+# Now create a beta4 value where the same value should be used for 
+# cascadeAdjust$beta4 <- rbeta(numRows, 0.85, 10.76)
+sampleBeta <- rbeta(numSamples, 0.85, 10.76)
+# numYears <- length(unique(cascadeSample$year))
+cascadeAdjust$beta4 <- rep(sampleBeta, numYears)
+
+# Adjust the undetecable numbers for regression analysis with this
+# new parameter
+cascadeAdjust$undetect <- cascadeAdjust$diagnosed + cascadeAdjust$beta4 * 
+                           cascadeAdjust$suppressed
+
+# Use reported notifications or estimated new infections and perform the 
+# regression analysis for the entire sample
+if(useDiagnoses){
+  lmUndetect <- lm(infections ~ 0 + undiagnosed + undetect + 
+                   unsuppressed, data = cascadeAdjust)
+} else {  
+# lmUndetect <- lm(newinfects ~ 0 + undiagnosed + undetect + 
+#   detectable, data = countAdjust)
+}
+print(lmUndetect)
+coefAdjustedUndetect <- unname(coef(lmUndetect)) # Resulting coefficients
+
+# Sample from coefficents to create uncertainty in the estimates.
+coefLowerTemp <- c(confint(lmUndetect)[1,1], 
+                   confint(lmUndetect)[2,1], 
+                   confint(lmUndetect)[3,1])
+
+coefUpperTemp <- c(confint(lmUndetect)[1,2], 
+                   confint(lmUndetect)[2,2], 
+                   confint(lmUndetect)[3,2])
+
+sampleDiag <- runif(numRows,coefLowerTemp[2], coefUpperTemp[2])
+
+# Store resulting samples for the cascade beta values
+undetectAdjustAnalysis <- data.frame(undiag = runif(numRows,
+                                              coefLowerTemp[1],
+                                              coefUpperTemp[1]),
+                               diag = sampleDiag,
+                               detect = runif(numRows, 
+                                              coefLowerTemp[3],
+                                              coefUpperTemp[3]),
+                               undetect = cascadeAdjust$beta4 * sampleDiag)
+
+# Display some summary stats
+aveBetas <- colMeans(undetectAdjustAnalysis)
+print(aveBetas)
+print(aveBetas/aveBetas[2])
+
+```
+
+One issue we encountered with the intial analysis is the beta for 
+undiagnosed is lower than the beta for diagnosed. I would potentially 
+expect the diagnosed beta to be lower given they know they are 
+infected and are likley to reduce risk to their partners.
+
+To potentially account for this I tried an additional constraint on the 
+beta for those on ART with detectable viral load. 
+
+```{r artconstraint}
+# Add an extra constraint on the on ART but detectable coefficient 
+# We are assuming detectable viral load is has a multiplicative factor 
+# between 0.5 and 1 of diagnosed 
+
+# Set up a distribution for the reduction multiplicative factor
+cascadeAdjust$beta2 <- runif(numRows, 0.5,1)
+
+# Adjust the detecable numbers for regression analysis with this new 
+# parameter
+cascadeAdjust$art <- (cascadeAdjust$infections + cascadeAdjust$beta2 * 
+                      cascadeAdjust$unsuppressed + cascadeAdjust$beta4 * 
+                      cascadeAdjust$suppressed)
+
+# Use reported notifications or estimated new infections and perform the 
+# regression analysis
+if(useDiagnoses){
+  lmArt <- lm(infections ~ 0 + undiagnosed + art, data = cascadeAdjust)
+} else {
+  lmArt <- lm(newinfects ~ 0 + undiagnosed + art, data = cascadeAdjust)
+}
+print(lmArt)
+coefAdjustedArt<- unname(coef(lmArt)) # Resulting coefficients
+
+# Sample from coefficents to create uncertainty in the estimates.
+coefLowerTemp <- c(confint(lmArt)[1, 1], confint(lmArt)[2, 1])
+coefUpperTemp <- c(confint(lmArt)[1, 2], confint(lmArt)[2, 2])
+
+sampleDiag2 <- runif(numRows, coefLowerTemp[2], coefUpperTemp[2])
+
+# Store resulting samples for the cascade beta values
+artAdjustAnalysis <- data.frame (undiag = runif(numRows, coefLowerTemp[1],
+                                          coefUpperTemp[1]),
+                           diag = sampleDiag2,
+                           detect = cascadeAdjust$beta2 * sampleDiag2, 
+                           undetect = cascadeAdjust$beta4 * sampleDiag2)
+
+# Display some summary stats
+aveBetas <- colMeans(artAdjustAnalysis)
+print(aveBetas)
+print(aveBetas/aveBetas[2])
+
+```
+
+The final approach constraining the ART parameters seems to produce the 
+most plausible estimates. However, the methods is a little sketchy I think
+and I would prefer to use a more robust approach.
+
+An alternative I decided to try applying the regression for each sample
+and then collate the regression parameters. This is kind of like a 
+bootstrap approach which I think is a little more rigorous
+
+```{r samplelm}
+
+# Loop through cascadeAdjust and calculate regression parameters for each 
+# sample
+
+betaValues <- data.frame(sample = 1:numSamples,
+                         undiag = NA,
+                         diag = NA,
+                         detect = NA,
+                         undetect = NA)
+
+tic <- proc.time()
+
+for (sample in 1:numSamples) {
+  # Need to extract the years corresponding to this sample
+  indices <- seq(sample, nrow(cascadeAdjust), by = numSamples)
+  
+  sampleData <- cascadeAdjust[indices, ]
+  
+  lmUndetect <- lm(infections ~ 0 + undiagnosed + undetect + 
+                   unsuppressed, data = sampleData)
+  
+  coefAdjustedUndetect <- unname(coef(lmUndetect))
+  
+  betaValues$undiag[sample] <- coefAdjustedUndetect[1]
+  betaValues$diag[sample] <- coefAdjustedUndetect[2]
+  betaValues$detect[sample] <- coefAdjustedUndetect[3]
+  betaValues$undetect[sample] <-  coefAdjustedUndetect[2] * 
+    sampleData$beta4[1]
+  
+}
+
+toc <-  proc.time() - tic
+
+# Look at some summary stats
+sampleAnalysis <- betaValues[, 2:5]
+aveBetas <- colMeans(sampleAnalysis)
+print(aveBetas)
+print(aveBetas/aveBetas[2])
+
+```
+
+```{r saveregression}
+# Save regression results
+if (saveRegression) {
+  save(coefUnadjustedOverall, cascadeAdjust, undetectAdjustAnalysis,
+       artAdjustAnalysis, sampleAnalysis,
+    file = file.path(outputFolder, paste(currTime, 
+    "_Cascade_Regression_Results.rda", sep ="")))
+}
+
+```
+
+## Experiemental approaches
+
+Given my reservations with the constrained regression approach. I tried some
+other experimental approaches for doing the regression. First I tried
+using non-linear least squares with upper and lower limits. Note warining in 
+documentation for nls() when using limits. 
+
+```{r experimental}
+# Try using nls to constrain the upper and lower values of the regression. 
+# Note it will always try to reach the linear regression values. 
+# WARNING FROM DOCUMENTATION: "The algorithm = 'port'code appears 
+# unfinished, and does not even check that the starting value is within the
+# bounds. Use with caution, especially where bounds are supplied."
+
+# NOTE: code needs updating to run properly!!
+
+if (runExperiments) {
+  
+  nls(infections ~ f1 * b2 * undiagnosed + 
+        b2 * diagnosed + 
+        f2 * b2 * unsuppressed + 
+        f3 * b2 * suppressed, 
+      data = cascadeSample, 
+      start = list(f1 = 2, b2 = 0.05, f2 = 0.75, f3 = 0.02),
+      lower = list(f1 = 1, b2 = 0, f2 = 0.5, f3 = 0.0),
+      upper = list(f1 = 5, b2 = 0.1, f2 = 1.1, f3 = 0.),
+      algorithm = "port")
+  
+  # Optimization tools ----------------------------------------------------
+  
+  # The next approach tried to use an optimization method to keep the beta 
+  # values between specified ranges. We tried using various optimization 
+  # tools to perform the analysis.
+  
+  # Set up data frame we use
+  countConstrain <- countAdjust
+  
+  countConstrain$z <- -countConstrain$undetect
+  dat <- countConstrain #tail(dat, n = numSamples) 
+  
+  # Define the function we optimize - minimizing least squares
+  min.RSS <- function(data,par){
+    with(data,sum((par[1] * undiagnosed + par[2] * diagnoses + 
+                     par[3] * detectable - z)^2))
+  }
+  
+  # Set up analysis with multiple initial conditions
+  results <- list()
+  numInits <- 100 #numSamples
+  values <- rep(numInits, 0)
+  
+  initpars <- matrix(c(runif(numInits, 1, 50),
+                       runif(numInits, -50, 0),
+                       runif(numInits, 0, 1)),
+                     nrow = numInits, ncol = 3)
+  
+  # Perform optimization for each initial value
+  for (ii in 1:numInits) {
+    results[[ii]] <- optim(par = initpars[ii,], 
+                           min.RSS, data = dat,lower=c(1,-50,0),
+                           upper=c(50,0,1), method="L-BFGS-B")
+    values[ii] <- results[[ii]]$value
+  }
+  
+  # Extract the results we want
+  pars <- results[[which.min(values)]]$par # Use one with minimum error
+  
+  # calculate the resulting parameters
+  param2 <- -1/pars[2]
+  param3 <- param2*pars[3]
+  param1 <- param2*pars[1]
+  
+  # Store resulting samples for the cascade beta values
+  optimAnalysis <- data.frame(undiag = runif(numRows, param1, param1),
+                              diag = runif(numRows, param2, param2), 
+                              detect = runif(numRows, param3, param3),
+                              undetect = countConstrain$beta4*diagOptim)
+  
+  # Display some summary stats
+  print(colMeans(optimAnalysis))
+  
+  # The first experimental results produces some weird results with the 
+  # beta value for those with detectable viral loads << than the beta for 
+  # suppressed virus. 
+  
+  # Optimization weighted -------------------------------------------------
+  
+  # The next approach tried to encode an optimization approach by weighting 
+  # for parameters such that beta1 > beta2 > beta3 > beta4. This has not 
+  # been finalized and I  don't think I can get it to work. 
+  
+  # Using optimization tools to perform the analysis where unrealistic 
+  # beta values are eliminated. 
+  
+  # Set up data frame we use
+  dat <- countAverage #tail(dat, n = numSamples) 
+  
+  # Define the function we optimize - minimizing least squares with a zero
+  # weighting for problematic parmaters
+  min.RSS <- function(data,par){
+    if((par[2] < par[1] || par[3] > par[2]) || par[4] > par[3]){
+      output <- 1e10
+    } else {
+      output <- with(data, sum((par[1]*undiagnosed + par[2]*diagnosed + 
+                                  par[3]*detectable + par[4]*undetectable - 
+                                  newinfects)^2))
+    }
+    output # Return
+  }
+  
+  # Set up analysis with multiple initial conditions
+  results <- list()
+  numInits <- 100 #numSamples
+  values <- rep(numInits, 0)
+  
+  initpars <- matrix(c(runif(numInits, 0.8, 1),
+                       runif(numInits, 0.5, 0.8), 
+                       runif(numInits,0.4,0.5),
+                       runif(numInits,0,0.4)),
+                     nrow = numInits, ncol = 4)
+  
+  # Perform optimization for each initial value
+  for (ii in 1:numInits) {
+    results[[ii]] <- optim(par = initpars[ii,], min.RSS, data = dat,
+                           lower=c(0,0,0,0), upper=c(1,1,1,1),
+                           method="L-BFGS-B")
+    values[ii] <- results[[ii]]$value
+  }
+  
+  pars <- results[[which.min(values)]]$par
+  
+  # Save regression results
+if (saveExptResults) {
+  stop("Current optimization approach deprecated")
+}
+  
+}
+```
+
+
+
+# Results
+
+The final results are presented in this section.
+
+```{r extractresults}
+# This chunk does a quick extraction of the current results. A more 
+# thorough analysis is done separately. 
+
+# Specify the results we want
+results <- "undetect"
+
+if (results == "undetect") {
+  resultsCoefs <- undetectAdjustAnalysis
+} else if (results == "art") {
+  resultsCoefs <- artAdjustAnalysis
+} else if (results == "sample") {
+  resultsCoefs <- sampleAnalysis  
+} else if (results == "optim") {
+  stop("Current ptimization approach deprecated")
+} else {
+  stop("Results unspecified")
+}
+
+# Adjust the results to remove negative coefficients
+negativeCoeffs <- apply(resultsCoefs, 1, function(x) sum(x < 0)) 
+resultsCoefs <- resultsCoefs[negativeCoeffs == 0,]
+
+# Extract the results
+aveCoeffs <- colMeans(resultsCoefs)
+medCoeffs <- apply(resultsCoefs,2, FUN = median)
+iqrCoeffs <- apply(resultsCoefs,2, FUN = IQR)
+
+print(aveCoeffs)
+print(aveCoeffs/aveCoeffs[2])
+
+print(medCoeffs)
+print(medCoeffs/medCoeffs[2])
+
+print(medCoeffs + iqrCoeffs/2)
+print(medCoeffs - iqrCoeffs/2)
+
+# Now estimate the uncertainty and proportion of infections caused by each 
+# stage
+
+numUndiag <- resultsCoefs$undiag*cascadeSample$undiagnosed
+numDiag <- resultsCoefs$diag*cascadeSample$diagnosed
+numDetect <- resultsCoefs$detect*cascadeSample$unsuppressed
+numUndetect <- resultsCoefs$undetect*cascadeSample$suppressed     
+numSum <- numUndiag + numDiag + numDetect + numUndetect
+                                                             
+# Put things in a data frame so we can extract results
+stageInfects <- data.frame(year = cascadeSample$year, 
+                           undiagnosed = numUndiag, 
+                           diagnosed = numDiag, 
+                           detectable = numDetect, 
+                           undetectable = numUndetect)
+
+propInfects <- data.frame(year = cascadeSample$year, 
+                          undiagnosed = numUndiag/numSum, 
+                          diagnosed = numDiag/numSum, 
+                          detectable = numDetect/numSum, 
+                          undetectable = numUndetect/numSum)
+
+# Return proportion of infections due to each stage
+infectsProp <- propInfects %>% 
+  group_by(year) %>% 
+  summarise_each(funs(mean))
+
+# Display some results
+print(infectsProp)
+
+```
+
+```{r tidyup, echo = FALSE}
+options(scipen=0)  # Set back to default
+```
