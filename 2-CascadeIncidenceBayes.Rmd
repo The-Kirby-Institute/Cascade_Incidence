@@ -157,10 +157,10 @@ if (useSaved) {
   # Priors for f1, f3, f4, and beta - at this stage assume uniform priors
   # but we need to be more rigorous about this I think
   
-  f1 <- runif(numBayesSamples, 0.9, 15)        # uniform 
-  f3 <- runif(numBayesSamples, 0.5, 1.1)      # uniform
+  f1 <- runif(numBayesSamples, 0.9, 30)        # uniform 
+  f3 <- runif(numBayesSamples, 0.5, 1.5)      # uniform
   f4 <- rbeta(numBayesSamples, 0.85, 10.76)   # beta fitted to data
-  beta <- runif(numBayesSamples, 0.02, 0.1)   # uniform: need to 
+  beta <- runif(numBayesSamples, 0.02, 0.15)   # uniform: need to 
                                               # recalculate
   
   # Priors for our error estimates if required
@@ -227,16 +227,16 @@ if (useSaved) {
     }
     
     # For each sample calculate the weights using the likelihood function
-    trend <- coef(lm(incidenceSample ~ years))["years"]
+    # trend <- coef(lm(incidenceSample ~ years))["years"]
     maxInc <- max(incidenceSample)
     minInc <- min(incidenceSample)
 
-    if ((trend < 0 || maxInc > 1000) || minInc < 400) {
+    # if ((minInc < 400|| maxInc > 1000) || trend < 0) {
+    if (minInc < 400|| maxInc > 1000) {
       weights[bayesSample] <- 0
     } else {
-      # TODO: Replace with correct correct weighting calculation
       weights[bayesSample] <- WeightError(infectionsData,
-        incidenceSample, 10) # 10% error
+        incidenceSample, 10) # 10% error in incidence
     }
     
   }
@@ -297,7 +297,7 @@ Generate some
 ```{r quickresults}
 # Incidence best 
 
-hist(f4[resampleIndices], breaks = 1000)
+hist(errf1[resampleIndices], breaks = 1000)
 
 apply(cascadeBest[, 2:5], 1, function(x) x * betaBest/sum(x * betaBest))
 
