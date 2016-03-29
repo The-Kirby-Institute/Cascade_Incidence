@@ -335,6 +335,9 @@ To potentially account for this I tried an additional constraint on the
 beta for those on ART with detectable viral load. 
 
 ```{r artconstraint}
+# WARNING: THINK THERE MUST BE A BUG HERE AS THE FIT IS WAY OFF
+# See quickplot chunck below
+
 # Add an extra constraint on the on ART but detectable coefficient 
 # We are assuming detectable viral load is has a multiplicative factor 
 # between 0.5 and 1 of diagnosed 
@@ -394,8 +397,9 @@ print(aveBetas/aveBetas[2])
 ```
 
 The final approach constraining the ART parameters seems to produce the 
-most plausible estimates. However, the methods is a little sketchy I think
-and I would prefer to use a more robust approach.
+most plausible estimates (however for the best fit it seems
+to produce some very funny results). However, the methods is a little 
+sketchy I think and I would prefer to use a more robust approach.
 
 An alternative I decided to try applying the regression for each sample
 and then collate the regression parameters. This is kind of like a 
@@ -441,6 +445,19 @@ aveBetas <- colMeans(sampleAnalysis)
 print(aveBetas)
 print(aveBetas/aveBetas[2])
 
+```
+
+When comparing each approach to the incidence data the ART adjusted 
+approach seems to be way off!
+
+```{r quickplot}
+# A quick plot comparison
+ggplot(data = cascadeBest, aes(x = year, y = infections)) +
+  geom_point() + 
+  geom_line(aes(y = lmInc)) + 
+  geom_line(aes(y = bayesInc)) + 
+  coord_cartesian(ylim = c(0, 1500)) + 
+  theme_bw() 
 ```
 
 ```{r saveregression}
