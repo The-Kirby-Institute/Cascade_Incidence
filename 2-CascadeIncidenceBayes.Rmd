@@ -113,10 +113,10 @@ errorRange <- hivCascade %>%
 
 # Chunk Options ----------------------------------------------------------
 
-numBayesSamples <- 1e4 # number of prior samples
+numBayesSamples <- 5e5 # number of prior samples
 
 useSaved <- FALSE  # use previous set of sampled priors
-saveSims <- FALSE   # save sample priors and weights
+saveSims <- TRUE   # save sample priors and weights
 useError <- TRUE
 errFull <- FALSE
 
@@ -166,14 +166,7 @@ if (useSaved) {
   # Priors for our error estimates if required
   if (useError) {
     if (errFull) {
-      # Set systematic error
-      errf1 <- rep(1, numBayesSamples)
-      errf2 <- errf1
-      errf3 <- errf1
-      errf4 <- errf1  
-      
-      
-      
+      # Unsure if this is necessary
     } else {
       # Use systematic estimates from error range 
       unDiagErr <- as.numeric(filter(errorRange, 
@@ -223,7 +216,6 @@ if (useSaved) {
     
     if (errFull) {
       # Create an error data frame to use instead
-      filter(errorRange, stage == "undiagnosed")
       
     } else {
       incidenceSample <- incFunc(cascadeBest, 
@@ -267,7 +259,7 @@ if (useSaved) {
 # Using the results from runsims resample with replacement to create 
 # psoteriors
 
-resamples <- 40000
+resamples <- 100000
 
 # Resample by weight with replacement -------------------------------------
 resampleIndices <- sample(1:numBayesSamples, resamples, prob = weights, 
@@ -305,19 +297,19 @@ Generate some
 ```{r quickresults}
 # Incidence best 
 
-hist(errf4[resampleIndices], breaks = 1000)
+hist(f4[resampleIndices], breaks = 1000)
 
 apply(cascadeBest[, 2:5], 1, function(x) x * betaBest/sum(x * betaBest))
 
 if (useError) {
-  
+  errorBest <- errBest
 } else {
-  
+  errorBest <- c(1, 1, 1, 1)
 }
   
 
 bayesInc <- incFunc(cascadeBest, betaBest[2], betaBestRel[1], 
-        betaBestRel[3], betaBestRel[4])
+        betaBestRel[3], betaBestRel[4], err = errorBest)
 
 cascadeBest$infections
 
