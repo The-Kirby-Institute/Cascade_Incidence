@@ -108,7 +108,7 @@ errorRange <- hivCascade %>%
 
 ```{r bayessims}
 # In this chunk we apply a Bayesian melding methodology by sampling from 
-# priors and running the samples in our model. It takes a long 
+# priors and running the samples in our model. It takes some time
 # time so it is set up to be optional.
 
 # Chunk Options ----------------------------------------------------------
@@ -116,8 +116,8 @@ errorRange <- hivCascade %>%
 numBayesSamples <- 5e5 # number of prior samples
 
 useSaved <- FALSE  # use previous set of sampled priors
-saveSims <- TRUE   # save sample priors and weights
-useError <- TRUE
+saveSims <- FALSE   # save sample priors and weights
+useError <- FALSE
 errFull <- FALSE
 
 # includeError <- FALSE
@@ -158,9 +158,10 @@ if (useSaved) {
   # but we need to be more rigorous about this I think
   
   f1 <- runif(numBayesSamples, 0.9, 30)        # uniform 
-  f3 <- runif(numBayesSamples, 0.5, 1.5)      # uniform
+  f3 <- runif(numBayesSamples, 0.05, 5)      # uniform
+  # f3 <- rep(1, numBayesSamples)
   f4 <- rbeta(numBayesSamples, 0.85, 10.76)   # beta fitted to data
-  beta <- runif(numBayesSamples, 0.02, 0.15)   # uniform: need to 
+  beta <- runif(numBayesSamples, 0.005, 0.06)   # uniform: need to 
                                               # recalculate
   
   # Priors for our error estimates if required
@@ -259,7 +260,7 @@ if (useSaved) {
 # Using the results from runsims resample with replacement to create 
 # psoteriors
 
-resamples <- 100000
+resamples <- 50000
 
 # Resample by weight with replacement -------------------------------------
 resampleIndices <- sample(1:numBayesSamples, resamples, prob = weights, 
@@ -297,7 +298,8 @@ Generate some
 ```{r quickresults}
 # Incidence best 
 
-hist(errf1[resampleIndices], breaks = 1000)
+hist(f3[resampleIndices] * beta[resampleIndices], breaks = 1000)
+hist(f3 * beta, breaks = 1000)
 
 apply(cascadeBest[, 2:5], 1, function(x) x * betaBest/sum(x * betaBest))
 
@@ -307,7 +309,6 @@ if (useError) {
   errorBest <- c(1, 1, 1, 1)
 }
   
-
 bayesInc <- incFunc(cascadeBest, betaBest[2], betaBestRel[1], 
         betaBestRel[3], betaBestRel[4], err = errorBest)
 
@@ -331,7 +332,7 @@ lmInc <- incFunc(cascadeBest, lmBeta[2], lmBeta[1] / lmBeta[2],
 # A quick plot comparison
 ggplot(data = cascadeBest, aes(x = year, y = infections)) +
   geom_point() + 
-  geom_line(aes(y = lmInc)) + 
+  geom_line(aes(y = lmInc)) +
   geom_line(aes(y = bayesInc)) + 
   coord_cartesian(ylim = c(0, 1500)) + 
   theme_bw() 
@@ -341,23 +342,26 @@ ggplot(data = cascadeBest, aes(x = year, y = infections)) +
 
 ```{r quickplot}
 
-priorFrame <- data.frame(beta = beta,
-                         f1 = f1,
-                         f3 = f3,
-                         f4 = f4)
+priorFrame <- data.frame(beta1 = f1 * beta,
+                         beta2 = beta,
+                         beta3 = f3 * beta,
+                         beta4 = f4 * beta)
 
-posteriorFrame <- data.frame(beta = beta[resampleIndices],
-                         f1 = f1[resampleIndices],
-                         f3 = f3[resampleIndices],
-                         f4 = f4[resampleIndices])
+posteriorFrame <- data.frame(beta1 = f1[resampleIndices] * 
+                               beta[resampleIndices],
+                             beta2 = beta[resampleIndices],
+                             beta3 = f3[resampleIndices] *
+                               beta[resampleIndices],
+                             beta4 = f4[resampleIndices] * 
+                               beta[resampleIndices])
 
-ggplot(data = posteriorFrame, aes(x = f4)) +
+ggplot(data = posteriorFrame, aes(x = beta1)) +
   geom_histogram(aes(y = (..count..)/sum(..count..)),
                      data = priorFrame,
-                 binwidth = diff(range(f4))/100) +
+                 binwidth = diff(range(beta1))/100) +
   geom_histogram(aes(y = (..count..)/sum(..count..)),
-                     binwidth = diff(range(f4))/100, alpha = 0.2) +
-  coord_cartesian(xlim = range(f4)) +
+                     binwidth = diff(range(beta1))/100, alpha = 0.2) +
+  coord_cartesian(xlim = range(beta1)) +
   ylab("Percent of simulations")
 
 ```
