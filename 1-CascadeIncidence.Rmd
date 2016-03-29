@@ -39,7 +39,7 @@ source(file.path(Rcode, "PlotOptions.R"), echo=TRUE)
 
 # Options for running and saving things
 saveCascadeSample <- FALSE  # save sample from cascade
-saveRegression <- FALSE     # save regression results
+saveRegression <- TRUE     # save regression results
 runExperiments <- FALSE     # run experimental fitting
 saveplots <- FALSE
 useSampling <- FALSE        # use a sampled range or the best estimates
@@ -54,7 +54,7 @@ inputFile <- paste("gbm_hiv_cascade-", toString(analysisYear),
                    ".csv", sep = "")
 
 # Details of where to store outputs if desired
-if (saveCascadeSample) {
+if (saveCascadeSample || saveRegression) {
   currTime <- format(Sys.time(), "%Y-%m-%d(%H-%M)") # to append to files
   folder <- paste("CountAnalysis_",currTime,sep="")
   
@@ -350,9 +350,9 @@ cascadeAdjust$beta2 <- sampleBeta2
 
 # Adjust the detecable numbers for regression analysis with this new 
 # parameter
-cascadeAdjust$art <- (cascadeAdjust$infections + cascadeAdjust$beta2 * 
+cascadeAdjust$art <- cascadeAdjust$infections + cascadeAdjust$beta2 * 
                       cascadeAdjust$unsuppressed + cascadeAdjust$beta4 * 
-                      cascadeAdjust$suppressed)
+                      cascadeAdjust$suppressed
 
 # Use reported notifications or estimated new infections and perform the 
 # regression analysis
@@ -446,6 +446,10 @@ print(aveBetas/aveBetas[2])
 ```{r saveregression}
 # Save regression results
 if (saveRegression) {
+  if (!useSampling) {
+    sampleAnalysis <- NULL
+  }
+  
   save(coefUnadjustedOverall, cascadeAdjust, cascadeBest, 
        undetectAdjustAnalysis, artAdjustAnalysis, sampleAnalysis,
     file = file.path(outputFolder, paste(currTime, 
