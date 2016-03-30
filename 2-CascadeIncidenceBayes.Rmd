@@ -113,7 +113,7 @@ saveSims <- TRUE   # save sample priors and weights
 
 # Details of inputs if required
 if (useSaved) {
-  simTime <- "2016-03-29(16-39)" # in %Y-%m-%d(%H-%M) format 
+  simTime <- "2016-03-30(12-07)" # in %Y-%m-%d(%H-%M) format 
                                  # or some other name
   folder <- paste("CascadeBayes_", simTime, sep = "")
   inputFolder <- file.path(resultsFolder, folder)
@@ -156,18 +156,18 @@ if (useSaved) {
   
   beta1 <- runif(numBayesSamples, 
                  beta1Rel[1] * beta[1] * errN1[1], 
-                 beta1Rel[2] * beta[2] * errN1[1]) 
+                 beta1Rel[2] * beta[2] * errN1[2]) 
   beta2 <- runif(numBayesSamples, 
                  beta[1] * errN2[1], 
                  beta[2] * errN2[2]) 
   beta3 <- runif(numBayesSamples, 
                  beta3Rel[1] * beta[1] * errN3[1], 
-                 beta3Rel[1] * beta[1] * errN3[1])    
+                 beta3Rel[2] * beta[2] * errN3[2])    
 
   f4 <- rbeta(numBayesSamples, 0.85, 10.76)   # beta fitted to data
   beta2extra <- runif(numBayesSamples, 
                  beta[1] * errN2[1] * errN4[1], 
-                 beta[2] * errN2[2] * errN4[1])
+                 beta[2] * errN2[2] * errN4[2])
   beta4 <- beta2 * f4
   
   
@@ -234,7 +234,7 @@ if (useSaved) {
 # Using the results from runsims resample with replacement to create 
 # psoteriors
 
-resamples <- 30000
+resamples <- 100000
 saveOutputs <- FALSE
 
 # Resample by weight with replacement -------------------------------------
