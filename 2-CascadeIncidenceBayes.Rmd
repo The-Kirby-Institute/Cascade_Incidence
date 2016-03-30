@@ -328,9 +328,9 @@ lmInc <- incFunc(cascadeBest, lmBeta[1], lmBeta[2],
 # A quick plot comparison
 source(file.path(Rcode,"PlotOptions.R"))
 source(file.path(Rcode,"TidyLongitudinal.R"))
-LoadLibrary(quantreg)
 
-rangeUppper <- function(x) {
+# Functions for plotting range in simulation outputs
+rangeUpper <- function(x) {
   quantile(x, c(0.975))
 }
 
@@ -351,15 +351,21 @@ ggplot(data = cascadeBest, aes(x = year, y = infections)) +
   coord_cartesian(ylim = c(0, 1500)) + 
   plotOpts 
 
-
+# Incidence reslults plot
 simsPlot <- ggplot(data = incidenceDF, 
                    aes(x = year, y = value, group = sim)) +
   geom_line(colour = "grey") +
   geom_point(data = cascadeBest, aes(y = infections, group = 1), 
              colour = "black") + 
   stat_summary(aes(group = 1), geom = "line", fun.y = median) +
-  stat_summary(aes(group = 1), geom = "line", fun.y = r95)
-
+  stat_summary(aes(group = 1), geom = "line", 
+               fun.y = rangeUpper, linetype = "dashed") + 
+  stat_summary(aes(group = 1), geom = "line", 
+               fun.y = rangeLower, linetype = "dashed") +
+  geom_line(data = cascadeBest, aes(y = bayesInc, group = 1), 
+            colour = "red") + 
+  coord_cartesian(ylim = c(0, 1500)) + 
+  plotOpts
 
 ```
 
@@ -375,13 +381,15 @@ posteriorFrame <- data.frame(beta1 = beta1[resampleIndices],
                              beta3 = beta3[resampleIndices],
                              beta4 = beta4[resampleIndices])
 
-ggplot(data = posteriorFrame, aes(x = beta4)) +
-  geom_histogram(aes(y = (..count..)/sum(..count..)),
-                     data = priorFrame,
-                 binwidth = diff(range(beta4))/100) +
-  geom_histogram(aes(y = (..count..)/sum(..count..)),
-                     binwidth = diff(range(beta4))/100, alpha = 0.2) +
-  coord_cartesian(xlim = range(beta4)) +
-  ylab("Percent of simulations")
+plotRange <- range(beta2)
+
+ggplot(data = posteriorFrame, aes(x = beta2)) +
+  geom_density(data = priorFrame,
+                colour = "red") +
+  geom_density() +
+  coord_cartesian(xlim = plotRange) +
+  ylab("Density") + 
+  plotOpts
 
 ```
+
