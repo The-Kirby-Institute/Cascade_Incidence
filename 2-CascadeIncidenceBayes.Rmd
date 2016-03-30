@@ -357,6 +357,13 @@ posteriorFrame <- data.frame(beta1 = beta1[resampleIndices],
 
 
 dist <- "beta2"
+
+
+labels <- c("beta1" = "Undiagnosed Beta",
+            "beta2" = "Diagnosed Beta",
+            "beta3" = "Unsuppressed Beta",
+            "beta4" = "Suppressed Beta")
+
 priorDist <- priorFrame[, dist]
 postDist <- posteriorFrame[, dist]
 plotRange <- range(priorDist)
@@ -376,11 +383,15 @@ postPlot <- ggplot(data = posteriorFrame, aes_string(x = dist)) +
   geom_density(colour = "red", fill = "red", alpha = 0.1) +
   coord_cartesian(xlim = plotRange) +
   ylab("Density") + 
+  xlab(labels[dist]) +
   annotate("text", label = plotStats, 
            x = Inf, y = Inf, hjust = 1, vjust = 1) +
   plotOpts
 
-postPlot
+ggsave(file.path(resultsFolder, 
+      paste("parameter_distribution-", dist, ".png",sep ="")),
+      plot = postPlot, width = 12, height = 10, 
+      units = "cm")
 
 ```
 
