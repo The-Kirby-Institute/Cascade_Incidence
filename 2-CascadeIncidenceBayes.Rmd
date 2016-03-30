@@ -117,7 +117,7 @@ if (useSaved) {
                                  # or some other name
   folder <- paste("CascadeBayes_", simTime, sep = "")
   inputFolder <- file.path(resultsFolder, folder)
-  savedFile <- paste(simTime, "_CascadeBayes.rda", sep = "")
+  savedFile <- paste(simTime, "_CascadeBayes_Sims.rda", sep = "")
 }
 
 # Details of where to store outputs if desired
@@ -234,8 +234,8 @@ if (useSaved) {
 # Using the results from runsims resample with replacement to create 
 # psoteriors
 
-resamples <- 100000
-saveOutputs <- FALSE
+resamples <- 30000
+saveOutputs <- TRUE
 
 # Resample by weight with replacement -------------------------------------
 resampleIndices <- sample(1:numBayesSamples, resamples, prob = weights, 
@@ -285,7 +285,7 @@ Generate some quick results
 ```{r quickresults}
 # Incidence best 
 
-hist(beta4[resampleIndices], breaks = 100)
+hist(beta3[resampleIndices], breaks = 100)
 hist(beta1, breaks = 100)
 
 apply(cascadeBest[, 2:5], 1, function(x) x * betaBest/sum(x * betaBest))
@@ -298,23 +298,6 @@ apply(cascadeBest[, 2:5], 1, function(x) x * betaBest/sum(x * betaBest))
   
 bayesInc <- incFunc(cascadeBest, betaBest[1], betaBest[2], 
         betaBest[3], betaBest[4])
-
-cascadeBest$infections
-
-# Results from regression analysis for comparison
-analysisResults <- "2016-03-29(16-09)"
-load(file.path(resultsFolder, 
-               paste("CountAnalysis_", analysisResults, sep = ""),
-               paste(analysisResults, 
-                     "_Cascade_Regression_Results.rda", sep = "")))
-
-
-# lmBeta <- as.numeric(undetectAdjustAnalysis)
-lmBeta <- as.numeric(undetectAdjustAnalysis)
-lmBeta/lmBeta[2]
-
-lmInc <- incFunc(cascadeBest, lmBeta[1], lmBeta[2], 
-        lmBeta[3], lmBeta[4])
 
 # A quick plot comparison
 source(file.path(Rcode,"PlotOptions.R"))
@@ -342,10 +325,10 @@ ggplot(data = cascadeBest, aes(x = year, y = infections)) +
   coord_cartesian(ylim = c(0, 1000)) + 
   plotOpts 
 
-# Incidence reslults plot
+# Incidence results plot
 simsPlot <- ggplot(data = incidenceDF, 
                    aes(x = year, y = value, group = sim)) +
-  # geom_line(colour = "grey") +
+  geom_line(colour = "grey") +
   geom_point(data = cascadeBest, aes(y = infections, group = 1), 
              colour = "black") + 
   stat_summary(aes(group = 1), geom = "line", fun.y = median) +
@@ -372,14 +355,32 @@ posteriorFrame <- data.frame(beta1 = beta1[resampleIndices],
                              beta3 = beta3[resampleIndices],
                              beta4 = beta4[resampleIndices])
 
-plotRange <- range(beta3)
 
-ggplot(data = posteriorFrame, aes(x = beta3)) +
-  geom_density(data = priorFrame) +
-  geom_density(colour = "red") +
+dist <- "beta2"
+priorDist <- priorFrame[, dist]
+postDist <- posteriorFrame[, dist]
+plotRange <- range(priorDist)
+plotStats <- paste("Mean, median, mode:   \n", 
+  "prior = ", 
+  toString(signif(mean(priorDist), digits = 2)), ", ",
+  toString(signif(median(priorDist), digits = 2)), ", ",
+  toString(signif(getmode(priorDist), digits = 2)), "   \n", 
+  "postior = ", 
+  toString(signif(mean(postDist), digits = 2)), ", ",
+  toString(signif(median(postDist), digits = 2)), ", ",
+  toString(signif(getmode(postDist), digits = 2)), "   \t\n", 
+  sep = "")
+
+postPlot <- ggplot(data = posteriorFrame, aes_string(x = dist)) +
+  geom_density(data = priorFrame, fill = "black", alpha = 0.2) +
+  geom_density(colour = "red", fill = "red", alpha = 0.1) +
   coord_cartesian(xlim = plotRange) +
   ylab("Density") + 
+  annotate("text", label = plotStats, 
+           x = Inf, y = Inf, hjust = 1, vjust = 1) +
   plotOpts
+
+postPlot
 
 ```
 
