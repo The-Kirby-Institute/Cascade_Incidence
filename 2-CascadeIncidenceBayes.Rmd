@@ -221,12 +221,12 @@ if (useSaved) {
     }
     
     # For each sample calculate the weights using the likelihood function
-    # trend <- coef(lm(incidenceSample ~ years))["years"]
+    trend <- coef(lm(incidenceSample ~ years))["years"]
     maxInc <- max(incidenceSample)
     minInc <- min(incidenceSample)
 
-    # if ((minInc < 400|| maxInc > 1000) || trend < 0) {
-    if (minInc < 400|| maxInc > 1000) {
+    if ((minInc < 400|| maxInc > 1000) || trend < 0) {
+    # if (minInc < 400|| maxInc > 1000) {
       weights[bayesSample] <- 0
     } else {
       weights[bayesSample] <- WeightError(infectionsData,
@@ -240,10 +240,10 @@ if (useSaved) {
   # Save results and Bayes parameters
   if (saveSims){
     # Save the output
-    save(numBayesSamples, f1, f3, f4, beta,
+    save(numBayesSamples, beta1, beta2, beta3, beta4,
       incidenceMatrix, weights,
         file = file.path(outputFolder, paste(currTime, 
-          "_CascadeBayes.rda", sep = "")))
+          "_CascadeBayes_Sims.rda", sep = "")))
   }
 }
 
@@ -258,6 +258,23 @@ resamples <- 30000
 # Resample by weight with replacement -------------------------------------
 resampleIndices <- sample(1:numBayesSamples, resamples, prob = weights, 
                           replace = TRUE) 
+
+# Number unique paramter sets resampled - want this to be relatively
+# stable
+numUniques <- length(unique(resampleIndices))
+
+# Save final outputs for generating results
+if (saveSims){
+    # Save the output
+    save(numBayesSamples, beta1, beta2, beta3, beta4,
+      incidenceMatrix, weights, resamples, resampleIndices, 
+        file = file.path(outputFolder, paste(currTime, 
+          "_CascadeBayes_Results.rda", sep = "")))
+  }
+
+```
+
+```{r quickstats}
 
 # Generate some stats -----------------------------------------------------
 
@@ -278,18 +295,10 @@ bestFit <- getmode(resampleIndices)
 betaBest <- c(beta1[bestFit], beta2[bestFit], beta3[bestFit],
               beta4[bestFit])
 betaBestRel <- betaBest / betaBest[2]            
-              
-
-# if (useError) {
-#   errBest <- c(errf1[bestFit], errf2[bestFit], errf3[bestFit],
-#                errf4[bestFit])
-# } else {
-#   errBest <- c(1, 1, 1, 1)
-# }
 
 ```
 
-Generate some 
+Generate some quick results
 
 ```{r quickresults}
 # Incidence best 
@@ -348,13 +357,13 @@ ggplot(data = cascadeBest, aes(x = year, y = infections)) +
   geom_line(aes(y = bayesInc), colour = "red") + 
   # stat_summary(data = incidenceDF, aes(x = year, y = value, group = 1), 
   #              geom = "line", fun.y = median) + 
-  coord_cartesian(ylim = c(0, 1500)) + 
+  coord_cartesian(ylim = c(0, 1000)) + 
   plotOpts 
 
 # Incidence reslults plot
 simsPlot <- ggplot(data = incidenceDF, 
                    aes(x = year, y = value, group = sim)) +
-  geom_line(colour = "grey") +
+  # geom_line(colour = "grey") +
   geom_point(data = cascadeBest, aes(y = infections, group = 1), 
              colour = "black") + 
   stat_summary(aes(group = 1), geom = "line", fun.y = median) +
@@ -364,7 +373,7 @@ simsPlot <- ggplot(data = incidenceDF,
                fun.y = rangeLower, linetype = "dashed") +
   geom_line(data = cascadeBest, aes(y = bayesInc, group = 1), 
             colour = "red") + 
-  coord_cartesian(ylim = c(0, 1500)) + 
+  coord_cartesian(ylim = c(0, 1000)) + 
   plotOpts
 
 ```
@@ -381,12 +390,11 @@ posteriorFrame <- data.frame(beta1 = beta1[resampleIndices],
                              beta3 = beta3[resampleIndices],
                              beta4 = beta4[resampleIndices])
 
-plotRange <- range(beta2)
+plotRange <- range(beta3)
 
-ggplot(data = posteriorFrame, aes(x = beta2)) +
-  geom_density(data = priorFrame,
-                colour = "red") +
-  geom_density() +
+ggplot(data = posteriorFrame, aes(x = beta3)) +
+  geom_density(data = priorFrame) +
+  geom_density(colour = "red") +
   coord_cartesian(xlim = plotRange) +
   ylab("Density") + 
   plotOpts
