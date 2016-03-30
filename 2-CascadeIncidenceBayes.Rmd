@@ -93,12 +93,7 @@ errorRange <- hivCascade %>%
                       "suppressed")) %>%
   group_by(stage) %>%
   summarise(errlower = mean(lower/value),
-            errupper = mean(upper/value),
-            start_lower = lower[1],
-            start_upper = upper[1],
-            rate_est = (tail(value, 1) - value[1]) / length(year),
-            rate_lower = (tail(lower, 1) - upper[1]) / length(year),
-            rate_upper = (tail(upper, 1) - lower[1]) / length(year))
+            errupper = mean(upper/value))
 
 ```
 
@@ -111,14 +106,10 @@ errorRange <- hivCascade %>%
 
 # Chunk Options ----------------------------------------------------------
 
-numBayesSamples <- 3e5 # number of prior samples
+numBayesSamples <- 1e6 # number of prior samples
 
 useSaved <- FALSE  # use previous set of sampled priors
-saveSims <- FALSE   # save sample priors and weights
-useError <- FALSE
-errFull <- FALSE
-
-# includeError <- FALSE
+saveSims <- TRUE   # save sample priors and weights
 
 # Details of inputs if required
 if (useSaved) {
@@ -149,45 +140,35 @@ if (useSaved) {
   
   # Priors for beta1, beta2, beta3, and beta4 - at this stage 
   # assume uniform priors except for beta4 <- f4 * beta2
-  # but we need to be more rigorous about this I think
+  # Systematic error in the cascade stage estimates is included
+  # The uniform range is given by a relative range compared to beta2 and 
+  # the error range. 
   
-  beta1 <- runif(numBayesSamples, 0.9 * 0.005, 30 * 0.06) # uniform 
-  beta2 <- runif(numBayesSamples, 0.005, 0.06)            # uniform
-  beta3 <- runif(numBayesSamples, 0.05 * 0.005, 5 * 0.06)    # uniform
-  # f3 <- rep(1, numBayesSamples)
+  beta <- c(0.005, 0.06)
+  
+  beta1Rel <- c(0.9, 30)
+  beta3Rel <- c(0.05, 5)
+  
+  errN1 <- as.numeric(errorRange[1, 2:3])
+  errN2 <- as.numeric(errorRange[2, 2:3])
+  errN3 <- as.numeric(errorRange[3, 2:3])
+  errN4 <- as.numeric(errorRange[4, 2:3])
+  
+  beta1 <- runif(numBayesSamples, 
+                 beta1Rel[1] * beta[1] * errN1[1], 
+                 beta1Rel[2] * beta[2] * errN1[1]) 
+  beta2 <- runif(numBayesSamples, 
+                 beta[1] * errN2[1], 
+                 beta[2] * errN2[2]) 
+  beta3 <- runif(numBayesSamples, 
+                 beta3Rel[1] * beta[1] * errN3[1], 
+                 beta3Rel[1] * beta[1] * errN3[1])    
+
   f4 <- rbeta(numBayesSamples, 0.85, 10.76)   # beta fitted to data
+  beta2extra <- runif(numBayesSamples, 
+                 beta[1] * errN2[1] * errN4[1], 
+                 beta[2] * errN2[2] * errN4[1])
   beta4 <- beta2 * f4
-  
-  
-  # Priors for our error estimates if required
-  # if (useError) {
-  #   if (errFull) {
-  #     # Unsure if this is necessary
-  #   } else {
-  #     # Use systematic estimates from error range 
-  #     unDiagErr <- as.numeric(filter(errorRange, 
-  #                                    stage == "undiagnosed")[2:3])
-  #     diagErr <- as.numeric(filter(errorRange, 
-  #                                  stage == "diagnosed")[2:3])
-  #     unSuspressErr <- as.numeric(filter(errorRange, 
-  #                                        stage == "unsuppressed")[2:3])
-  #     suppressErr <- as.numeric(filter(errorRange, 
-  #                                      stage == "suppressed")[2:3])
-  #     
-  #     # Convert to systematic errors
-  #     errf1 <- runif(numBayesSamples, unDiagErr[1], unDiagErr[2]) # uniform
-  #     errf2 <- runif(numBayesSamples, diagErr[1], diagErr[2]) # uniform
-  #     errf3 <- runif(numBayesSamples, unSuspressErr[1], 
-  #                    unSuspressErr[2]) # uniform
-  #     errf4 <- runif(numBayesSamples, suppressErr[1], 
-  #                    suppressErr[2]) # uniform
-  #   }
-  # } else {
-  #   errf1 <- rep(1, numBayesSamples)
-  #   errf2 <- errf1
-  #   errf3 <- errf1
-  #   errf4 <- errf1  
-  # }
   
   
   # Run simulations ------------------------------------------------------
@@ -254,6 +235,7 @@ if (useSaved) {
 # psoteriors
 
 resamples <- 30000
+saveOutputs <- FALSE
 
 # Resample by weight with replacement -------------------------------------
 resampleIndices <- sample(1:numBayesSamples, resamples, prob = weights, 
@@ -263,8 +245,8 @@ resampleIndices <- sample(1:numBayesSamples, resamples, prob = weights,
 # stable
 numUniques <- length(unique(resampleIndices))
 
-# Save final outputs for generating results
-if (saveSims){
+# Save final outputs for generating results ------------------------------
+if (saveOutputs){
     # Save the output
     save(numBayesSamples, beta1, beta2, beta3, beta4,
       incidenceMatrix, weights, resamples, resampleIndices, 
