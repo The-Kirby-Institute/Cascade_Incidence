@@ -36,14 +36,12 @@ if (useSubset) {
 
 # Set up a function so we can eaily calculate the incidence values
 # for each sample
-incFunc <- function(data, beta, f1, f3, f4, err = c(1, 1, 1, 1)) {
+incFunc <- function(data, beta1, beta2, beta3, beta4) {
   # Data is a data frame with the countSample data for each year
   # err represents the error adjustmengt for the inputs
   
-  return(beta * (f1 * data$undiag * err[1] + 
-                   data$diag * err[2] + 
-                   f3 * data$unsuppressed * err[3] + 
-                   f4 * data$suppressed * err[4]))
+  return(beta1 * data$undiag  + beta2 * data$diag  + 
+         beta3 * data$unsuppressed  + beta4 * data$suppressed)
 }
 
 # Setup the likelihood function for calculating the weight
@@ -113,7 +111,7 @@ errorRange <- hivCascade %>%
 
 # Chunk Options ----------------------------------------------------------
 
-numBayesSamples <- 5e5 # number of prior samples
+numBayesSamples <- 3e5 # number of prior samples
 
 useSaved <- FALSE  # use previous set of sampled priors
 saveSims <- FALSE   # save sample priors and weights
@@ -143,56 +141,53 @@ if (saveSims) {
 
 # Run analysis -----------------------------------------------------------
 
-# We slightly recast the equation to make it easier for setting up 
-# the priors. 
-# I = beta * (f1 * N1 + f2 * N2 + f2 * N3 + f4 * N4) 
-# Generally we set f2 = 1 so we still have an equation with four 
-# parameters.
 
 if (useSaved) {
   load(file.path(inputFolder, savedFile))
 } else {
   # Set up priors --------------------------------------------------------
   
-  # Priors for f1, f3, f4, and beta - at this stage assume uniform priors
+  # Priors for beta1, beta2, beta3, and beta4 - at this stage 
+  # assume uniform priors except for beta4 <- f4 * beta2
   # but we need to be more rigorous about this I think
   
-  f1 <- runif(numBayesSamples, 0.9, 30)        # uniform 
-  f3 <- runif(numBayesSamples, 0.05, 5)      # uniform
+  beta1 <- runif(numBayesSamples, 0.9 * 0.005, 30 * 0.06) # uniform 
+  beta2 <- runif(numBayesSamples, 0.005, 0.06)            # uniform
+  beta3 <- runif(numBayesSamples, 0.05 * 0.005, 5 * 0.06)    # uniform
   # f3 <- rep(1, numBayesSamples)
   f4 <- rbeta(numBayesSamples, 0.85, 10.76)   # beta fitted to data
-  beta <- runif(numBayesSamples, 0.005, 0.06)   # uniform: need to 
-                                              # recalculate
+  beta4 <- beta2 * f4
+  
   
   # Priors for our error estimates if required
-  if (useError) {
-    if (errFull) {
-      # Unsure if this is necessary
-    } else {
-      # Use systematic estimates from error range 
-      unDiagErr <- as.numeric(filter(errorRange, 
-                                     stage == "undiagnosed")[2:3])
-      diagErr <- as.numeric(filter(errorRange, 
-                                   stage == "diagnosed")[2:3])
-      unSuspressErr <- as.numeric(filter(errorRange, 
-                                         stage == "unsuppressed")[2:3])
-      suppressErr <- as.numeric(filter(errorRange, 
-                                       stage == "suppressed")[2:3])
-      
-      # Convert to systematic errors
-      errf1 <- runif(numBayesSamples, unDiagErr[1], unDiagErr[2]) # uniform
-      errf2 <- runif(numBayesSamples, diagErr[1], diagErr[2]) # uniform
-      errf3 <- runif(numBayesSamples, unSuspressErr[1], 
-                     unSuspressErr[2]) # uniform
-      errf4 <- runif(numBayesSamples, suppressErr[1], 
-                     suppressErr[2]) # uniform
-    }
-  } else {
-    errf1 <- rep(1, numBayesSamples)
-    errf2 <- errf1
-    errf3 <- errf1
-    errf4 <- errf1  
-  }
+  # if (useError) {
+  #   if (errFull) {
+  #     # Unsure if this is necessary
+  #   } else {
+  #     # Use systematic estimates from error range 
+  #     unDiagErr <- as.numeric(filter(errorRange, 
+  #                                    stage == "undiagnosed")[2:3])
+  #     diagErr <- as.numeric(filter(errorRange, 
+  #                                  stage == "diagnosed")[2:3])
+  #     unSuspressErr <- as.numeric(filter(errorRange, 
+  #                                        stage == "unsuppressed")[2:3])
+  #     suppressErr <- as.numeric(filter(errorRange, 
+  #                                      stage == "suppressed")[2:3])
+  #     
+  #     # Convert to systematic errors
+  #     errf1 <- runif(numBayesSamples, unDiagErr[1], unDiagErr[2]) # uniform
+  #     errf2 <- runif(numBayesSamples, diagErr[1], diagErr[2]) # uniform
+  #     errf3 <- runif(numBayesSamples, unSuspressErr[1], 
+  #                    unSuspressErr[2]) # uniform
+  #     errf4 <- runif(numBayesSamples, suppressErr[1], 
+  #                    suppressErr[2]) # uniform
+  #   }
+  # } else {
+  #   errf1 <- rep(1, numBayesSamples)
+  #   errf2 <- errf1
+  #   errf3 <- errf1
+  #   errf4 <- errf1  
+  # }
   
   
   # Run simulations ------------------------------------------------------
@@ -220,10 +215,8 @@ if (useSaved) {
       
     } else {
       incidenceSample <- incFunc(cascadeBest, 
-          beta[bayesSample], f1[bayesSample], f3[bayesSample],
-          f4[bayesSample], 
-          err = c(errf1[bayesSample], errf2[bayesSample],
-                  errf3[bayesSample], errf4[bayesSample]))
+          beta1[bayesSample], beta2[bayesSample], beta3[bayesSample],
+          beta4[bayesSample])
       incidenceMatrix[bayesSample, ] <- incidenceSample
     }
     
@@ -260,7 +253,7 @@ if (useSaved) {
 # Using the results from runsims resample with replacement to create 
 # psoteriors
 
-resamples <- 50000
+resamples <- 30000
 
 # Resample by weight with replacement -------------------------------------
 resampleIndices <- sample(1:numBayesSamples, resamples, prob = weights, 
@@ -281,15 +274,18 @@ numUniques <- length(unique(resampleIndices))
 bestFit <- getmode(resampleIndices)
 
 # What the best fit looks like
-betaBestRel <- c(f1[bestFit], 1, f3[bestFit], f4[bestFit])
-betaBest <- beta[bestFit] * betaBestRel
+# betaBestRel <- c(f1[bestFit], 1, f3[bestFit], f4[bestFit])
+betaBest <- c(beta1[bestFit], beta2[bestFit], beta3[bestFit],
+              beta4[bestFit])
+betaBestRel <- betaBest / betaBest[2]            
+              
 
-if (useError) {
-  errBest <- c(errf1[bestFit], errf2[bestFit], errf3[bestFit],
-               errf4[bestFit])
-} else {
-  errBest <- c(1, 1, 1, 1)
-}
+# if (useError) {
+#   errBest <- c(errf1[bestFit], errf2[bestFit], errf3[bestFit],
+#                errf4[bestFit])
+# } else {
+#   errBest <- c(1, 1, 1, 1)
+# }
 
 ```
 
@@ -298,19 +294,19 @@ Generate some
 ```{r quickresults}
 # Incidence best 
 
-hist(f3[resampleIndices] * beta[resampleIndices], breaks = 1000)
-hist(f3 * beta, breaks = 1000)
+hist(beta4[resampleIndices], breaks = 100)
+hist(beta1, breaks = 100)
 
 apply(cascadeBest[, 2:5], 1, function(x) x * betaBest/sum(x * betaBest))
 
-if (useError) {
-  errorBest <- errBest
-} else {
-  errorBest <- c(1, 1, 1, 1)
-}
+# if (useError) {
+#   errorBest <- errBest
+# } else {
+#   errorBest <- c(1, 1, 1, 1)
+# }
   
-bayesInc <- incFunc(cascadeBest, betaBest[2], betaBestRel[1], 
-        betaBestRel[3], betaBestRel[4], err = errorBest)
+bayesInc <- incFunc(cascadeBest, betaBest[1], betaBest[2], 
+        betaBest[3], betaBest[4])
 
 cascadeBest$infections
 
@@ -326,42 +322,66 @@ load(file.path(resultsFolder,
 lmBeta <- as.numeric(undetectAdjustAnalysis)
 lmBeta/lmBeta[2]
 
-lmInc <- incFunc(cascadeBest, lmBeta[2], lmBeta[1] / lmBeta[2], 
-        lmBeta[3] / lmBeta[2], lmBeta[4] / lmBeta[2])
+lmInc <- incFunc(cascadeBest, lmBeta[1], lmBeta[2], 
+        lmBeta[3], lmBeta[4])
 
 # A quick plot comparison
+source(file.path(Rcode,"PlotOptions.R"))
+source(file.path(Rcode,"TidyLongitudinal.R"))
+LoadLibrary(quantreg)
+
+rangeUppper <- function(x) {
+  quantile(x, c(0.975))
+}
+
+rangeLower <- function(x) {
+  quantile(x, c(0.025))
+}
+
+# incidenceDF <- as.data.frame(incidenceMatrix[resampleIndices, ])
+incidenceDF <- TidyLongitudinal(incidenceMatrix[resampleIndices, ], 2004)
+
 ggplot(data = cascadeBest, aes(x = year, y = infections)) +
-  geom_point() + 
-  geom_line(aes(y = lmInc)) +
-  geom_line(aes(y = bayesInc)) + 
+  # geom_line(data = incidenceDF, 
+  #           aes(x = year, y = value, group = sim), colour = "grey") +
+  geom_point(colour = "black") + 
+  geom_line(aes(y = bayesInc), colour = "red") + 
+  # stat_summary(data = incidenceDF, aes(x = year, y = value, group = 1), 
+  #              geom = "line", fun.y = median) + 
   coord_cartesian(ylim = c(0, 1500)) + 
-  theme_bw() 
+  plotOpts 
+
+
+simsPlot <- ggplot(data = incidenceDF, 
+                   aes(x = year, y = value, group = sim)) +
+  geom_line(colour = "grey") +
+  geom_point(data = cascadeBest, aes(y = infections, group = 1), 
+             colour = "black") + 
+  stat_summary(aes(group = 1), geom = "line", fun.y = median) +
+  stat_summary(aes(group = 1), geom = "line", fun.y = r95)
 
 
 ```
 
 ```{r quickplot}
 
-priorFrame <- data.frame(beta1 = f1 * beta,
-                         beta2 = beta,
-                         beta3 = f3 * beta,
-                         beta4 = f4 * beta)
+priorFrame <- data.frame(beta1 = beta1,
+                         beta2 = beta2,
+                         beta3 = beta3,
+                         beta4 = beta4)
 
-posteriorFrame <- data.frame(beta1 = f1[resampleIndices] * 
-                               beta[resampleIndices],
-                             beta2 = beta[resampleIndices],
-                             beta3 = f3[resampleIndices] *
-                               beta[resampleIndices],
-                             beta4 = f4[resampleIndices] * 
-                               beta[resampleIndices])
+posteriorFrame <- data.frame(beta1 = beta1[resampleIndices],
+                             beta2 = beta2[resampleIndices],
+                             beta3 = beta3[resampleIndices],
+                             beta4 = beta4[resampleIndices])
 
-ggplot(data = posteriorFrame, aes(x = beta1)) +
+ggplot(data = posteriorFrame, aes(x = beta4)) +
   geom_histogram(aes(y = (..count..)/sum(..count..)),
                      data = priorFrame,
-                 binwidth = diff(range(beta1))/100) +
+                 binwidth = diff(range(beta4))/100) +
   geom_histogram(aes(y = (..count..)/sum(..count..)),
-                     binwidth = diff(range(beta1))/100, alpha = 0.2) +
-  coord_cartesian(xlim = range(beta1)) +
+                     binwidth = diff(range(beta4))/100, alpha = 0.2) +
+  coord_cartesian(xlim = range(beta4)) +
   ylab("Percent of simulations")
 
 ```
