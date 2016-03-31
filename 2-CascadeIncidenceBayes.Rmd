@@ -21,8 +21,8 @@ resultsFolder <- file.path(basePath, "output")
 Rcode <- file.path(basePath, "code") 
 
 # Load standard libraries, key functions and options
-source(file.path(Rcode, "LoadLibrary.R"), echo=TRUE)
-source(file.path(Rcode, "DataLibraries.R"), echo=TRUE)
+source(file.path(Rcode, "LoadLibrary.R"), echo = TRUE)
+source(file.path(Rcode, "DataLibraries.R"), echo = TRUE)
 
 # Script parameters ------------------------------------------------------
 
@@ -32,29 +32,8 @@ if (useSubset) {
     subSamples <- 100000
 }
 
-# Useful functions --------------------------------------------------------
-
-# Set up a function so we can eaily calculate the incidence values
-# for each sample
-incFunc <- function(data, beta1, beta2, beta3, beta4) {
-  # Data is a data frame with the countSample data for each year
-  # err represents the error adjustmengt for the inputs
-  
-  return(beta1 * data$undiag  + beta2 * data$diag  + 
-         beta3 * data$unsuppressed  + beta4 * data$suppressed)
-}
-
-# Setup the likelihood function for calculating the weight
-
-WeightError <- function(data, estimate, err) {
-  nn <- length(data)
-  x <- data - estimate # difference between observed and simulated
-  
-  sigma <- data * err/100 # standard deviation
-  mu <- rep(0, nn) # mean of x is zero if same
-  w <- prod(dnorm(x, mu, sigma) / dnorm(mu, mu, sigma))
-  return(w)
-}
+# Source Useful functions
+source(file.path(Rcode, "BayesFunctions.R"), echo = TRUE)
 
 ```
 
@@ -356,7 +335,7 @@ posteriorFrame <- data.frame(beta1 = beta1[resampleIndices],
                              beta4 = beta4[resampleIndices])
 
 
-dist <- "beta2"
+dist <- "beta4"
 
 
 labels <- c("beta1" = "Undiagnosed Beta",
