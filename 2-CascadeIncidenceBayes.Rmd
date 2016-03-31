@@ -87,11 +87,12 @@ errorRange <- hivCascade %>%
 
 numBayesSamples <- 1e6 # number of prior samples
 
-useSaved <- FALSE  # use previous set of sampled priors
-saveSims <- TRUE   # save sample priors and weights
+useSaved <- TRUE  # use previous set of sampled priors
+saveSims <- FALSE   # save sample priors and weights
 
 # Details of inputs if required
 if (useSaved) {
+  # Specify details of saved file
   simTime <- "2016-03-30(12-07)" # in %Y-%m-%d(%H-%M) format 
                                  # or some other name
   folder <- paste("CascadeBayes_", simTime, sep = "")
@@ -110,7 +111,6 @@ if (saveSims) {
 }
 
 # Run analysis -----------------------------------------------------------
-
 
 if (useSaved) {
   load(file.path(inputFolder, savedFile))
@@ -148,7 +148,6 @@ if (useSaved) {
                  beta[1] * errN2[1] * errN4[1], 
                  beta[2] * errN2[2] * errN4[2])
   beta4 <- beta2 * f4
-  
   
   # Run simulations ------------------------------------------------------
   
@@ -192,7 +191,6 @@ if (useSaved) {
       weights[bayesSample] <- WeightError(infectionsData,
         incidenceSample, 10) # 10% error in incidence
     }
-    
   }
   
   toc <- proc.time() - tic
@@ -334,43 +332,7 @@ posteriorFrame <- data.frame(beta1 = beta1[resampleIndices],
                              beta3 = beta3[resampleIndices],
                              beta4 = beta4[resampleIndices])
 
-
-dist <- "beta4"
-
-
-labels <- c("beta1" = "Undiagnosed Beta",
-            "beta2" = "Diagnosed Beta",
-            "beta3" = "Unsuppressed Beta",
-            "beta4" = "Suppressed Beta")
-
-priorDist <- priorFrame[, dist]
-postDist <- posteriorFrame[, dist]
-plotRange <- range(priorDist)
-plotStats <- paste("Mean, median, mode:   \n", 
-  "prior = ", 
-  toString(signif(mean(priorDist), digits = 2)), ", ",
-  toString(signif(median(priorDist), digits = 2)), ", ",
-  toString(signif(getmode(priorDist), digits = 2)), "   \n", 
-  "postior = ", 
-  toString(signif(mean(postDist), digits = 2)), ", ",
-  toString(signif(median(postDist), digits = 2)), ", ",
-  toString(signif(getmode(postDist), digits = 2)), "   \t\n", 
-  sep = "")
-
-postPlot <- ggplot(data = posteriorFrame, aes_string(x = dist)) +
-  geom_density(data = priorFrame, fill = "black", alpha = 0.2) +
-  geom_density(colour = "red", fill = "red", alpha = 0.1) +
-  coord_cartesian(xlim = plotRange) +
-  ylab("Density") + 
-  xlab(labels[dist]) +
-  annotate("text", label = plotStats, 
-           x = Inf, y = Inf, hjust = 1, vjust = 1) +
-  plotOpts
-
-ggsave(file.path(resultsFolder, 
-      paste("parameter_distribution-", dist, ".png",sep ="")),
-      plot = postPlot, width = 12, height = 10, 
-      units = "cm")
+paramPlot <- parameterPlot("beta1", priorFrame, posteriorFrame)
 
 ```
 
