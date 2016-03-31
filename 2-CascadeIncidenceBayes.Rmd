@@ -24,14 +24,6 @@ Rcode <- file.path(basePath, "code")
 source(file.path(Rcode, "LoadLibrary.R"), echo = TRUE)
 source(file.path(Rcode, "DataLibraries.R"), echo = TRUE)
 
-# Script parameters ------------------------------------------------------
-
-# Options for running and saving things
-useSubset <- TRUE # take a subset of our big sample of the cascade
-if (useSubset) {
-    subSamples <- 100000
-}
-
 # Source Useful functions
 source(file.path(Rcode, "BayesFunctions.R"), echo = TRUE)
 
@@ -85,7 +77,7 @@ errorRange <- hivCascade %>%
 
 # Chunk Options ----------------------------------------------------------
 
-numBayesSamples <- 1e6 # number of prior samples
+numBayesSamples <- 1e3 # number of prior samples
 
 useSaved <- TRUE  # use previous set of sampled priors
 saveSims <- FALSE   # save sample priors and weights
@@ -93,7 +85,7 @@ saveSims <- FALSE   # save sample priors and weights
 # Details of inputs if required
 if (useSaved) {
   # Specify details of saved file
-  simTime <- "2016-03-30(12-07)" # in %Y-%m-%d(%H-%M) format 
+  simTime <- "2016-03-30(14-37)" # in %Y-%m-%d(%H-%M) format 
                                  # or some other name
   folder <- paste("CascadeBayes_", simTime, sep = "")
   inputFolder <- file.path(resultsFolder, folder)
@@ -169,15 +161,10 @@ if (useSaved) {
       print(bayesSample)
     }
     
-    if (errFull) {
-      # Create an error data frame to use instead
-      
-    } else {
-      incidenceSample <- incFunc(cascadeBest, 
-          beta1[bayesSample], beta2[bayesSample], beta3[bayesSample],
-          beta4[bayesSample])
-      incidenceMatrix[bayesSample, ] <- incidenceSample
-    }
+    incidenceSample <- IncFunc(cascadeBest, 
+                               beta1[bayesSample], beta2[bayesSample],
+                               beta3[bayesSample], beta4[bayesSample])
+    incidenceMatrix[bayesSample, ] <- incidenceSample
     
     # For each sample calculate the weights using the likelihood function
     trend <- coef(lm(incidenceSample ~ years))["years"]
@@ -211,43 +198,50 @@ if (useSaved) {
 # Using the results from runsims resample with replacement to create 
 # psoteriors
 
-resamples <- 30000
-saveOutputs <- TRUE
+resamples <- 2000
+useSaved <- TRUE
+saveOutputs <- FALSE
 
-# Resample by weight with replacement -------------------------------------
-resampleIndices <- sample(1:numBayesSamples, resamples, prob = weights, 
-                          replace = TRUE) 
-
-# Number unique paramter sets resampled - want this to be relatively
-# stable
-numUniques <- length(unique(resampleIndices))
-
-# Save final outputs for generating results ------------------------------
-if (saveOutputs){
+if (useSaved) {
+  # Specify details of saved file
+  simTime <- "2016-03-30(14-37)" # in %Y-%m-%d(%H-%M) format 
+                                 # or some other name
+  folder <- paste("CascadeBayes_", simTime, sep = "")
+  inputFolder <- file.path(resultsFolder, folder)
+  savedFile <- paste(simTime, "_CascadeBayes_Results.rda", sep = "")
+  
+  # Load saved file
+  load(file.path(inputFolder, savedFile))
+} else {
+  
+  # Resample by weight with replacement -----------------------------------
+  resampleIndices <- sample(1:numBayesSamples, resamples, prob = weights, 
+                            replace = TRUE) 
+  
+  # Number unique paramter sets resampled - want this to be relatively
+  # stable
+  numUniques <- length(unique(resampleIndices))
+  
+  # Save final outputs for generating results ----------------------------
+  if (saveOutputs){
     # Save the output
     save(numBayesSamples, beta1, beta2, beta3, beta4,
-      incidenceMatrix, weights, resamples, resampleIndices, 
-        file = file.path(outputFolder, paste(currTime, 
-          "_CascadeBayes_Results.rda", sep = "")))
+         incidenceMatrix, weights, resamples, resampleIndices, 
+         file = file.path(outputFolder, paste(currTime, 
+         "_CascadeBayes_Results.rda", sep = "")))
   }
+}
 
 ```
 
 ```{r quickstats}
-
-# Generate some stats -----------------------------------------------------
-
-# Need a function for mode! - 
-getmode <- function(vector) {
-  uniqueElements <- unique(vector)
-  uniqueElements[which.max(tabulate(match(vector, uniqueElements)))]
-}
+# Generate some quick stats and results
 
 # Number unique paramter sets resampled
 numUniques <- length(unique(resampleIndices))
 
 # Best fitting parameter sets
-bestFit <- getmode(resampleIndices)
+bestFit <- GetMode(resampleIndices)
 
 # What the best fit looks like
 # betaBestRel <- c(f1[bestFit], 1, f3[bestFit], f4[bestFit])
@@ -257,28 +251,45 @@ betaBestRel <- betaBest / betaBest[2]
 
 ```
 
-Generate some quick results
+The following chunk generates some quick results for checking purposes. 
+The main results and plots are generate in the 
+3-CascadeIncidenceResults.Rmd Rmarkdown script. 
 
 ```{r quickresults}
+
 # Incidence best 
 
-hist(beta3[resampleIndices], breaks = 100)
-hist(beta1, breaks = 100)
+hist(beta3[resampleIndices], breaks = 100) # posterior
+hist(beta1, breaks = 100) # prior
 
 apply(cascadeBest[, 2:5], 1, function(x) x * betaBest/sum(x * betaBest))
-
-# if (useError) {
-#   errorBest <- errBest
-# } else {
-#   errorBest <- c(1, 1, 1, 1)
-# }
   
-bayesInc <- incFunc(cascadeBest, betaBest[1], betaBest[2], 
+bayesInc <- IncFunc(cascadeBest, betaBest[1], betaBest[2], 
         betaBest[3], betaBest[4])
 
-# A quick plot comparison
+
+# Plot model fits and data -----------------------------------------------
+
 source(file.path(Rcode,"PlotOptions.R"))
 source(file.path(Rcode,"TidyLongitudinal.R"))
+
+# Convert incidence Matrix into a long data frame
+incidenceDF <- TidyLongitudinal(incidenceMatrix[resampleIndices, ], 2004)
+
+# Plot best fit regression and Bayes fit
+load(file.path(resultsFolder, "CountAnalysis_2016-03-29(16-09)", 
+               "2016-03-29(16-09)_Cascade_Regression_Results.rda"))
+
+lmBeta <- as.numeric(undetectAdjustAnalysis)
+lmInc <- apply(cascadeBest[ ,2:5], 1, 
+               function(x) sum(x *  lmBeta))
+
+ggplot(data = cascadeBest, aes(x = year, y = infections)) +
+  geom_point(colour = "black") + 
+  geom_line(aes(y = bayesInc), colour = "red") + 
+  geom_line(aes(y = lmInc), colour = "blue") +
+  coord_cartesian(ylim = c(0, 1000)) + 
+  plotOpts 
 
 # Functions for plotting range in simulation outputs
 rangeUpper <- function(x) {
@@ -288,19 +299,6 @@ rangeUpper <- function(x) {
 rangeLower <- function(x) {
   quantile(x, c(0.025))
 }
-
-# incidenceDF <- as.data.frame(incidenceMatrix[resampleIndices, ])
-incidenceDF <- TidyLongitudinal(incidenceMatrix[resampleIndices, ], 2004)
-
-ggplot(data = cascadeBest, aes(x = year, y = infections)) +
-  # geom_line(data = incidenceDF, 
-  #           aes(x = year, y = value, group = sim), colour = "grey") +
-  geom_point(colour = "black") + 
-  geom_line(aes(y = bayesInc), colour = "red") + 
-  # stat_summary(data = incidenceDF, aes(x = year, y = value, group = 1), 
-  #              geom = "line", fun.y = median) + 
-  coord_cartesian(ylim = c(0, 1000)) + 
-  plotOpts 
 
 # Incidence results plot
 simsPlot <- ggplot(data = incidenceDF, 
@@ -318,9 +316,9 @@ simsPlot <- ggplot(data = incidenceDF,
   coord_cartesian(ylim = c(0, 1000)) + 
   plotOpts
 
-```
+simsPlot
 
-```{r quickplot}
+# Parameter prior and posterior distributions -------------------------
 
 priorFrame <- data.frame(beta1 = beta1,
                          beta2 = beta2,
@@ -332,7 +330,7 @@ posteriorFrame <- data.frame(beta1 = beta1[resampleIndices],
                              beta3 = beta3[resampleIndices],
                              beta4 = beta4[resampleIndices])
 
-paramPlot <- parameterPlot("beta1", priorFrame, posteriorFrame)
+parameterPlot("beta4", priorFrame, posteriorFrame)
 
 ```
 

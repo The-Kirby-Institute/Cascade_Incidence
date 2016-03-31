@@ -8,7 +8,13 @@
 # Analysis Functions
 # ==================
 
-incFunc <- function(cascadeData, beta1, beta2, beta3, beta4) {
+# R needs a function for mode!
+GetMode <- function(vector) {
+  uniqueElements <- unique(vector)
+  uniqueElements[which.max(tabulate(match(vector, uniqueElements)))]
+}
+
+IncFunc <- function(cascadeData, beta1, beta2, beta3, beta4) {
   # Function for can easily calculating the incidence values
   # for each sample of the beta values
   #
@@ -57,7 +63,7 @@ WeightError <- function(dataValues, estimatedValues, dataError) {
 # Plotting Functions
 # ==================
 
-parameterPlot <- function(paramter, priorsSamples, posteriorSamples, 
+parameterPlot <- function(parameter, priorsSamples, posteriorSamples, 
                           save = FALSE) {
   # This function generates a plot of the prior and posterior for each
   # parameter. Specificly set up for this project. Parameters and inputs 
@@ -87,8 +93,8 @@ parameterPlot <- function(paramter, priorsSamples, posteriorSamples,
               "beta3" = "Unsuppressed Beta",
               "beta4" = "Suppressed Beta")
   
-  priorDist <- priorFrame[, dist]
-  postDist <- posteriorFrame[, dist]
+  priorDist <- priorFrame[, parameter]
+  postDist <- posteriorFrame[, parameter]
   plotRange <- range(priorDist)
   plotStats <- paste("Mean, median, mode:   \n", 
                      "prior = ", 
@@ -101,12 +107,12 @@ parameterPlot <- function(paramter, priorsSamples, posteriorSamples,
                      toString(signif(getmode(postDist), digits = 2)), "   \t\n", 
                      sep = "")
   
-  postPlot <- ggplot(data = posteriorFrame, aes_string(x = dist)) +
+  postPlot <- ggplot(data = posteriorFrame, aes_string(x = parameter)) +
     geom_density(data = priorFrame, fill = "black", alpha = 0.2) +
     geom_density(colour = "red", fill = "red", alpha = 0.1) +
     coord_cartesian(xlim = plotRange) +
     ylab("Density") + 
-    xlab(labels[dist]) +
+    xlab(labels[parameter]) +
     annotate("text", label = plotStats, 
              x = Inf, y = Inf, hjust = 1, vjust = 1) +
     plotOpts
@@ -117,4 +123,6 @@ parameterPlot <- function(paramter, priorsSamples, posteriorSamples,
            plot = postPlot, width = 12, height = 10, 
            units = "cm")
   }
+  
+  return(postPlot)
 }
