@@ -234,8 +234,13 @@ if (useSaved) {
 
 ```
 
-```{r quickstats}
-# Generate some quick stats and results
+The following chunk generates some quick results for checking purposes. 
+The main results and plots are generate in the 
+3-CascadeIncidenceResults.Rmd Rmarkdown script. 
+
+```{r quickresults}
+
+# Generate some quick stats ----------------------------------------------
 
 # Number unique paramter sets resampled
 numUniques <- length(unique(resampleIndices))
@@ -247,31 +252,28 @@ bestFit <- GetMode(resampleIndices)
 # betaBestRel <- c(f1[bestFit], 1, f3[bestFit], f4[bestFit])
 betaBest <- c(beta1[bestFit], beta2[bestFit], beta3[bestFit],
               beta4[bestFit])
-betaBestRel <- betaBest / betaBest[2]            
+betaBestRel <- betaBest / betaBest[2]   
 
-```
-
-The following chunk generates some quick results for checking purposes. 
-The main results and plots are generate in the 
-3-CascadeIncidenceResults.Rmd Rmarkdown script. 
-
-```{r quickresults}
-
-# Incidence best 
+# General exploration -----------------------------------------------------
 
 hist(beta3[resampleIndices], breaks = 100) # posterior
 hist(beta1, breaks = 100) # prior
 
-apply(cascadeBest[, 2:5], 1, function(x) x * betaBest/sum(x * betaBest))
-  
-bayesInc <- IncFunc(cascadeBest, betaBest[1], betaBest[2], 
-        betaBest[3], betaBest[4])
+# Proportion infections for each stage
 
+cascadeData <- select(cascadeBest, undiagnosed, diagnosed,
+                      unsuppressed, suppressed)
+
+PropInfections(cascadeData, betaBest)
 
 # Plot model fits and data -----------------------------------------------
 
 source(file.path(Rcode,"PlotOptions.R"))
 source(file.path(Rcode,"TidyLongitudinal.R"))
+
+# Best fit results
+bayesInc <- IncFunc(cascadeBest, betaBest[1], betaBest[2], 
+        betaBest[3], betaBest[4])
 
 # Convert incidence Matrix into a long data frame
 incidenceDF <- TidyLongitudinal(incidenceMatrix[resampleIndices, ], 2004)
@@ -331,6 +333,50 @@ posteriorFrame <- data.frame(beta1 = beta1[resampleIndices],
                              beta4 = beta4[resampleIndices])
 
 parameterPlot("beta4", priorFrame, posteriorFrame)
+
+# Distribution for proportion undiagnosed --------------------------------
+
+# Pre-allocate results frame
+propFrame <- data.frame(sample = NULL, 
+                        year = NULL, 
+                        undiagnosed = NULL,
+                        diagnosed = NULL,
+                        unsuppressed = NULL,
+                        suppressed = NULL)
+
+for (yearprop in years) {
+  # Get the year data
+  yearCascade <- cascadeBest %>%
+    filter(year == yearprop) %>%
+    select(-year, -infections) %>%
+    as.numeric()
+  
+  # Create data frame
+  loopFrame <- as.data.frame(t(apply(posteriorFrame, 1, 
+    function(x) x * yearCascade / sum(x * yearCascade))))
+  
+  colnames(loopFrame) <- c("undiagnosed", "diagnosed", "unsuppressed", 
+                           "suppressed")
+  
+  loopFrame$year <- yearprop
+  loopFrame$sample <- 1:resamples
+  
+  # Add to final results frame
+  propFrame <- bind_rows(propFrame, loopFrame)
+}
+
+# Gather propFrame into long format
+# propFrame <- propFrame %>%
+#   select(sample, year, everything()) %>%
+#   gather("stage", "proportion", 3:6) 
+
+# Plot change in proportion acquired by stage aver time
+ggplot(data = propFrame, 
+       aes(x = 100 * undiagnosed, group = year, colour = factor(year))) + 
+  geom_density(size = 1.2) + 
+  scale_colour_brewer(palette = "RdYlBu", name = "Year") +  
+  ylab("Density") + xlab("Percentage acquired from undiagnosed") +
+  plotOpts + theme(legend.position = "right")
 
 ```
 

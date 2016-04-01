@@ -60,6 +60,33 @@ WeightError <- function(dataValues, estimatedValues, dataError) {
   return(weight)
 }
 
+# Generating results
+# ==================
+
+PropInfections <- function(cascadeData, betaValues) {
+  # This function calculates the proportion of new infections due to each 
+  # stage of the cascade for a given set of beta Values.
+  #
+  # Args:
+  #   cascadeData: Data frame with annual estimates for each stage
+  #   betaValues: Vector of corresponding beta values for each stage
+  # Returns:
+  #   A data frame with the proportion of new infections attributed to 
+  #   each stage of the HIV cascade. 
+  #
+  # ----------------------------------------------------------------------
+  
+  # Apply proportion calculation to each year
+  propResults <- t(apply(cascadeData, 1, 
+                         function(x) x * betaValues / sum(x * betaValues)))
+  
+  # Convert to data frame and return
+  propResults <- as.data.frame(cbind(cascadeBest$year, propResults))
+  colnames(propResults)[1] <- "year"
+  
+  return(propResults)
+}
+
 # Plotting Functions
 # ==================
 

@@ -5,7 +5,7 @@ This script is used to generate the results and pretty plots used for the
 analysis
 
 
-```{r prettyplots}
+```{r infectionsbar}
 # Create a pretty plot to show proportion of infections due to each stage 
 # of the cascade for the results selected in "extractresults" chunk
 graphics.off()
