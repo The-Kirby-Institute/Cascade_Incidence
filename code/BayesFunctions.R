@@ -89,6 +89,30 @@ PropInfections <- function(cascadeData, betaValues) {
   return(propResults)
 }
 
+NumInfections <- function(cascadeData, betaValues) {
+  # This function calculates the number of new infections due to each 
+  # stage of the cascade for a given set of beta Values.
+  #
+  # Args:
+  #   cascadeData: Data frame with annual estimates for each stage
+  #   betaValues: Vector of corresponding beta values for each stage
+  # Returns:
+  #   A data frame with the proportion of new infections attributed to 
+  #   each stage of the HIV cascade. 
+  #
+  # ----------------------------------------------------------------------
+  
+  # Apply proportion calculation to each year
+  numResults <- t(apply(cascadeData, 1, 
+                         function(x) x * betaValues))
+  
+  # Convert to data frame and return
+  numResults <- as.data.frame(cbind(cascadeBest$year, numResults))
+  colnames(numResults)[1] <- "year"
+  
+  return(numResults)
+}
+
 # Plotting Functions
 # ==================
 
@@ -131,19 +155,19 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
                      "prior = ", 
                      toString(signif(mean(priorDist), digits = 2)), ", ",
                      toString(signif(median(priorDist), digits = 2)), ", ",
-                     toString(signif(getmode(priorDist), digits = 2)), 
+                     toString(signif(GetMode(priorDist), digits = 2)), 
                      "   \n", 
                      "postior = ", 
                      toString(signif(mean(postDist), digits = 2)), ", ",
                      toString(signif(median(postDist), digits = 2)), ", ",
-                     toString(signif(getmode(postDist), digits = 2)), 
+                     toString(signif(GetMode(postDist), digits = 2)), 
                      "   \t\n", 
                      sep = "")
   
   postPlot <- ggplot(data = posteriorFrame, aes_string(x = parameter)) +
-    geom_line(data = priorFrame, stat = "density", fill = "black", 
+    geom_density(data = priorFrame, fill = "black", 
               alpha = 0.2) +
-    geom_line(colour = "red", stat = "density", fill = "red", 
+    geom_density(colour = "red", fill = "red", 
               alpha = 0.1) +
     coord_cartesian(xlim = plotRange) +
     ylab("Density") + 
@@ -196,10 +220,13 @@ PercentInc <- function(cascadeStage, percentFrame, years = NULL,
   if (is.null(years)) {
     percentData <- filter(percentFrame, stage == cascadeStage)
     numYears <- 0
+    saveStr <- "All-"
   } else {
     percentData <- filter(percentFrame, stage == cascadeStage, 
                           year %in% years)
     numYears <- length(years)
+    saveStr <- paste(toString(min(years)), "-", toString(max(years)), "-", 
+                     sep = "")
   }
   
   # Create plot
@@ -216,18 +243,24 @@ PercentInc <- function(cascadeStage, percentFrame, years = NULL,
   } else {
     # Only a single year plotted so remove legend and fix colour
     distPlot <- ggplot(data = percentData, aes(x = percentage)) + 
-      geom_line(size = 1.2, stat = "density", colour = "blue") + 
+      geom_density(size = 1.2, colour = "blue", 
+                   fill = "blue", alpha = 0.2) +
       ylab("Density") + 
       xlab(paste("Percentage acquired from ", cascadeStage
                  , "in", toString(years))) +
       coord_cartesian(xlim = xlimits) +
       plotOpts
+    
+    # Overwrite save string with single year
+    saveStr <- paste(toString(years), "-", sep = "")
   }
   
   # Save if requested 
   if (!is.null(savefolder)) {
     ggsave(file.path(savefolder, 
-                     paste("Incidence_distribution_All-", cascadeStage,
+                     paste("Incidence_distribution_",
+                           saveStr, 
+                           cascadeStage,
                            ".png",sep ="")),
            plot = distPlot, width = 12, height = 10, 
            units = "cm")

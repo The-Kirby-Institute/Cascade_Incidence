@@ -49,7 +49,6 @@ source(file.path(Rcode, "TidyLongitudinal.R"))
 ```{r Script options, echo = FALSE, messages = FALSE, include=FALSE}
 # Setup script options
 savePlots <- TRUE    # save plots as separate files
-saveFormat <- ".png" # file extension for saved plots 
 
 if (savePlots) {
   # Create folder for the plots using the currTime
@@ -57,8 +56,18 @@ if (savePlots) {
   folder <- paste("Incidence_Results_", currTime, sep="")
   
   # Create directory if it doesn't already exist
-  dir.create(file.path(resultsFolder,folder), showWarnings = FALSE)
+  dir.create(file.path(figFolder,folder), showWarnings = FALSE)
   outputFolder <- file.path(figFolder, folder)
+  
+  # Wrapper function so we don't have to keep entering everything in
+  # ggsave. Plot defaults are put iteh figure defaults
+  SaveFigure <- function(folder, filename, figure, 
+                         format = ".png", width = 12, 
+                         height = 10, units = "cm", ...) {
+    ggsave(file.path(folder, paste(filename, format, sep = "")), 
+           plot = figure, 
+           width = width, height = height, units = units, ...)
+  }
 }
 
 ```
@@ -83,124 +92,46 @@ load(file.path(resultsFolder,
   paste("Cascade_Bayes_", bayesAnalysisTime, sep = ""),
   paste(bayesAnalysisTime, "_Cascade_Bayes_results.rda", sep = "")))
 
-```
+# Useful info and results
+# cascadeBest <- cascadeBestBayes
+years <- cascadeBest$year
+numyears <- length(years)
 
-
-```{r infectionsbar}
-# Create a pretty plot to show proportion of infections due to each stage 
-# of the cascade for the results selected in "extractresults" chunk
-graphics.off()
-
-# Organize the results
-pldhivFrame <- cascadeSample[c(1,3:6)]  %>% 
-  group_by(year) %>% 
-  summarise_each(funs(mean))
-
-infectsFrame <- stageInfects %>% 
-  group_by(year) %>% 
-  summarise_each(funs(mean)) 
-
-# Melt data into right format 
-plhivResults <- gather(pldhivFrame,"stage","number",2:5) %>%
-  group_by(year) %>%
-  mutate(cumsum=cumsum(number))
-
-infectsResults <- gather(infectsFrame,"stage","number",2:5) %>%
-  group_by(year) %>%
-  mutate(cumsum=cumsum(number))
-
-## Now create plots 
-legendLabels <- c("Undiagnosed", "Diagnosed no ART", 
-                  "On ART unsuppressed VL", "On ART suppressed VL")
-xValues <- seq(2005,2014, by = 3)
-
-# PLDHIV overall
-plhivPlotBase <- ggplot(data = plhivResults, aes(x = year, y = number, 
-                                                 fill = stage)) + xlab("Year") + labs(fill = 'Cascade stage') +
-  scale_fill_manual(values = asrcols, name = "", labels = legendLabels, 
-                    guide = guide_legend(reverse=TRUE, nrow = 2)) +  
-  scale_x_continuous(breaks = xValues) + plotOpts 
-
-
-plhivPlotNum <- plhivPlotBase + geom_bar(stat="identity") + 
-  ylab("Number PLHIV") 
-plhivPlotProp <- plhivPlotBase + geom_bar(stat="identity", 
-                                          position= "fill") + ylab("Proportion PLHIV")
-
-# New infections/diagnoses
-infectsPlotBase <- ggplot(data = infectsResults, aes(x = year, y = number, 
-                                                     fill = stage)) + xlab("Year") +  labs(fill = 'Cascade stage') +
-  scale_fill_manual(values = asrcols, name = "", labels = legendLabels, 
-                    guide = guide_legend(reverse=TRUE, nrow = 2)) + 
-  scale_x_continuous(breaks = xValues) + plotOpts
-
-if(useDiagnoses){
-  infectsPlotNum <- infectsPlotBase + geom_bar(stat = "identity") + 
-    ylab("Number new infections")
-  infectsPlotProp <- infectsPlotBase + 
-    geom_bar(stat="identity", position = "fill") + 
-    ylab("Proportion new infections")
-} else {
-  infectsPlotNum <- infectsPlotBase + geom_bar(stat = "identity") + 
-    ylab("Number Diagnoses")
-  infectsPlotProp <- infectsPlotBase + 
-    geom_bar(stat = "identity", position = "fill") +
-    ylab("Proportion Diagnoses") 
-}
-
-# Print figures to separate files
-if (saveplots) {
-  # Plot specs
-  plotWidth <- 12
-  plotHeight <- 10
-  plotUnits <- "cm"
-  
-  # Do the plots
-  ggsave(file.path(resultsFolder, paste("cascadeIncidence-", "numPLHIV", 
-                                        "-", toString(max(countClean$year)), ".png",sep ="")),
-         plot = plhivPlotNum, width = plotWidth, height = plotHeight, 
-         units = plotUnits)
-  
-  
-  ggsave(file.path(resultsFolder, paste("cascadeIncidence-", "numDiags",
-                                        "-", toString(max(countClean$year)), ".png",sep ="")), 
-         plot = infectsPlotNum, width = plotWidth, height = plotHeight, 
-         units = plotUnits)
-  
-  ggsave(file.path(resultsFolder, paste("cascadeIncidence-", "propPLHIV", 
-                                        "-", toString(max(countClean$year)), ".png",sep ="")), 
-         plot = plhivPlotProp, width = plotWidth, height = plotHeight, 
-         units = plotUnits)
-  
-  ggsave(file.path(resultsFolder, paste("cascadeIncidence-", "propDiags",
-                                        "-", toString(max(countClean$year)), ".png",sep ="")), 
-         plot = infectsPlotProp, width = plotWidth, height = plotHeight, 
-         units = plotUnits)
-}
+# Bayesian best fit info
+bestFit <- GetMode(resampleIndices)
+betaBest <- c(beta1[bestFit], beta2[bestFit], beta3[bestFit],
+              beta4[bestFit])
+betaBestRel <- betaBest / betaBest[2]
 
 ```
 
-```{r incidence results}
+# Results
 
-# Best fit results
+**Figure 1** -- The HIV cascade for Australian GBM over 2004-2014. A) The change in the number of people in each state of the cascade; B) The proportion of the overall PLHIV population in each state; C) The estimated number of people on treatment over time; D) The percentage of PLHIV already diagnosed on ART;  E) The number of people with suppressed virus and F) The percentage of all PLHIV with suppressed virus. The red line shows the estimate and the shading shows the range in this estimate.
+
+```{r Incidence results}
+
+# Best fit results --------------------------------------------------------
 bayesInc <- IncFunc(cascadeBest, betaBest[1], betaBest[2], 
         betaBest[3], betaBest[4])
 
-# Convert incidence Matrix into a long data frame
-incidenceDF <- TidyLongitudinal(incidenceMatrix[resampleIndices, ], 2004)
-
-
-
+# Regression best fit
 lmBeta <- as.numeric(undetectAdjustAnalysis)
 lmInc <- apply(cascadeBest[ ,2:5], 1, 
                function(x) sum(x *  lmBeta))
 
-ggplot(data = cascadeBest, aes(x = year, y = infections)) +
-  geom_point(colour = "black") + 
-  geom_line(aes(y = bayesInc), colour = "red") + 
-  geom_line(aes(y = lmInc), colour = "blue") +
+comparePlot <- ggplot(data = cascadeBest, aes(x = year, y = infections)) +
+  geom_point(aes(colour = "data")) + 
+  geom_line(aes(y = lmInc, colour = "bayes")) +
+  geom_line(aes(y = bayesInc, colour = "regression")) + 
   coord_cartesian(ylim = c(0, 1000)) + 
-  plotOpts 
+  scale_colour_manual(name = "",
+    limits = c("data", "regression", "bayes"), 
+    labels = c("Notifications data", "Linear regression fit", 
+               "Bayesian fit"), 
+    values = c("black", "blue", "red")) +
+  ylab("New infections") + xlab("Year") +
+  plotOpts + theme(legend.position = "right")
 
 # Functions for plotting range in simulation outputs
 rangeUpper <- function(x) {
@@ -211,29 +142,109 @@ rangeLower <- function(x) {
   quantile(x, c(0.025))
 }
 
-# Incidence results plot
+# Incidence results plot --------------------------------------------------
+# Convert incidence Matrix into a long data frame
+incidenceDF <- TidyLongitudinal(incidenceMatrix[resampleIndices, ], 2004)
+
+# Set up complicated legend
+aesLabels <- c("data", "sims", "mode", "median", "range" ) # legend order 
+
+cols <- c("data" = "black", "sims" = "grey", "median" = "black", 
+          "range" = "black", "mode" = "red")
+
+labels <- c("data" = "Notifications data",
+            "sims" = "Posterior simulations",
+            "median" = "Median value",
+            "range" = "95% credible interval",
+            "mode" = "Best fitting simulation")
+
+lines <- c("data" = "blank", "sims" = "solid", "median" = "solid", 
+          "range" = "dotted", "mode" = "solid")
+
+shapes <- c("data" = 16, "sims" = NA, "median" = NA, 
+          "range" = NA, "mode" = NA)
+
+
+# Create the plot
 simsPlot <- ggplot(data = incidenceDF, 
                    aes(x = year, y = value, group = sim)) +
-  geom_line(colour = "grey") +
-  geom_point(data = cascadeBest, aes(y = infections, group = 1), 
-             colour = "black") + 
-  stat_summary(aes(group = 1), geom = "line", fun.y = median) +
-  stat_summary(aes(group = 1), geom = "line", 
-               fun.y = rangeUpper, linetype = "dashed") + 
-  stat_summary(aes(group = 1), geom = "line", 
-               fun.y = rangeLower, linetype = "dashed") +
-  geom_line(data = cascadeBest, aes(y = bayesInc, group = 1), 
-            colour = "red") + 
+  geom_line(aes(colour = "sims")) +
+  geom_point(data = cascadeBest, aes(y = infections, group = 1,
+             colour = "data")) + 
+  stat_summary(aes(group = 1, colour = "median"), geom = "line", 
+               fun.y = median) +
+  stat_summary(aes(group = 1, colour = "range"), geom = "line", 
+               fun.y = rangeUpper, linetype = lines["range"]) + 
+  stat_summary(aes(group = 1), geom = "line", colour = "black",
+               fun.y = rangeLower, linetype = lines["range"]) +
+  geom_line(data = cascadeBest, aes(y = bayesInc, colour = "mode",
+                                    group = 1), size = 1.2) + 
   coord_cartesian(ylim = c(0, 1000)) + 
-  plotOpts
+  scale_colour_manual(name = "", values = cols[aesLabels],
+                      labels = labels[aesLabels],
+                      breaks = aesLabels,
+                      guide = guide_legend(override.aes = list(
+                         linetype = lines[aesLabels],
+                         shape = shapes[aesLabels]))) +
+  ylab("New infections") + xlab("Year")
+  plotOpts + theme(legend.position = "right")
 
-simsPlot
+if (savePlots) {
+  SaveFigure(outputFolder, "Best_fit_comparison", comparePlot, width = 18)
+  SaveFigure(outputFolder, "Incidence_fit", simsPlot, width = 18)
+}
 
 ```
 
-```{r paramterDistPlots}
-# Parameter prior and posterior distributions -------------------------
+**Figure 2** -- The 
+```{r Insert incidence fits, echo = FALSE, messages = FALSE, warning = FALSE, results = "hide", fig.width= 5.5, fig.height=3}
+print(simsPlot)
+```
 
+```{r Infections bar, echo = FALSE, messages = FALSE, include=FALSE}
+# Create a pretty plot to show proportion of infections due to each stage 
+# of the cascade for best fitting parameters
+
+# New infections for each stage for betaBest
+cascadeData <- select(cascadeBest, undiagnosed, diagnosed,
+                      unsuppressed, suppressed)
+
+incNumbers <- NumInfections(cascadeData, betaBest) %>%
+  gather("stage", "infections", 2:5)
+
+# Set up plots 
+legendLabels <- c("Undiagnosed", "Diagnosed untreated", 
+                  "On ART: VL > 400 last test", 
+                  "On ART: VL < 400 last test")
+plotCols <- asrcols[c(1:2, 4:5)]
+xValues <- seq(2004,2014, by = 5)
+
+# Incidence bar charts
+incPlotBase <- ggplot(data = incNumbers, aes(x = year, y = infections, 
+                                            fill = stage)) + 
+  xlab("Year") +
+  scale_fill_manual(values = plotCols, name = "", labels = legendLabels, 
+                    guide = guide_legend(reverse=TRUE, nrow = 2)) +  
+  scale_x_continuous(breaks = xValues) + plotOpts 
+
+
+incPlotNum <- incPlotBase + geom_bar(stat="identity") + 
+  ylab("New infections") 
+incPlotProp <- incPlotBase + geom_bar(stat="identity", 
+                                          position= "fill") +
+  ylab("Proportion new infections")
+
+if (savePlots) {
+  # Print figures to separate files
+  SaveFigure(outputFolder, "New_infections_stage", incPlotNum)
+  SaveFigure(outputFolder, "Prop_infections_stage", incPlotProp)
+  
+}
+
+```
+
+```{r Prior postior plots, echo = FALSE, messages = FALSE, include=FALSE}
+# Parameter prior and posterior distributions -------------------------
 priorFrame <- data.frame(beta1 = beta1,
                          beta2 = beta2,
                          beta3 = beta3,
@@ -244,13 +255,23 @@ posteriorFrame <- data.frame(beta1 = beta1[resampleIndices],
                              beta3 = beta3[resampleIndices],
                              beta4 = beta4[resampleIndices])
 
-ParameterPlot("beta4", priorFrame, posteriorFrame)
+beta1Plot <- ParameterPlot("beta1", priorFrame, posteriorFrame)
+beta2Plot <- ParameterPlot("beta2", priorFrame, posteriorFrame)
+beta3Plot <- ParameterPlot("beta3", priorFrame, posteriorFrame)
+beta4Plot <- ParameterPlot("beta4", priorFrame, posteriorFrame)
+
+if (savePlots) {
+  # Print figures to separate files
+  SaveFigure(outputFolder, "Beta1_distributions", beta1Plot)
+  SaveFigure(outputFolder, "Beta2_distributions", beta2Plot)
+  SaveFigure(outputFolder, "Beta3_distributions", beta3Plot)
+  SaveFigure(outputFolder, "Beta4_distributions", beta4Plot)
+}
 
 ```
 
-
-```{r propIncPlot}
-# Distribution for proportion undiagnosed --------------------------------
+```{r Proportion incidence, echo = FALSE, messages = FALSE, include=FALSE}
+# Distribution new infections percentage for each stage
 
 # Pre-allocate results frame
 percentFrame <- data.frame(sample = NULL, 
@@ -286,11 +307,31 @@ percentFrame <- percentFrame %>%
   select(sample, year, everything()) %>%
   gather("stage", "percentage", 3:6)
 
-# Plot change in proportion acquired by stage aver time
-undiagPercent <- PercentInc("undiagnosed", percentFrame)
-diagPercent <- PercentInc("diagnosed", percentFrame)
-unsuppressPercent <- PercentInc("unsuppressed", percentFrame)
+if (savePlots) {
+  saveFolder <- outputFolder
+} else {
+  saveFolder = NULL
+}
+
+# Plot change in proportion acquired by stage over time
+undiagPercent <- PercentInc("undiagnosed", percentFrame, 
+                            savefolder = saveFolder)
+diagPercent <- PercentInc("diagnosed", percentFrame, 
+                          savefolder = saveFolder)
+unsuppressPercent <- PercentInc("unsuppressed", percentFrame,
+                                savefolder = saveFolder)
 suppressPercent <- PercentInc("suppressed", percentFrame, 
-                              xlimits = c(0, 5))
+                              xlimits = c(0, 5),
+                              savefolder = saveFolder)
+
+# Plot change in proportion acquired for 2014
+undiagPercent <- PercentInc("undiagnosed", percentFrame, years = 2014,
+                            savefolder = saveFolder)
+diagPercent <- PercentInc("diagnosed", percentFrame, years = 2014,
+                          savefolder = saveFolder)
+unsuppressPercent <- PercentInc("unsuppressed", percentFrame, 
+                                years = 2014, savefolder = saveFolder)
+suppressPercent <- PercentInc("suppressed", percentFrame, years = 2014, 
+                              xlimits = c(0, 5), savefolder = saveFolder)
 
 ```
