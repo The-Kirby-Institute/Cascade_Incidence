@@ -5,17 +5,12 @@ This Rmarkdown script builds on the cascade incidence regression analysis
 and applies a Bayesian Melding approach. 
 
 ```{r initialization}
-rm(list=ls()) 
+rm(list = ls()) 
 
 # Source to current directory and set working directory
 basePath <- getwd()
 
 # Various directories
-sampleTime <- "Million" # defined by user in %Y-%m-%d(%H-%M) 
-                                  # format or some other name
-sampleFolder <- file.path(basePath, "output", 
-                         paste("CountAnalysis_", sampleTime, sep = ""))
-
 dataFolder <- file.path(basePath, "data")
 resultsFolder <- file.path(basePath, "output")
 Rcode <- file.path(basePath, "code") 
@@ -24,7 +19,7 @@ Rcode <- file.path(basePath, "code")
 source(file.path(Rcode, "LoadLibrary.R"), echo = TRUE)
 source(file.path(Rcode, "DataLibraries.R"), echo = TRUE)
 
-# Source Useful functions
+# Source useful functions
 source(file.path(Rcode, "BayesFunctions.R"), echo = TRUE)
 
 ```
@@ -87,15 +82,15 @@ if (useSaved) {
   # Specify details of saved file
   simTime <- "2016-03-30(14-37)" # in %Y-%m-%d(%H-%M) format 
                                  # or some other name
-  folder <- paste("CascadeBayes_", simTime, sep = "")
+  folder <- paste("Cascade_Bayes_", simTime, sep = "")
   inputFolder <- file.path(resultsFolder, folder)
-  savedFile <- paste(simTime, "_CascadeBayes_Sims.rda", sep = "")
+  savedFile <- paste(simTime, "_Cascade_Bayes_Sims.rda", sep = "")
 }
 
 # Details of where to store outputs if desired
 if (saveSims) {
   currTime <- format(Sys.time(), "%Y-%m-%d(%H-%M)") # to append to files
-  folder <- paste("CascadeBayes_", currTime, sep="")
+  folder <- paste("Cascade_Bayes_", currTime, sep="")
   
   # Create directory
   dir.create(file.path(resultsFolder,folder), showWarnings = FALSE)
@@ -188,7 +183,7 @@ if (useSaved) {
     save(numBayesSamples, beta1, beta2, beta3, beta4,
       incidenceMatrix, weights,
         file = file.path(outputFolder, paste(currTime, 
-          "_CascadeBayes_Sims.rda", sep = "")))
+          "_Cascade_Bayes_Sims.rda", sep = "")))
   }
 }
 
@@ -206,9 +201,9 @@ if (useSaved) {
   # Specify details of saved file
   simTime <- "2016-03-30(14-37)" # in %Y-%m-%d(%H-%M) format 
                                  # or some other name
-  folder <- paste("CascadeBayes_", simTime, sep = "")
+  folder <- paste("Cascade_Bayes_", simTime, sep = "")
   inputFolder <- file.path(resultsFolder, folder)
-  savedFile <- paste(simTime, "_CascadeBayes_Results.rda", sep = "")
+  savedFile <- paste(simTime, "_Cascade_Bayes_Results.rda", sep = "")
   
   # Load saved file
   load(file.path(inputFolder, savedFile))
@@ -225,10 +220,11 @@ if (useSaved) {
   # Save final outputs for generating results ----------------------------
   if (saveOutputs){
     # Save the output
-    save(numBayesSamples, beta1, beta2, beta3, beta4,
+    cascadeBestBayes <- cascadeBest
+    save(cascadeBestBayes, numBayesSamples, beta1, beta2, beta3, beta4,
          incidenceMatrix, weights, resamples, resampleIndices, 
          file = file.path(outputFolder, paste(currTime, 
-         "_CascadeBayes_Results.rda", sep = "")))
+         "_Cascade_Bayes_Results.rda", sep = "")))
   }
 }
 

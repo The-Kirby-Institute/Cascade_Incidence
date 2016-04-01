@@ -1,18 +1,87 @@
-HIV Cascade Incidence Results
-=============================
-  
-This script is used to generate the results and pretty plots used for the
-analysis
+---
+title: "GBM HIV Cascade Incidence Results"
+author: "Richard T. Gray"
+date: Latest version - `r format(Sys.Date(), format="%B %d %Y")` 
+output:
+  word_document:
+    pandoc_args: --output="docs/GBM_Incidence.docx"
+    reference_docx: docs/mystyles.docx
+---
 
-```{r initialization}
+This document summarizes results from the HIV cascade incidence analysis 
+applied to the HIV cascade over 2004 to 2014 for gay and bisexual men 
+(GBM). The R code for these calculations is available in an associated 
+Rmarkdown file. The aim of this analysis is to estimate the proportion of 
+new infections attributable to GBM living with HIV who are undiagnosed, 
+diagnosed but not on ART, on ART but with unsuppressed virus, and those on 
+ART with suppressed virus. 
 
+This document is written in dynamic format using R markdown v2 within 
+RStudio Version 0.99.878 (using R version 
+`r substr(R.Version()$version.string,1,15))`. Further details are available
+in the associated R markdown file (code blocks are suppressed in the output
+document).
 
-source(file.path(Rcode,"PlotOptions.R"))
-source(file.path(Rcode,"TidyLongitudinal.R"))
+```{r Initialization, echo = FALSE, messages = FALSE, include=FALSE}
+# Clear workspace
+rm(list = ls()) 
+options(scipen = 999)  # To get rid of scientific notation
+
+# Setup directories
+basePath <- getwd()
+
+# Various directories
+Rcode <- file.path(basePath, "code") 
+resultsFolder <- file.path(basePath,"output")
+figFolder <- file.path(resultsFolder, "figures")
+
+# Load standard libraries, key functions and options
+source(file.path(Rcode, "LoadLibrary.R"), echo = TRUE)
+source(file.path(Rcode, "DataLibraries.R"), echo = TRUE)
+
+# Source useful functions
+source(file.path(Rcode, "BayesFunctions.R"), echo = TRUE)
+source(file.path(Rcode, "PlotOptions.R"))
+source(file.path(Rcode, "TidyLongitudinal.R"))
 
 ```
 
-```{r loaddata}
+```{r Script options, echo = FALSE, messages = FALSE, include=FALSE}
+# Setup script options
+savePlots <- TRUE    # save plots as separate files
+saveFormat <- ".png" # file extension for saved plots 
+
+if (savePlots) {
+  # Create folder for the plots using the currTime
+  currTime <- format(Sys.time(), "%Y-%m-%d(%H-%M)") # to append to files
+  folder <- paste("Incidence_Results_", currTime, sep="")
+  
+  # Create directory if it doesn't already exist
+  dir.create(file.path(resultsFolder,folder), showWarnings = FALSE)
+  outputFolder <- file.path(figFolder, folder)
+}
+
+```
+
+```{r Load results, echo = FALSE, messages = FALSE, include=FALSE}
+# Load the previoulsy generated results from the regression analysis
+# and the Bayesian melding analysis. Extract useful numbers and organize
+# results appropriately
+
+# Specify the results production times/string for selecting the correct 
+# folder
+regAnalysisTime <- "2016-03-29(16-09)" 
+bayesAnalysisTime <- "2016-03-30(14-37)"
+  
+# Load regression results 
+load(file.path(resultsFolder, 
+  paste("Cascade_Analysis_", regAnalysisTime, sep = ""),
+  paste(regAnalysisTime, "_Cascade_Regression_Results.rda", sep = "")))
+
+# Load Bayesian results
+load(file.path(resultsFolder, 
+  paste("Cascade_Bayes_", bayesAnalysisTime, sep = ""),
+  paste(bayesAnalysisTime, "_Cascade_Bayes_results.rda", sep = "")))
 
 ```
 
@@ -120,9 +189,7 @@ bayesInc <- IncFunc(cascadeBest, betaBest[1], betaBest[2],
 # Convert incidence Matrix into a long data frame
 incidenceDF <- TidyLongitudinal(incidenceMatrix[resampleIndices, ], 2004)
 
-# Plot best fit regression and Bayes fit
-load(file.path(resultsFolder, "CountAnalysis_2016-03-29(16-09)", 
-               "2016-03-29(16-09)_Cascade_Regression_Results.rda"))
+
 
 lmBeta <- as.numeric(undetectAdjustAnalysis)
 lmInc <- apply(cascadeBest[ ,2:5], 1, 
