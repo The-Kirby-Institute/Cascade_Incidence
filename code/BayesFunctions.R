@@ -19,16 +19,18 @@ IncFunc <- function(cascadeData, beta1, beta2, beta3, beta4) {
   # for each sample of the beta values
   #
   # Args:
-  #   cascadeData: Data frame containing the cascade data for each stage for each 
-  #     year
+  #   cascadeData: Data frame containing the cascade data for each stage 
+  #     for each year
   #   beta1, beta2, beta3, beta4: Value for each beta fixed over time
   # Returns:
   #   Returns: estimated incidence for each year in data
   # 
   # ----------------------------------------------------------------------
   
-  return(beta1 * cascadeData$undiag  + beta2 * cascadeData$diag  + 
-           beta3 * cascadeData$unsuppressed  + beta4 * cascadeData$suppressed)
+  return(beta1 * cascadeData$undiag  + 
+           beta2 * cascadeData$diag  + 
+           beta3 * cascadeData$unsuppressed  + 
+           beta4 * cascadeData$suppressed)
 }
 
 WeightError <- function(dataValues, estimatedValues, dataError) {
@@ -90,10 +92,12 @@ PropInfections <- function(cascadeData, betaValues) {
 # Plotting Functions
 # ==================
 
-parameterPlot <- function(parameter, priorsSamples, posteriorSamples, 
-                          save = FALSE) {
+# PlotOptions.R needs to be sourced for these functions to work
+
+ParameterPlot <- function(parameter, priorsSamples, posteriorSamples, 
+                          savefolder = NULL) {
   # This function generates a plot of the prior and posterior for each
-  # parameter. Specificly set up for this project. Parameters and inputs 
+  # parameter. Specifically set up for this project. Parameters and inputs 
   # must correspond to the incidence model.
   #
   # Args:
@@ -101,9 +105,9 @@ parameterPlot <- function(parameter, priorsSamples, posteriorSamples,
   #     Only beta1, beta2, beta3, beta4 allowed
   #   priorSamples: Data frame with columns corresponding to samples from 
   #     the prior parameter distributions
-  #   posteriorSamples: Data frame with columns corresponding to samples from 
-  #     the posterior parameter distributions
-  #   save: Set to true if you want to save the plot
+  #   posteriorSamples: Data frame with columns corresponding to samples 
+  #     from the posterior parameter distributions
+  #   savefolder: (Optional) Set to true if you want to save the plot
   # Returns:
   #   Plot handle corresponding to the created plot
   #
@@ -127,16 +131,20 @@ parameterPlot <- function(parameter, priorsSamples, posteriorSamples,
                      "prior = ", 
                      toString(signif(mean(priorDist), digits = 2)), ", ",
                      toString(signif(median(priorDist), digits = 2)), ", ",
-                     toString(signif(getmode(priorDist), digits = 2)), "   \n", 
+                     toString(signif(getmode(priorDist), digits = 2)), 
+                     "   \n", 
                      "postior = ", 
                      toString(signif(mean(postDist), digits = 2)), ", ",
                      toString(signif(median(postDist), digits = 2)), ", ",
-                     toString(signif(getmode(postDist), digits = 2)), "   \t\n", 
+                     toString(signif(getmode(postDist), digits = 2)), 
+                     "   \t\n", 
                      sep = "")
   
   postPlot <- ggplot(data = posteriorFrame, aes_string(x = parameter)) +
-    geom_density(data = priorFrame, fill = "black", alpha = 0.2) +
-    geom_density(colour = "red", fill = "red", alpha = 0.1) +
+    geom_line(data = priorFrame, stat = "density", fill = "black", 
+              alpha = 0.2) +
+    geom_line(colour = "red", stat = "density", fill = "red", 
+              alpha = 0.1) +
     coord_cartesian(xlim = plotRange) +
     ylab("Density") + 
     xlab(labels[parameter]) +
@@ -144,12 +152,88 @@ parameterPlot <- function(parameter, priorsSamples, posteriorSamples,
              x = Inf, y = Inf, hjust = 1, vjust = 1) +
     plotOpts
   
-  if (save) {
+  if (!is.null(savefolder)) {
     ggsave(file.path(resultsFolder, 
-                     paste("parameter_distribution-", paramter, ".png",sep ="")),
+                     paste("parameter_distribution-", paramter, ".png", 
+                           sep ="")),
            plot = postPlot, width = 12, height = 10, 
            units = "cm")
   }
   
   return(postPlot)
 }
+
+PercentInc <- function(cascadeStage, percentFrame, years = NULL, 
+                       xlimits = NULL, savefolder = NULL) {
+  # This function generates a plot of the distribution in the percentage of
+  # infections acquired from each stage of the HIV cascade. This function 
+  # is specifically set up for this project. Parameters and inputs 
+  # must correspond to the incidence model outputs.
+  #
+  # Args:
+  #   cascadeStage: String specifying the stage we are plotting. 
+  #     Must be "undiagnosed", "diagnosed", "unsuppressed", "suppressed".
+  #   percentFrame: Data frame in long format with year values for 
+  #     percentage of infections for each HIV stage and sample. 
+  #     Must contain columns year, stage, percentage.
+  #   years: (Optional) Vector specifying years we are interested in. 
+  #     Default is all years in percentFrame. 
+  #   xlimits: (Optional) Specify range of x values to plot.
+  #   savefolder: (Optional) Specify if you want to save the plot by 
+  #     setting to the folder where plot will be save.
+  # Returns:
+  #   Plot handle corresponding to the created plot.
+  #
+  # ----------------------------------------------------------------------
+  
+  # Check input paramter is appropriate
+  if (!(cascadeStage %in% c("undiagnosed", "diagnosed", "unsuppressed", 
+                            "suppressed"))) {
+    stop("Unknown parameter entered")
+  }
+  
+  # Extract data we want from percentFrame
+  if (is.null(years)) {
+    percentData <- filter(percentFrame, stage == cascadeStage)
+    numYears <- 0
+  } else {
+    percentData <- filter(percentFrame, stage == cascadeStage, 
+                          year %in% years)
+    numYears <- length(years)
+  }
+  
+  # Create plot
+  if (numYears != 1) {
+  distPlot <- ggplot(data = percentData, 
+                     aes(x = percentage, group = year, 
+                         colour = factor(year))) + 
+    geom_line(size = 1.2, stat = "density") + 
+    scale_colour_brewer(palette = "RdYlBu", name = "Year") +  
+    ylab("Density") + 
+    xlab(paste("Percentage acquired from ", cascadeStage)) +
+    coord_cartesian(xlim = xlimits) +
+    plotOpts + theme(legend.position = "right")
+  } else {
+    # Only a single year plotted so remove legend and fix colour
+    distPlot <- ggplot(data = percentData, aes(x = percentage)) + 
+      geom_line(size = 1.2, stat = "density", colour = "blue") + 
+      ylab("Density") + 
+      xlab(paste("Percentage acquired from ", cascadeStage
+                 , "in", toString(years))) +
+      coord_cartesian(xlim = xlimits) +
+      plotOpts
+  }
+  
+  # Save if requested 
+  if (!is.null(savefolder)) {
+    ggsave(file.path(savefolder, 
+                     paste("Incidence_distribution_All-", cascadeStage,
+                           ".png",sep ="")),
+           plot = distPlot, width = 12, height = 10, 
+           units = "cm")
+  }
+  
+  # Return plot handle
+  return(distPlot)
+}
+

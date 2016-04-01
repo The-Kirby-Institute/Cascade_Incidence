@@ -4,6 +4,18 @@ HIV Cascade Incidence Results
 This script is used to generate the results and pretty plots used for the
 analysis
 
+```{r initialization}
+
+
+source(file.path(Rcode,"PlotOptions.R"))
+source(file.path(Rcode,"TidyLongitudinal.R"))
+
+```
+
+```{r loaddata}
+
+```
+
 
 ```{r infectionsbar}
 # Create a pretty plot to show proportion of infections due to each stage 
@@ -96,5 +108,122 @@ if (saveplots) {
          plot = infectsPlotProp, width = plotWidth, height = plotHeight, 
          units = plotUnits)
 }
+
+```
+
+```{r incidence results}
+
+# Best fit results
+bayesInc <- IncFunc(cascadeBest, betaBest[1], betaBest[2], 
+        betaBest[3], betaBest[4])
+
+# Convert incidence Matrix into a long data frame
+incidenceDF <- TidyLongitudinal(incidenceMatrix[resampleIndices, ], 2004)
+
+# Plot best fit regression and Bayes fit
+load(file.path(resultsFolder, "CountAnalysis_2016-03-29(16-09)", 
+               "2016-03-29(16-09)_Cascade_Regression_Results.rda"))
+
+lmBeta <- as.numeric(undetectAdjustAnalysis)
+lmInc <- apply(cascadeBest[ ,2:5], 1, 
+               function(x) sum(x *  lmBeta))
+
+ggplot(data = cascadeBest, aes(x = year, y = infections)) +
+  geom_point(colour = "black") + 
+  geom_line(aes(y = bayesInc), colour = "red") + 
+  geom_line(aes(y = lmInc), colour = "blue") +
+  coord_cartesian(ylim = c(0, 1000)) + 
+  plotOpts 
+
+# Functions for plotting range in simulation outputs
+rangeUpper <- function(x) {
+  quantile(x, c(0.975))
+}
+
+rangeLower <- function(x) {
+  quantile(x, c(0.025))
+}
+
+# Incidence results plot
+simsPlot <- ggplot(data = incidenceDF, 
+                   aes(x = year, y = value, group = sim)) +
+  geom_line(colour = "grey") +
+  geom_point(data = cascadeBest, aes(y = infections, group = 1), 
+             colour = "black") + 
+  stat_summary(aes(group = 1), geom = "line", fun.y = median) +
+  stat_summary(aes(group = 1), geom = "line", 
+               fun.y = rangeUpper, linetype = "dashed") + 
+  stat_summary(aes(group = 1), geom = "line", 
+               fun.y = rangeLower, linetype = "dashed") +
+  geom_line(data = cascadeBest, aes(y = bayesInc, group = 1), 
+            colour = "red") + 
+  coord_cartesian(ylim = c(0, 1000)) + 
+  plotOpts
+
+simsPlot
+
+```
+
+```{r paramterDistPlots}
+# Parameter prior and posterior distributions -------------------------
+
+priorFrame <- data.frame(beta1 = beta1,
+                         beta2 = beta2,
+                         beta3 = beta3,
+                         beta4 = beta4)
+
+posteriorFrame <- data.frame(beta1 = beta1[resampleIndices],
+                             beta2 = beta2[resampleIndices],
+                             beta3 = beta3[resampleIndices],
+                             beta4 = beta4[resampleIndices])
+
+ParameterPlot("beta4", priorFrame, posteriorFrame)
+
+```
+
+
+```{r propIncPlot}
+# Distribution for proportion undiagnosed --------------------------------
+
+# Pre-allocate results frame
+percentFrame <- data.frame(sample = NULL, 
+                        year = NULL, 
+                        undiagnosed = NULL,
+                        diagnosed = NULL,
+                        unsuppressed = NULL,
+                        suppressed = NULL)
+
+for (yearprop in years) {
+  # Get the year data
+  yearCascade <- cascadeBest %>%
+    filter(year == yearprop) %>%
+    select(-year, -infections) %>%
+    as.numeric()
+  
+  # Create data frame of percentages 
+  loopFrame <- as.data.frame(t(apply(posteriorFrame, 1, 
+    function(x) 100 * (x * yearCascade / sum(x * yearCascade)))))
+  
+  colnames(loopFrame) <- c("undiagnosed", "diagnosed", "unsuppressed", 
+                           "suppressed")
+  
+  loopFrame$year <- yearprop
+  loopFrame$sample <- 1:resamples
+  
+  # Add to final results frame
+  percentFrame <- bind_rows(percentFrame, loopFrame)
+}
+
+# Gather propFrame into long format
+percentFrame <- percentFrame %>%
+  select(sample, year, everything()) %>%
+  gather("stage", "percentage", 3:6)
+
+# Plot change in proportion acquired by stage aver time
+undiagPercent <- PercentInc("undiagnosed", percentFrame)
+diagPercent <- PercentInc("diagnosed", percentFrame)
+unsuppressPercent <- PercentInc("unsuppressed", percentFrame)
+suppressPercent <- PercentInc("suppressed", percentFrame, 
+                              xlimits = c(0, 5))
 
 ```
