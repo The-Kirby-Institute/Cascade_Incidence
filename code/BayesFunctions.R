@@ -44,6 +44,7 @@ WeightError <- function(dataValues, estimatedValues, dataError) {
   #   estimatedValues: Estimated data values from model
   #   dataError: Percentage error in the data
   # Returns:
+  #   Corresponding weight for set of parameters
   #
   # ----------------------------------------------------------------------
   
@@ -60,6 +61,31 @@ WeightError <- function(dataValues, estimatedValues, dataError) {
   # Calculate the weight assuming a normal likelihood
   weight <- prod(dnorm(distance, mu, sigma) / dnorm(mu, mu, sigma))
   return(weight)
+}
+
+PriorSample <- function(samples, dist, parameters) {
+  # Function which produces samples from a prior specified by 
+  # a distribution and appropriate set of parameters. 
+  #
+  # Args:
+  #
+  # Returns: 
+  #
+  # ----------------------------------------------------------------------
+  
+  if (dist == "unif") {
+    return(runif(samples, parameters[1], parameters[2]))
+  } else if (dist == "beta") {
+    return(rbeta(samples, parameters[1], parameters[2]))
+  } else if (dist == "triangle") {
+    # Assume triangle library already loaded
+    return(rtriangle(samples, parameters[1], parameters[2], parameters[3]))
+  } else if (dist == "lognorm") {
+    return(rlnorm(samples, parameters[1], parameters[2]))
+  } else {
+    stop("Unknown distribution")
+  }
+    
 }
 
 # Generating results
