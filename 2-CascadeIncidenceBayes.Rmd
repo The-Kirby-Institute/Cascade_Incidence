@@ -72,7 +72,7 @@ errorRange <- hivCascade %>%
 
 # Chunk Options ----------------------------------------------------------
 
-numBayesSamples <- 1e3 # number of prior samples
+numBayesSamples <- 1e6 # number of prior samples
 
 useSaved <- TRUE  # use previous set of sampled priors
 saveSims <- FALSE   # save sample priors and weights
@@ -80,8 +80,8 @@ saveSims <- FALSE   # save sample priors and weights
 # Details of inputs if required
 if (useSaved) {
   # Specify details of saved file
-  simTime <- "2016-03-30(14-37)" # in %Y-%m-%d(%H-%M) format 
-                                 # or some other name
+  # simTime <- "2016-03-30(14-37)" # in %Y-%m-%d(%H-%M) format 
+  simTime <- "2016-04-12(19-31)"   # or some other name
   folder <- paste("Cascade_Bayes_", simTime, sep = "")
   inputFolder <- file.path(resultsFolder, folder)
   savedFile <- paste(simTime, "_Cascade_Bayes_Sims.rda", sep = "")
@@ -128,13 +128,18 @@ if (useSaved) {
                  beta[2] * errN2[2]) 
   beta3 <- runif(numBayesSamples, 
                  beta3Rel[1] * beta[1] * errN3[1], 
-                 beta3Rel[2] * beta[2] * errN3[2])    
+                 beta3Rel[2] * beta[2] * errN3[2])   
+ 
 
-  f4 <- rbeta(numBayesSamples, 0.85, 10.76)   # beta fitted to data
+  # Use a fitted lognormal distribution for the relative effect
+  f4 <- rlnorm(2 * numBayesSamples, log(0.04), 1.16)
+  f4 <- f4[f4 <= 1] # remove values greater than 1
+  f4 <- f4[1:numBayesSamples] # take correct number of samples
+
   beta2extra <- runif(numBayesSamples, 
                  beta[1] * errN2[1] * errN4[1], 
                  beta[2] * errN2[2] * errN4[2])
-  beta4 <- beta2 * f4
+  beta4 <- beta2extra * f4
   
   # Run simulations ------------------------------------------------------
   
@@ -193,14 +198,14 @@ if (useSaved) {
 # Using the results from runsims resample with replacement to create 
 # psoteriors
 
-resamples <- 2000
+resamples <- 40000
 useSaved <- TRUE
 saveOutputs <- FALSE
 
 if (useSaved) {
   # Specify details of saved file
-  simTime <- "2016-03-30(14-37)" # in %Y-%m-%d(%H-%M) format 
-                                 # or some other name
+  # simTime <- "2016-03-30(14-37)" # in %Y-%m-%d(%H-%M) format 
+  simTime <- "2016-04-12(19-31)" # or some other name
   folder <- paste("Cascade_Bayes_", simTime, sep = "")
   inputFolder <- file.path(resultsFolder, folder)
   savedFile <- paste(simTime, "_Cascade_Bayes_Results.rda", sep = "")
