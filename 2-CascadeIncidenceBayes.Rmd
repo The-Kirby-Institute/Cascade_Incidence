@@ -133,13 +133,12 @@ if (useSaved) {
   errN3 <- as.numeric(errorRange[3, 2:3])
   errN4 <- as.numeric(errorRange[4, 2:3])
   
-  if (priorApproach == "independent") {
+  # Specify some common info for the beta values
+  beta <- c(0.005, 0.06)
+  beta1Rel <- c(0.9, 30)
+  beta3Rel <- c(0.05, 5)
   
-    beta <- c(0.005, 0.06)
-    
-    beta1Rel <- c(0.9, 30)
-    beta3Rel <- c(0.05, 5)
-    
+  if (priorApproach == "independent") {
     # Specify uniform priors between min and max
     beta1 <- runif(numBayesSamples, 
                    beta1Rel[1] * beta[1] * errN1[1], 
@@ -151,22 +150,21 @@ if (useSaved) {
                    beta3Rel[1] * beta[1] * errN3[1], 
                    beta3Rel[2] * beta[2] * errN3[2])   
     
-    # If independent calculate multiplicative factor (f) values
+    # Calculate multiplicative factor (f) values
     f1 <- beta1 / beta2
     f3 <- beta3 / beta2
     
-    
   } else if(priorApproach == "relative") {
-    beta <- c(0.005, 0.06)
-    beta2 <- runif(numBayesSamples, 
-                   beta[1] * errN2[1], 
-                   beta[2] * errN2[2])
-    beta2 <- runif(numBayesSamples, beta[1], beta[2]) * 
+    # Set up beta2 prior
+    beta2 <- PriorSample(numBayesSamples, "unif", c(beta[1], beta[2])) * 
       runif(numBayesSamples, errN2[1], errN2[2])
   
-    f1 <-runif(numBayesSamples, beta1Rel[1], beta1Rel[2]) * 
+    # Set up priors for multiplicative factors
+    f1 <-PriorSample(numBayesSamples, "unif", 
+                     c(beta1Rel[1], beta1Rel[2]))* 
       runif(numBayesSamples, errN1[1], errN1[2])
-    f3 <-runif(numBayesSamples, beta3Rel[1], beta3Rel[2]) * 
+    f3 <-PriorSample(numBayesSamples, "unif",
+                     c(beta3Rel[1], beta3Rel[2])) * 
       runif(numBayesSamples, errN3[1], errN3[2])
     
     # Calculate corresponding beta values
@@ -177,7 +175,7 @@ if (useSaved) {
     stop("Unspecified approach to generating priors")
   }
   
-  # Create f4 prior
+  # Create f4 prior -- always realtive to beta2
   f4 <- PriorSample(numBayesSamples, f4Prior$dist, f4Prior$params) * 
     runif(numBayesSamples, errN4[1], errN4[2])
   
