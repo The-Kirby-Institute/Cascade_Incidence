@@ -48,7 +48,7 @@ source(file.path(Rcode, "TidyLongitudinal.R"))
 
 ```{r Script options, echo = FALSE, messages = FALSE, include=FALSE}
 # Setup script options
-savePlots <- TRUE    # save plots as separate files
+savePlots <- FALSE    # save plots as separate files
 
 if (savePlots) {
   # Create folder for the plots using the currTime
@@ -80,8 +80,10 @@ if (savePlots) {
 # Specify the results production times/string for selecting the correct 
 # folder
 regAnalysisTime <- "2016-03-29(16-09)" 
-bayesAnalysisTime <- "2016-03-30(14-37)"
-  
+# bayesAnalysisTime <- "2016-03-30(14-37)"
+bayesAnalysisTime <- "2016-04-12(20-43)"
+
+
 # Load regression results 
 load(file.path(resultsFolder, 
   paste("Cascade_Analysis_", regAnalysisTime, sep = ""),
@@ -122,8 +124,8 @@ lmInc <- apply(cascadeBest[ ,2:5], 1,
 
 comparePlot <- ggplot(data = cascadeBest, aes(x = year, y = infections)) +
   geom_point(aes(colour = "data")) + 
-  geom_line(aes(y = lmInc, colour = "bayes")) +
-  geom_line(aes(y = bayesInc, colour = "regression")) + 
+  geom_line(aes(y = lmInc, colour = "regression")) +
+  geom_line(aes(y = bayesInc, colour = "bayes")) + 
   coord_cartesian(ylim = c(0, 1000)) + 
   scale_colour_manual(name = "",
     limits = c("data", "regression", "bayes"), 
@@ -186,7 +188,7 @@ simsPlot <- ggplot(data = incidenceDF,
                       guide = guide_legend(override.aes = list(
                          linetype = lines[aesLabels],
                          shape = shapes[aesLabels]))) +
-  ylab("New infections") + xlab("Year")
+  ylab("New infections") + xlab("Year") + 
   plotOpts + theme(legend.position = "right")
 
 if (savePlots) {
@@ -243,7 +245,7 @@ if (savePlots) {
 
 ```
 
-```{r Prior postior plots, echo = FALSE, messages = FALSE, include=FALSE}
+```{r Prior posterior plots, echo = FALSE, messages = FALSE, include=FALSE}
 # Parameter prior and posterior distributions -------------------------
 priorFrame <- data.frame(beta1 = beta1,
                          beta2 = beta2,
@@ -335,3 +337,12 @@ suppressPercent <- PercentInc("suppressed", percentFrame, years = 2014,
                               xlimits = c(0, 5), savefolder = saveFolder)
 
 ```
+
+
+## Supplementary plots
+
+```{r corner plots, echo = FALSE, messages = FALSE, include=FALSE}
+
+
+```
+
