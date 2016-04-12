@@ -73,18 +73,20 @@ errorRange <- hivCascade %>%
 
 # Chunk Options ----------------------------------------------------------
 
-numBayesSamples <- 1e4 # number of prior samples
-priorApproach <- "relative" # Independent or relative
+numBayesSamples <- 1e6 # number of prior samples
+priorApproach <- "independent" # independent or relative
 
 useSaved <- FALSE  # use previous set of sampled priors
-saveSims <- FALSE   # save sample priors and weights
+saveSims <- TRUE   # save sample priors and weights
 
 # Specify f4 prior -------------------------------------------------------
-
 # Trying lots of alternatives
 f4opt1 <- list(dist = "beta", params = c(0.85, 10.76))   # orig approach
-f4opt2 <- list(dist = "beta", params = c(1.2, 15))         # new beta
-f4opt3 <- list(dist = "triangle", params = c(0, 0.5, 0.2)) # triangle
+f4opt2 <- list(dist = "beta", params = c(1, 18))         # new beta
+
+f4opt3 <- list(dist = "triangle", params = c(0, 0.3, 0.05)) # triangle
+f4opt4 <- list(dist = "triangle", params = c(0, 0.45, 0.15)) # triangle
+f4opt5 <- list(dist = "triangle", params = c(0, 0.6, 0.3)) # triangle
 
 # Use a fitted lognormal distribution for the relative effect
 # Currently a bit of a hack
