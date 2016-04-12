@@ -18,6 +18,7 @@ Rcode <- file.path(basePath, "code")
 # Load standard libraries, key functions and options
 source(file.path(Rcode, "LoadLibrary.R"), echo = TRUE)
 source(file.path(Rcode, "DataLibraries.R"), echo = TRUE)
+LoadLibrary(triangle)
 
 # Source useful functions
 source(file.path(Rcode, "BayesFunctions.R"), echo = TRUE)
@@ -72,16 +73,18 @@ errorRange <- hivCascade %>%
 
 # Chunk Options ----------------------------------------------------------
 
-numBayesSamples <- 1e6 # number of prior samples
+numBayesSamples <- 1e5 # number of prior samples
+priorApproach <- "relative" # Independent or relative
+# f4Prior <- 
 
-useSaved <- TRUE  # use previous set of sampled priors
-saveSims <- FALSE   # save sample priors and weights
+useSaved <- FALSE  # use previous set of sampled priors
+saveSims <- TRUE   # save sample priors and weights
 
 # Details of inputs if required
 if (useSaved) {
   # Specify details of saved file
-  # simTime <- "2016-03-30(14-37)" # in %Y-%m-%d(%H-%M) format 
-  simTime <- "2016-04-12(19-31)"   # or some other name
+  simTime <- "2016-04-12(20-43)" # in %Y-%m-%d(%H-%M) format 
+                                   # or some other name
   folder <- paste("Cascade_Bayes_", simTime, sep = "")
   inputFolder <- file.path(resultsFolder, folder)
   savedFile <- paste(simTime, "_Cascade_Bayes_Sims.rda", sep = "")
@@ -106,40 +109,72 @@ if (useSaved) {
   
   # Priors for beta1, beta2, beta3, and beta4 - at this stage 
   # assume uniform priors except for beta4 <- f4 * beta2
-  # Systematic error in the cascade stage estimates is included
+  # Systematic error in the cascade stage estimates is included.
   # The uniform range is given by a relative range compared to beta2 and 
   # the error range. 
   
-  beta <- c(0.005, 0.06)
-  
-  beta1Rel <- c(0.9, 30)
-  beta3Rel <- c(0.05, 5)
-  
+  # Specify min and max for error ranges in cascade estimates
   errN1 <- as.numeric(errorRange[1, 2:3])
   errN2 <- as.numeric(errorRange[2, 2:3])
   errN3 <- as.numeric(errorRange[3, 2:3])
   errN4 <- as.numeric(errorRange[4, 2:3])
   
-  beta1 <- runif(numBayesSamples, 
-                 beta1Rel[1] * beta[1] * errN1[1], 
-                 beta1Rel[2] * beta[2] * errN1[2]) 
-  beta2 <- runif(numBayesSamples, 
-                 beta[1] * errN2[1], 
-                 beta[2] * errN2[2]) 
-  beta3 <- runif(numBayesSamples, 
-                 beta3Rel[1] * beta[1] * errN3[1], 
-                 beta3Rel[2] * beta[2] * errN3[2])   
- 
-
+  if (priorApproach == "independent") {
+  
+    beta <- c(0.005, 0.06)
+    
+    beta1Rel <- c(0.9, 30)
+    beta3Rel <- c(0.05, 5)
+    
+    # Specify uniform priors between min and max
+    beta1 <- runif(numBayesSamples, 
+                   beta1Rel[1] * beta[1] * errN1[1], 
+                   beta1Rel[2] * beta[2] * errN1[2]) 
+    beta2 <- runif(numBayesSamples, 
+                   beta[1] * errN2[1], 
+                   beta[2] * errN2[2]) 
+    beta3 <- runif(numBayesSamples, 
+                   beta3Rel[1] * beta[1] * errN3[1], 
+                   beta3Rel[2] * beta[2] * errN3[2])   
+    
+    # If independent calculate multiplicative factor (f) values
+    f1 <- beta1 / beta2
+    f3 <- beta3 / beta2
+    
+    
+  } else if(priorApproach == "relative") {
+    beta <- c(0.005, 0.06)
+    beta2 <- runif(numBayesSamples, 
+                   beta[1] * errN2[1], 
+                   beta[2] * errN2[2])
+    beta2 <- runif(numBayesSamples, beta[1], beta[2]) * 
+      runif(numBayesSamples, errN2[1], errN2[2])
+  
+    f1 <-runif(numBayesSamples, beta1Rel[1], beta1Rel[2]) * 
+      runif(numBayesSamples, errN1[1], errN1[2])
+    f3 <-runif(numBayesSamples, beta3Rel[1], beta3Rel[2]) * 
+      runif(numBayesSamples, errN3[1], errN3[2])
+    
+    # Calculate corresponding beta values
+    beta1 <- f1 * beta2
+    beta3 <- f3 * beta3
+  
+  } else {
+    stop("Unspecified approach to generating priors")
+  }
+  
   # Use a fitted lognormal distribution for the relative effect
-  f4 <- rlnorm(2 * numBayesSamples, log(0.04), 1.16)
-  f4 <- f4[f4 <= 1] # remove values greater than 1
-  f4 <- f4[1:numBayesSamples] # take correct number of samples
-
-  beta2extra <- runif(numBayesSamples, 
-                 beta[1] * errN2[1] * errN4[1], 
-                 beta[2] * errN2[2] * errN4[2])
-  beta4 <- beta2extra * f4
+  # Currently a bit of a hack
+  # f4 <- rlnorm(2 * numBayesSamples, log(0.04), 1.16)
+  # f4 <- f4[f4 <= 1] # remove values greater than 1
+  # f4 <- f4[1:numBayesSamples] # take correct number of samples
+  # Alternatives
+  f4 <- rtriangle(numBayesSamples, 0, 0.5, 0.2) * 
+    runif(numBayesSamples, errN4[1], errN4[2])
+  # rbeta(numBayesSamples, 1.4, 15) or thereabouts
+  
+  # Calculate corresponding beta 4 values
+  beta4 <- beta2 * f4
   
   # Run simulations ------------------------------------------------------
   
@@ -161,7 +196,7 @@ if (useSaved) {
       print(bayesSample)
     }
     
-    incidenceSample <- IncFunc(cascadeBest, 
+    incidenceSample <- IncFunc(cascadeBest,
                                beta1[bayesSample], beta2[bayesSample],
                                beta3[bayesSample], beta4[bayesSample])
     incidenceMatrix[bayesSample, ] <- incidenceSample
@@ -185,9 +220,10 @@ if (useSaved) {
   # Save results and Bayes parameters
   if (saveSims){
     # Save the output
-    save(numBayesSamples, beta1, beta2, beta3, beta4,
-      incidenceMatrix, weights,
-        file = file.path(outputFolder, paste(currTime, 
+    save(numBayesSamples, priorApproach, 
+         beta1, beta2, beta3, beta4, 
+         f1, f3, f4, incidenceMatrix, weights,
+         file = file.path(outputFolder, paste(currTime, 
           "_Cascade_Bayes_Sims.rda", sep = "")))
   }
 }
@@ -198,14 +234,14 @@ if (useSaved) {
 # Using the results from runsims resample with replacement to create 
 # psoteriors
 
-resamples <- 40000
-useSaved <- TRUE
+resamples <- 10000
+useSaved <- FALSE
 saveOutputs <- FALSE
 
 if (useSaved) {
   # Specify details of saved file
-  # simTime <- "2016-03-30(14-37)" # in %Y-%m-%d(%H-%M) format 
-  simTime <- "2016-04-12(19-31)" # or some other name
+  simTime <- "2016-04-12(20-43)" # in %Y-%m-%d(%H-%M) format 
+                                  # or some other name
   folder <- paste("Cascade_Bayes_", simTime, sep = "")
   inputFolder <- file.path(resultsFolder, folder)
   savedFile <- paste(simTime, "_Cascade_Bayes_Results.rda", sep = "")
@@ -254,8 +290,11 @@ betaBestRel <- betaBest / betaBest[2]
 
 # General exploration -----------------------------------------------------
 
-hist(beta3[resampleIndices], breaks = 100) # posterior
-hist(beta1, breaks = 100) # prior
+hist(beta4[resampleIndices], breaks = 100) # posterior
+hist(beta4, breaks = 100) # prior
+
+hist(f4[resampleIndices], breaks = 100) # posterior
+hist(f4, breaks = 100) # prior
 
 # Proportion infections for each stage for betaBest
 
