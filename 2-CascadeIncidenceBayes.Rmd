@@ -73,14 +73,28 @@ errorRange <- hivCascade %>%
 
 # Chunk Options ----------------------------------------------------------
 
-numBayesSamples <- 1e5 # number of prior samples
+numBayesSamples <- 1e4 # number of prior samples
 priorApproach <- "relative" # Independent or relative
-# f4Prior <- 
 
 useSaved <- FALSE  # use previous set of sampled priors
-saveSims <- TRUE   # save sample priors and weights
+saveSims <- FALSE   # save sample priors and weights
 
-# Details of inputs if required
+# Specify f4 prior -------------------------------------------------------
+
+# Trying lots of alternatives
+f4opt1 <- list(dist = "beta", params = c(0.85, 10.76))   # orig approach
+f4opt2 <- list(dist = "beta", params = c(1.2, 15))         # new beta
+f4opt3 <- list(dist = "triangle", params = c(0, 0.5, 0.2)) # triangle
+
+# Use a fitted lognormal distribution for the relative effect
+# Currently a bit of a hack
+# f4 <- rlnorm(2 * numBayesSamples, log(0.04), 1.16)
+# f4 <- f4[f4 <= 1] # remove values greater than 1
+# f4 <- f4[1:numBayesSamples] # take correct number of samples
+
+f4Prior <- f4opt3
+
+# Details of inputs if required ------------------------------------------
 if (useSaved) {
   # Specify details of saved file
   simTime <- "2016-04-12(20-43)" # in %Y-%m-%d(%H-%M) format 
@@ -163,15 +177,9 @@ if (useSaved) {
     stop("Unspecified approach to generating priors")
   }
   
-  # Use a fitted lognormal distribution for the relative effect
-  # Currently a bit of a hack
-  # f4 <- rlnorm(2 * numBayesSamples, log(0.04), 1.16)
-  # f4 <- f4[f4 <= 1] # remove values greater than 1
-  # f4 <- f4[1:numBayesSamples] # take correct number of samples
-  # Alternatives
-  f4 <- rtriangle(numBayesSamples, 0, 0.5, 0.2) * 
+  # Create f4 prior
+  f4 <- PriorSample(numBayesSamples, f4Prior$dist, f4Prior$params) * 
     runif(numBayesSamples, errN4[1], errN4[2])
-  # rbeta(numBayesSamples, 1.4, 15) or thereabouts
   
   # Calculate corresponding beta 4 values
   beta4 <- beta2 * f4
@@ -220,7 +228,7 @@ if (useSaved) {
   # Save results and Bayes parameters
   if (saveSims){
     # Save the output
-    save(numBayesSamples, priorApproach, 
+    save(numBayesSamples, priorApproach, f4Prior,
          beta1, beta2, beta3, beta4, 
          f1, f3, f4, incidenceMatrix, weights,
          file = file.path(outputFolder, paste(currTime, 
@@ -262,7 +270,8 @@ if (useSaved) {
   if (saveOutputs){
     # Save the output
     cascadeBestBayes <- cascadeBest
-    save(cascadeBestBayes, numBayesSamples, beta1, beta2, beta3, beta4,
+    save(cascadeBestBayes, numBayesSamples, priorApproach, f4Prior,
+         beta1, beta2, beta3, beta4, f1, f3, f4,
          incidenceMatrix, weights, resamples, resampleIndices, 
          file = file.path(outputFolder, paste(currTime, 
          "_Cascade_Bayes_Results.rda", sep = "")))
