@@ -33,6 +33,30 @@ IncFunc <- function(cascadeData, beta1, beta2, beta3, beta4) {
            beta4 * cascadeData$suppressed)
 }
 
+IncFuncRel <- function(cascadeData, beta, f1, f3, f4) {
+  # Function for can easily calculating the incidence values
+  # for each sample of the beta values using a multiplicative 
+  # factor for the relative change in beta across cascade satges
+  # 
+  #
+  # Args:
+  #   cascadeData: Data frame containing the cascade data for each stage 
+  #     for each year
+  #   beta: Value for beta associated with diagnosed not on ART
+  #     fixed over time
+  #   f1, f3, f4: Multiplicative factor for betas for other stages 
+  #     compared to beta
+  # Returns:
+  #   Returns: estimated incidence for each year in data
+  # 
+  # ----------------------------------------------------------------------
+  
+  return(f1 * beta * cascadeData$undiag  + 
+           beta * cascadeData$diag  + 
+           f3 * beta * cascadeData$unsuppressed  + 
+           f4 * beta * cascadeData$suppressed)
+}
+
 WeightError <- function(dataValues, estimatedValues, dataError) {
   # Function to calculate the weight for a sample of the prior 
   # distribtions. This function is used in a Bayesian melding procedure to 
