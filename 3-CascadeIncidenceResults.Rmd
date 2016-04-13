@@ -1,18 +1,9 @@
----
-title: "GBM HIV Cascade Incidence Results"
-author: "Richard T. Gray"
-date: Latest version - `r format(Sys.Date(), format="%B %d %Y")` 
-output:
-  word_document:
-    pandoc_args: --output="docs/GBM_Incidence.docx"
-    reference_docx: docs/mystyles.docx
----
+# HIV Cascade Incidence - Bayesian Results
+# ========================================
 
-This document summarizes results from the HIV cascade incidence analysis 
-applied to the HIV cascade over 2004 to 2014 for gay and bisexual men 
-(GBM). The R code for these calculations is available in an associated 
-Rmarkdown file. The aim of this analysis is to estimate the proportion of 
-new infections attributable to GBM living with HIV who are undiagnosed, 
+This Rmarkdown scipt generates the figures and results from the HIV cascade
+incidence analysis. The aim of this analysis is to estimate the proportion
+of new infections attributable to GBM living with HIV who are undiagnosed, 
 diagnosed but not on ART, on ART but with unsuppressed virus, and those on 
 ART with suppressed virus. 
 
@@ -33,7 +24,6 @@ basePath <- getwd()
 # Various directories
 Rcode <- file.path(basePath, "code") 
 resultsFolder <- file.path(basePath,"output")
-# figFolder <- file.path(resultsFolder, "figures")
 
 # Load standard libraries, key functions and options
 source(file.path(Rcode, "LoadLibrary.R"), echo = TRUE)
