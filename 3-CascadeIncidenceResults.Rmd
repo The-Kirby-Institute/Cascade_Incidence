@@ -22,18 +22,18 @@ RStudio Version 0.99.878 (using R version
 in the associated R markdown file (code blocks are suppressed in the output
 document).
 
-```{r Initialization, echo = FALSE, messages = FALSE, include=FALSE}
+```{r Initialization}
 # Clear workspace
 rm(list = ls()) 
-options(scipen = 999)  # To get rid of scientific notation
 
-# Setup directories
+# Setup directories after setting working directory to source file 
+# directory
 basePath <- getwd()
 
 # Various directories
 Rcode <- file.path(basePath, "code") 
 resultsFolder <- file.path(basePath,"output")
-figFolder <- file.path(resultsFolder, "figures")
+# figFolder <- file.path(resultsFolder, "figures")
 
 # Load standard libraries, key functions and options
 source(file.path(Rcode, "LoadLibrary.R"), echo = TRUE)
@@ -46,33 +46,7 @@ source(file.path(Rcode, "TidyLongitudinal.R"))
 
 ```
 
-```{r Script options, echo = FALSE, messages = FALSE, include=FALSE}
-# Setup script options
-savePlots <- FALSE    # save plots as separate files
-
-if (savePlots) {
-  # Create folder for the plots using the currTime
-  currTime <- format(Sys.time(), "%Y-%m-%d(%H-%M)") # to append to files
-  folder <- paste("Incidence_Results_", currTime, sep="")
-  
-  # Create directory if it doesn't already exist
-  dir.create(file.path(figFolder,folder), showWarnings = FALSE)
-  outputFolder <- file.path(figFolder, folder)
-  
-  # Wrapper function so we don't have to keep entering everything in
-  # ggsave. Plot defaults are put iteh figure defaults
-  SaveFigure <- function(folder, filename, figure, 
-                         format = ".png", width = 12, 
-                         height = 10, units = "cm", ...) {
-    ggsave(file.path(folder, paste(filename, format, sep = "")), 
-           plot = figure, 
-           width = width, height = height, units = units, ...)
-  }
-}
-
-```
-
-```{r Load results, echo = FALSE, messages = FALSE, include=FALSE}
+```{r Load results}
 # Load the previoulsy generated results from the regression analysis
 # and the Bayesian melding analysis. Extract useful numbers and organize
 # results appropriately
@@ -80,9 +54,7 @@ if (savePlots) {
 # Specify the results production times/string for selecting the correct 
 # folder
 regAnalysisTime <- "2016-03-29(16-09)" 
-# bayesAnalysisTime <- "2016-03-30(14-37)"
-bayesAnalysisTime <- "2016-04-12(20-43)"
-
+bayesAnalysisTime <- "2016-04-13(12-03)" 
 
 # Load regression results 
 load(file.path(resultsFolder, 
@@ -90,9 +62,10 @@ load(file.path(resultsFolder,
   paste(regAnalysisTime, "_Cascade_Regression_Results.rda", sep = "")))
 
 # Load Bayesian results
-load(file.path(resultsFolder, 
-  paste("Cascade_Bayes_", bayesAnalysisTime, sep = ""),
-  paste(bayesAnalysisTime, "_Cascade_Bayes_results.rda", sep = "")))
+bayesResultsFolder <- file.path(resultsFolder, 
+  paste("Cascade_Bayes_", bayesAnalysisTime, sep = ""))
+load(file.path(bayesResultsFolder, paste(bayesAnalysisTime,
+  "_Cascade_Bayes_results.rda", sep = "")))
 
 # Useful info and results
 # cascadeBest <- cascadeBestBayes
@@ -107,9 +80,35 @@ betaBestRel <- betaBest / betaBest[2]
 
 ```
 
-# Results
+```{r Script options}
+# Setup script options
+savePlots <- TRUE    # save plots as separate files
+saveTables <- TRUE
 
-**Figure 1** -- The HIV cascade for Australian GBM over 2004-2014. A) The change in the number of people in each state of the cascade; B) The proportion of the overall PLHIV population in each state; C) The estimated number of people on treatment over time; D) The percentage of PLHIV already diagnosed on ART;  E) The number of people with suppressed virus and F) The percentage of all PLHIV with suppressed virus. The red line shows the estimate and the shading shows the range in this estimate.
+if (savePlots) {
+  # Create folder for the plots using the current time
+  # currTime <- format(Sys.time(), "%Y-%m-%d(%H-%M)") # to append to files
+  # folder <- paste("Incidence_Results_", currTime, sep="")
+  
+  # Create directory if it doesn't already exist
+  dir.create(file.path(bayesResultsFolder, "figures"), 
+             showWarnings = FALSE)
+  outputFolder <- file.path(bayesResultsFolder, "figures")
+  
+  # Wrapper function so we don't have to keep entering everything in
+  # ggsave. Plot defaults are put iteh figure defaults
+  SaveFigure <- function(folder, filename, figure, 
+                         format = ".png", width = 12, 
+                         height = 10, units = "cm", ...) {
+    ggsave(file.path(folder, paste(filename, format, sep = "")), 
+           plot = figure, 
+           width = width, height = height, units = units, ...)
+  }
+}
+
+```
+
+# Results
 
 ```{r Incidence results}
 
@@ -198,12 +197,7 @@ if (savePlots) {
 
 ```
 
-**Figure 2** -- The 
-```{r Insert incidence fits, echo = FALSE, messages = FALSE, warning = FALSE, results = "hide", fig.width= 5.5, fig.height=3}
-print(simsPlot)
-```
-
-```{r Infections bar, echo = FALSE, messages = FALSE, include=FALSE}
+```{r Infections bar}
 # Create a pretty plot to show proportion of infections due to each stage 
 # of the cascade for best fitting parameters
 
@@ -245,22 +239,31 @@ if (savePlots) {
 
 ```
 
-```{r Prior posterior plots, echo = FALSE, messages = FALSE, include=FALSE}
+```{r Prior posterior plots}
 # Parameter prior and posterior distributions -------------------------
 priorFrame <- data.frame(beta1 = beta1,
                          beta2 = beta2,
                          beta3 = beta3,
-                         beta4 = beta4)
+                         beta4 = beta4,
+                         f1 = f1,
+                         f3 = f3,
+                         f4 = f4)
 
 posteriorFrame <- data.frame(beta1 = beta1[resampleIndices],
                              beta2 = beta2[resampleIndices],
                              beta3 = beta3[resampleIndices],
-                             beta4 = beta4[resampleIndices])
+                             beta4 = beta4[resampleIndices],
+                             f1 = f1[resampleIndices],
+                             f3 = f3[resampleIndices],
+                             f4 = f4[resampleIndices])
 
 beta1Plot <- ParameterPlot("beta1", priorFrame, posteriorFrame)
 beta2Plot <- ParameterPlot("beta2", priorFrame, posteriorFrame)
 beta3Plot <- ParameterPlot("beta3", priorFrame, posteriorFrame)
 beta4Plot <- ParameterPlot("beta4", priorFrame, posteriorFrame)
+f1Plot <- ParameterPlot("f1", priorFrame, posteriorFrame)
+f3Plot <- ParameterPlot("f3", priorFrame, posteriorFrame)
+f4Plot <- ParameterPlot("f4", priorFrame, posteriorFrame)
 
 if (savePlots) {
   # Print figures to separate files
@@ -268,11 +271,14 @@ if (savePlots) {
   SaveFigure(outputFolder, "Beta2_distributions", beta2Plot)
   SaveFigure(outputFolder, "Beta3_distributions", beta3Plot)
   SaveFigure(outputFolder, "Beta4_distributions", beta4Plot)
+  SaveFigure(outputFolder, "f1_distributions", f1Plot)
+  SaveFigure(outputFolder, "f3_distributions", f3Plot)
+  SaveFigure(outputFolder, "f4_distributions", f4Plot)
 }
 
 ```
 
-```{r Proportion incidence, echo = FALSE, messages = FALSE, include=FALSE}
+```{r Proportion incidence}
 # Distribution new infections percentage for each stage
 
 # Pre-allocate results frame
@@ -283,6 +289,10 @@ percentFrame <- data.frame(sample = NULL,
                         unsuppressed = NULL,
                         suppressed = NULL)
 
+# Filter posterior frame to extract beta values
+betaFrame <- posteriorFrame %>%
+  select(beta1, beta2, beta3, beta4)
+
 for (yearprop in years) {
   # Get the year data
   yearCascade <- cascadeBest %>%
@@ -291,7 +301,7 @@ for (yearprop in years) {
     as.numeric()
   
   # Create data frame of percentages 
-  loopFrame <- as.data.frame(t(apply(posteriorFrame, 1, 
+  loopFrame <- as.data.frame(t(apply(betaFrame, 1, 
     function(x) 100 * (x * yearCascade / sum(x * yearCascade)))))
   
   colnames(loopFrame) <- c("undiagnosed", "diagnosed", "unsuppressed", 
@@ -313,6 +323,20 @@ if (savePlots) {
   saveFolder <- outputFolder
 } else {
   saveFolder = NULL
+}
+
+# Calculate proportion attributable to each stage -- mean and 95% credible 
+# interval for each year 
+incPercentFrame <- percentFrame %>%
+  group_by(year, stage) %>%
+  summarise(mean = mean(percentage),
+            lower05 = quantile(percentage, 0.05),
+            upper95 = quantile(percentage, 0.95))
+
+if (saveTables) {
+  # Incidence Percent Frame to a csv file
+  write.csv(incPercentFrame, file.path(bayesResultsFolder,
+                                       "Source_Infections.csv"))
 }
 
 # Plot change in proportion acquired by stage over time
@@ -341,8 +365,36 @@ suppressPercent <- PercentInc("suppressed", percentFrame, years = 2014,
 
 ## Supplementary plots
 
-```{r corner plots, echo = FALSE, messages = FALSE, include=FALSE}
+```{r corner plots}
+# Use GGally library
+LoadLibrary(GGally)
 
+# Produce bivariate correlation plots between posterior parameter 
+# estimates aka a corner plot. We have four priors so this means 6 plots
+if (priorApproach == "independent") {
+  bivariateData <- posteriorFrame %>%
+    select(beta1, beta2, beta3, f4) 
+} else {
+  # relative approach
+  bivariateData <- posteriorFrame %>%
+    select(f1, beta2, f3, f4) 
+}
+
+# Create corner plot
+cornerPlot <- ggpairs(bivariateData, 
+  title = "Bivariate correlations between posterior parameter estimates",
+  axisLabels = "none") +
+  plotOpts
+
+if (savePlots) {
+  # Print figures to separate files -- can't use SaveFigure for ggpairs 
+  # objects 
+  png(file.path(outputFolder, "Bivariate_correlations.png"),
+                width = 20, height = 15, units = "cm", res = 300)
+  print(cornerPlot)
+  dev.off()
+
+}
 
 ```
 

@@ -5,8 +5,7 @@
 # This script contains functions useful for the cascade incidence analysis
 # and results and figures generation. 
 
-# Analysis Functions
-# ==================
+# Analysis Functions ------------------------------------------------------
 
 # R needs a function for mode!
 GetMode <- function(vector) {
@@ -25,7 +24,6 @@ IncFunc <- function(cascadeData, beta1, beta2, beta3, beta4) {
   # Returns:
   #   Returns: estimated incidence for each year in data
   # 
-  # ----------------------------------------------------------------------
   
   return(beta1 * cascadeData$undiag  + 
            beta2 * cascadeData$diag  + 
@@ -46,7 +44,6 @@ WeightError <- function(dataValues, estimatedValues, dataError) {
   # Returns:
   #   Corresponding weight for set of parameters
   #
-  # ----------------------------------------------------------------------
   
   numData <- length(dataValues)
   
@@ -71,7 +68,6 @@ PriorSample <- function(samples, dist, parameters) {
   #
   # Returns: 
   #
-  # ----------------------------------------------------------------------
   
   if (dist == "unif") {
     return(runif(samples, parameters[1], parameters[2]))
@@ -91,6 +87,7 @@ PriorSample <- function(samples, dist, parameters) {
 }
 
 SuppressedOption <- function(option) {
+  
   # Beta distribution
   if (option == "option1") {
     return(list(dist = "beta", params = c(0.85, 10.76))) # Original
@@ -115,8 +112,7 @@ SuppressedOption <- function(option) {
   }
 }
 
-# Generating results
-# ==================
+# Generating results -----------------------------------------------------
 
 PropInfections <- function(cascadeData, betaValues) {
   # This function calculates the proportion of new infections due to each 
@@ -129,7 +125,6 @@ PropInfections <- function(cascadeData, betaValues) {
   #   A data frame with the proportion of new infections attributed to 
   #   each stage of the HIV cascade. 
   #
-  # ----------------------------------------------------------------------
   
   # Apply proportion calculation to each year
   propResults <- t(apply(cascadeData, 1, 
@@ -153,7 +148,6 @@ NumInfections <- function(cascadeData, betaValues) {
   #   A data frame with the proportion of new infections attributed to 
   #   each stage of the HIV cascade. 
   #
-  # ----------------------------------------------------------------------
   
   # Apply proportion calculation to each year
   numResults <- t(apply(cascadeData, 1, 
@@ -166,8 +160,7 @@ NumInfections <- function(cascadeData, betaValues) {
   return(numResults)
 }
 
-# Plotting Functions
-# ==================
+# Plotting Functions -----------------------------------------------------
 
 # PlotOptions.R needs to be sourced for these functions to work
 
@@ -188,7 +181,6 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
   # Returns:
   #   Plot handle corresponding to the created plot
   #
-  # ----------------------------------------------------------------------
   
   # Check input paramter is appropriate
   if (!(parameter %in% c("beta1", "beta2", "beta3", "beta4", "f1", "f3", 
@@ -214,7 +206,7 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
                      toString(signif(median(priorDist), digits = 2)), ", ",
                      toString(signif(GetMode(priorDist), digits = 2)), 
                      "   \n", 
-                     "postior = ", 
+                     "posterior = ", 
                      toString(signif(mean(postDist), digits = 2)), ", ",
                      toString(signif(median(postDist), digits = 2)), ", ",
                      toString(signif(GetMode(postDist), digits = 2)), 
@@ -265,7 +257,6 @@ PercentInc <- function(cascadeStage, percentFrame, years = NULL,
   # Returns:
   #   Plot handle corresponding to the created plot.
   #
-  # ----------------------------------------------------------------------
   
   # Check input paramter is appropriate
   if (!(cascadeStage %in% c("undiagnosed", "diagnosed", "unsuppressed", 
