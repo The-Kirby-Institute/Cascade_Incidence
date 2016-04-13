@@ -21,6 +21,7 @@ source(file.path(Rcode, "DataLibraries.R"), echo = TRUE)
 
 # Additional packages for exploring f4 distribution
 LoadLibrary(triangle)
+LoadLibrary(EnvStats)
 
 # Source useful functions
 source(file.path(Rcode, "BayesFunctions.R"), echo = TRUE)
@@ -76,22 +77,22 @@ errorRange <- hivCascade %>%
 # Chunk Options ----------------------------------------------------------
 
 numBayesSamples <- 1e6 # number of prior samples
-priorApproach <- "independent" # independent or relative
+priorApproach <- "relative" # independent or relative
 
-useSaved <- FALSE  # use previous set of sampled priors
-saveSims <- TRUE   # save sample priors and weights
+useSaved <- TRUE  # use previous set of sampled priors
+saveSims <- FALSE   # save sample priors and weights
 
 # Specify f4 prior 
-f4Prior <- SuppressedOption("option6")
+f4Prior <- SuppressedOption("option8")
 
 # Details of inputs if required ------------------------------------------
 if (useSaved) {
   # Specify details of saved file
-  simTime <- "2016-04-12(22-51)" # in %Y-%m-%d(%H-%M) format 
+  currTime <- "2016-04-13(14-43)" # in %Y-%m-%d(%H-%M) format 
                                    # or some other name
-  folder <- paste("Cascade_Bayes_", simTime, sep = "")
-  inputFolder <- file.path(resultsFolder, folder)
-  savedFile <- paste(simTime, "_Cascade_Bayes_Sims.rda", sep = "")
+  folder <- paste("Cascade_Bayes_", currTime, sep = "")
+  outputFolder <- file.path(resultsFolder, folder)
+  savedFile <- paste(currTime, "_Cascade_Bayes_Sims.rda", sep = "")
 }
 
 # Details of where to store outputs if desired
@@ -107,7 +108,7 @@ if (saveSims) {
 # Run analysis -----------------------------------------------------------
 
 if (useSaved) {
-  load(file.path(inputFolder, savedFile))
+  load(file.path(outputFolder, savedFile))
 } else {
   # Set up priors --------------------------------------------------------
   
@@ -231,7 +232,7 @@ if (useSaved) {
 # psoteriors
 
 resamples <- 40000
-useSaved <- TRUE
+useSaved <- FALSE
 saveOutputs <- TRUE
 
 if (useSaved) {
@@ -287,7 +288,7 @@ betaBestRel <- betaBest / betaBest[2]
 
 # General exploration -----------------------------------------------------
 
-hist(beta2[resampleIndices], breaks = 100) # posterior
+hist(beta3[resampleIndices], breaks = 100) # posterior
 hist(beta4, breaks = 100) # prior
 
 hist(f4[resampleIndices], breaks = 100) # posterior
