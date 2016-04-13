@@ -285,7 +285,7 @@ PercentInc <- function(cascadeStage, percentFrame, years = NULL,
     geom_line(size = 1.2, stat = "density") + 
     scale_colour_brewer(palette = "RdYlBu", name = "Year") +  
     ylab("Density") + 
-    xlab(paste("Percentage acquired from ", cascadeStage)) +
+    xlab(paste("Percentage acquired from", cascadeStage)) +
     coord_cartesian(xlim = xlimits) +
     plotOpts + theme(legend.position = "right")
   } else {
@@ -294,7 +294,7 @@ PercentInc <- function(cascadeStage, percentFrame, years = NULL,
       geom_density(size = 1.2, colour = "blue", 
                    fill = "blue", alpha = 0.2) +
       ylab("Density") + 
-      xlab(paste("Percentage acquired from ", cascadeStage
+      xlab(paste("Percentage acquired from", cascadeStage
                  , "in", toString(years))) +
       coord_cartesian(xlim = xlimits) +
       plotOpts
