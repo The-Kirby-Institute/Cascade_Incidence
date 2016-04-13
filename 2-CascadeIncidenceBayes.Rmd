@@ -18,6 +18,8 @@ Rcode <- file.path(basePath, "code")
 # Load standard libraries, key functions and options
 source(file.path(Rcode, "LoadLibrary.R"), echo = TRUE)
 source(file.path(Rcode, "DataLibraries.R"), echo = TRUE)
+
+# Additional packages for exploring f4 distribution
 LoadLibrary(triangle)
 
 # Source useful functions
@@ -79,27 +81,13 @@ priorApproach <- "independent" # independent or relative
 useSaved <- FALSE  # use previous set of sampled priors
 saveSims <- TRUE   # save sample priors and weights
 
-# Specify f4 prior -------------------------------------------------------
-# Trying lots of alternatives
-f4opt1 <- list(dist = "beta", params = c(0.85, 10.76))   # orig approach
-f4opt2 <- list(dist = "beta", params = c(1, 18))         # new beta
-
-f4opt3 <- list(dist = "triangle", params = c(0, 0.3, 0.05)) # triangle
-f4opt4 <- list(dist = "triangle", params = c(0, 0.45, 0.15)) # triangle
-f4opt5 <- list(dist = "triangle", params = c(0, 0.6, 0.3)) # triangle
-
-# Use a fitted lognormal distribution for the relative effect
-# Currently a bit of a hack
-# f4 <- rlnorm(2 * numBayesSamples, log(0.04), 1.16)
-# f4 <- f4[f4 <= 1] # remove values greater than 1
-# f4 <- f4[1:numBayesSamples] # take correct number of samples
-
-f4Prior <- f4opt3
+# Specify f4 prior 
+f4Prior <- SuppressedOption("option6")
 
 # Details of inputs if required ------------------------------------------
 if (useSaved) {
   # Specify details of saved file
-  simTime <- "2016-04-12(20-43)" # in %Y-%m-%d(%H-%M) format 
+  simTime <- "2016-04-12(22-51)" # in %Y-%m-%d(%H-%M) format 
                                    # or some other name
   folder <- paste("Cascade_Bayes_", simTime, sep = "")
   inputFolder <- file.path(resultsFolder, folder)
@@ -242,13 +230,13 @@ if (useSaved) {
 # Using the results from runsims resample with replacement to create 
 # psoteriors
 
-resamples <- 10000
-useSaved <- FALSE
-saveOutputs <- FALSE
+resamples <- 40000
+useSaved <- TRUE
+saveOutputs <- TRUE
 
 if (useSaved) {
   # Specify details of saved file
-  simTime <- "2016-04-12(20-43)" # in %Y-%m-%d(%H-%M) format 
+  simTime <- "2016-04-12(22-51)" # in %Y-%m-%d(%H-%M) format 
                                   # or some other name
   folder <- paste("Cascade_Bayes_", simTime, sep = "")
   inputFolder <- file.path(resultsFolder, folder)
@@ -299,7 +287,7 @@ betaBestRel <- betaBest / betaBest[2]
 
 # General exploration -----------------------------------------------------
 
-hist(beta4[resampleIndices], breaks = 100) # posterior
+hist(beta2[resampleIndices], breaks = 100) # posterior
 hist(beta4, breaks = 100) # prior
 
 hist(f4[resampleIndices], breaks = 100) # posterior

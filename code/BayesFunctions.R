@@ -82,10 +82,37 @@ PriorSample <- function(samples, dist, parameters) {
     return(rtriangle(samples, parameters[1], parameters[2], parameters[3]))
   } else if (dist == "lognorm") {
     return(rlnorm(samples, parameters[1], parameters[2]))
+  } else if (dist == "truncln") {
+    # Assume EnvStats package already loaded
+    return(rlnormTrun(samples, parameters[1], parameters[2], max = 1))
   } else {
     stop("Unknown distribution")
   }
-    
+}
+
+SuppressedOption <- function(option) {
+  # Beta distribution
+  if (option == "option1") {
+    return(list(dist = "beta", params = c(0.85, 10.76))) # Original
+  } else if (option == "option2"){
+    return(list(dist = "beta", params = c(1, 18)))
+    # Triangle distribution
+  } else if (option == "option3"){
+    return(list(dist = "triangle", params = c(0, 0.3, 0.05)))
+  } else if (option == "option4"){
+    return(list(dist = "triangle", params = c(0, 0.45, 0.15)))
+  } else if (option == "option5"){
+    return(list(dist = "triangle", params = c(0, 0.6, 0.3)) )
+  # Truncated lognormal distribution 
+  } else if (option == "option6"){
+    return(list(dist = "truncln", params = c(log(0.04), 1.2)))
+  } else if (option == "option7"){
+    return(list(dist = "truncln", params = c(log(0.1), 1.2)))
+  } else if (option == "option8"){
+    return(list(dist = "truncln", params = c(log(0.25), 1.2)))
+  } else {
+    stop("Unknown option for suppressed beta prior")
+  }
 }
 
 # Generating results
