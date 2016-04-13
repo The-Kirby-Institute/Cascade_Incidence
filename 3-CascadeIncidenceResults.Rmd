@@ -9,7 +9,7 @@ ART with suppressed virus.
 
 This document is written in dynamic format using R markdown v2 within 
 RStudio Version 0.99.878 (using R version 
-`r substr(R.Version()$version.string,1,15))`. Further details are available
+`r substr(R.Version()$version))`. Further details are available
 in the associated R markdown file (code blocks are suppressed in the output
 document).
 
@@ -44,7 +44,7 @@ source(file.path(Rcode, "TidyLongitudinal.R"))
 # Specify the results production times/string for selecting the correct 
 # folder
 regAnalysisTime <- "2016-03-29(16-09)" 
-bayesAnalysisTime <- "2016-04-13(12-03)" 
+bayesAnalysisTime <- "2016-04-13(11-30)" 
 
 # Load regression results 
 load(file.path(resultsFolder, 

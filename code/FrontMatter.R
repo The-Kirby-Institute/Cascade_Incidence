@@ -5,13 +5,13 @@
 
 # Richard T. Gray
 
-FrontMatter <- function(packages, rstudio = NULL) {
+FrontMatter <- function(packages = NULL, rstudio = NULL) {
   
   # String materials
   versionStr <- R.Version()$version
   time <- format(Sys.Date(), format="%Y-%m-%d")
   
-  # Merge if text
+  # Setup R/Rstudio string
   rstr <- paste("Version info: Code for this page was tested in", 
                 versionStr)
   if (!is.null(rstudio)) {
@@ -20,6 +20,11 @@ FrontMatter <- function(packages, rstudio = NULL) {
   
   # Setup time string
   tstr <- paste("On:", time)
+  
+  # Setup package string
+  if (!is.null(packages)) {
+    # loop through 
+  }
   
   # Put everything together
   finalStr <- paste(rstr, "\n", tstr, sep = "")
