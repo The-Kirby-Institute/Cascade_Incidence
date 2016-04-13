@@ -22,7 +22,7 @@ IncFunc <- function(cascadeData, beta1, beta2, beta3, beta4) {
   #     for each year
   #   beta1, beta2, beta3, beta4: Value for each beta fixed over time
   # Returns:
-  #   Returns: estimated incidence for each year in data
+  #   Estimated incidence for each year in data
   # 
   
   return(beta1 * cascadeData$undiag  + 
@@ -65,8 +65,12 @@ PriorSample <- function(samples, dist, parameters) {
   # a distribution and appropriate set of parameters. 
   #
   # Args:
+  #   samples: Number of samples to take from priors
+  #   dist: String specifying the prior distribution type
+  #   parameters: Vector of values specifying the shape of dist.
   #
   # Returns: 
+  #   Vector of samples from the specified distribution.
   #
   
   if (dist == "unif") {
@@ -87,6 +91,14 @@ PriorSample <- function(samples, dist, parameters) {
 }
 
 SuppressedOption <- function(option) {
+  # Function used to return specifications of prior for f4.
+  #
+  # Args:
+  #   option: Specified option. 
+  #
+  # Returns:
+  #   List with the distribution type and associated parameters.
+  #
   
   # Beta distribution
   if (option == "option1") {
