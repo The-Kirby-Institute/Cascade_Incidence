@@ -7,12 +7,6 @@ of new infections attributable to GBM living with HIV who are undiagnosed,
 diagnosed but not on ART, on ART but with unsuppressed virus, and those on 
 ART with suppressed virus. 
 
-This document is written in dynamic format using R markdown v2 within 
-RStudio Version 0.99.878 (using R version 
-`r substr(R.Version()$version))`. Further details are available
-in the associated R markdown file (code blocks are suppressed in the output
-document).
-
 ```{r Initialization}
 # Clear workspace
 rm(list = ls()) 
@@ -35,6 +29,16 @@ source(file.path(Rcode, "PlotOptions.R"))
 source(file.path(Rcode, "TidyLongitudinal.R"))
 
 ```
+
+```{r Front matter}
+mainPackages <- c("dplyr", "tidyr", "ggplot2", "markdown")
+source(file.path(Rcode, "FrontMatter.R"), echo = TRUE)
+fmStr <- FrontMatter(mainPackages, rstudio = "0.99.891")
+cat(fmStr)
+```
+
+This analysis was conducted using R within Rstudio:      
+`r cat(fmStr)`. 
 
 ```{r Load results}
 # Load the previoulsy generated results from the regression analysis
