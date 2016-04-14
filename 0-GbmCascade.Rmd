@@ -14,11 +14,12 @@ basePath <- getwd()
 # Various directories
 dataFolder <- file.path(basePath, "data")
 resultsFolder <- file.path(basePath, "output")
+figFolder <- file.path(resultsFolder,"Cascade_figures")
 Rcode <- file.path(basePath, "code") 
 
 # Load standard libraries, key functions and options
-source(file.path(Rcode, "LoadLibrary.R"), echo=TRUE)
-source(file.path(Rcode, "DataLibraries.R"), echo=TRUE)
+source(file.path(Rcode, "LoadLibrary.R"), echo = TRUE)
+source(file.path(Rcode, "DataLibraries.R"), echo = TRUE)
 ```
 
 ```{r scriptdetails}
@@ -209,7 +210,7 @@ if (saveCascade) {
 # Plot some figures of our cascade
 if (plotCascade) {
   # Load default plot options
-  source(file.path(Rcode, "PlotOptions.R"), echo=TRUE)
+  source(file.path(Rcode, "PlotOptions.R"), echo = TRUE)
   
   # Tidy up data for plotting
   plotData <- hivCascade %>%
@@ -250,16 +251,57 @@ if (plotCascade) {
     plotUnits <- "cm"
     
     # Do the plots
-    ggsave(file.path(resultsFolder, paste("cascadeIncidence-", "numPLHIV", 
+    ggsave(file.path(figFolder, paste("cascadeIncidence-", "numPLHIV", 
       "-", toString(analysisYear), ".png",sep ="")),
       plot = plhivPlotNum, width = plotWidth, height = plotHeight, 
       units = plotUnits)
     
-    ggsave(file.path(resultsFolder, paste("cascadeIncidence-", "numDiags",
+    ggsave(file.path(figFolder, paste("cascadeIncidence-", "numDiags",
       "-", toString(analysisYear), ".png",sep ="")), 
       plot = plhivPlotProp, width = plotWidth, height = plotHeight, 
       units = plotUnits)
   }
+  
+  # Do time varying plots --------------------------------------------------
+  
+  plotStages <- c("undiagnosed", "diagnosed", "unsuppressed", "suppressed")
+
+  
+  yLabels <- c("undiagnosed" = "Number undiagnosed",
+               "diagnosed" = "Number diagnosed untreated",
+               "unsuppressed" = "Number on ART VL > 400",
+               "suppressed" = "Number with VL < 400")
+  
+  # Loop across stages and save plots 
+  for (ii in plotStages) {
+    #Select data we want
+    tempData <- filter(plotData, stage == ii)
+    
+    # Plot the stage over time
+    plotCurrent <- ggplot(data = tempData, aes(x = year, y = value)) + 
+      geom_ribbon(aes(ymin = lower, ymax = upper), 
+                  fill = asrcols[2], alpha = 0.4) +
+      geom_line(color = asrcols[2]) + 
+      scale_x_continuous(breaks = seq(startYear,                        
+                                      analysisYear, by = 3)) +
+      expand_limits(y = 0) +
+      ylab(yLabels[ii]) + xlab("Year") +  
+      plotOpts
+    
+    # Save the current plot
+    if (savePlots) {
+      # Plot specs
+      plotWidth <- 12
+      plotHeight <- 10
+      plotUnits <- "cm"
+      
+      ggsave(file.path(figFolder, paste("GBMstage-", ii, "_", 
+        toString(startYear), "-", toString(analysisYear), 
+        ".png", sep = "")), plot = plotCurrent, width = plotWidth, 
+        height = plotHeight, units = plotUnits) 
+    }
+  }
+  
 }
 ```
 
