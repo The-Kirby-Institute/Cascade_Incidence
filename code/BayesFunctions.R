@@ -195,17 +195,19 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
   #
   
   # Check input paramter is appropriate
-  if (!(parameter %in% c("beta1", "beta2", "beta3", "beta4", "f1", "f3", 
-                         "f4"))) {
+  if (!(parameter %in% c("beta", "beta1", "beta2", "beta3", "beta4", 
+                         "f1", "f2", "f3", "f4"))) {
     stop("Unknown parameter entered")
   }
   
   # Specify parameter labels
-  labels <- c("beta1" = "Undiagnosed Beta",
+  labels <- c("beta" = "Overall beta",
+              "beta1" = "Undiagnosed Beta",
               "beta2" = "Diagnosed Beta",
               "beta3" = "Unsuppressed Beta",
               "beta4" = "Suppressed Beta",
               "f1" = "Undiagnosed factor",
+              "f2" = "Diagnosed factor",
               "f3" = "Unsuppressed factor",
               "f4" = "Suppressed factor")
   

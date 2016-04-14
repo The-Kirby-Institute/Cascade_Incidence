@@ -1,0 +1,83 @@
+# HIV Cascade Incidence - Bayesian Results Caomparison
+# ====================================================
+
+This Rmarkdown scipt generates the figures and results from the HIV cascade
+incidence analysis. The aim of this analysis is to estimate the proportion
+of new infections attributable to GBM living with HIV who are undiagnosed, 
+diagnosed but not on ART, on ART but with unsuppressed virus, and those on 
+ART with suppressed virus. 
+
+```{r Initialization}
+# Clear workspace
+rm(list = ls()) 
+
+# Setup directories after setting working directory to source file 
+# directory
+basePath <- getwd()
+
+# Various directories
+Rcode <- file.path(basePath, "code") 
+resultsFolder <- file.path(basePath,"output")
+
+# Load standard libraries, key functions and options
+source(file.path(Rcode, "LoadLibrary.R"), echo = TRUE)
+source(file.path(Rcode, "DataLibraries.R"), echo = TRUE)
+
+# Source useful functions
+source(file.path(Rcode, "BayesFunctions.R"), echo = TRUE)
+source(file.path(Rcode, "PlotOptions.R"))
+source(file.path(Rcode, "TidyLongitudinal.R"))
+
+```
+
+```{r Load results}
+# Load the previoulsy generated results we want to compare
+
+# Specify the results production times/string for selecting the correct 
+# folder
+bayesAnalysisTimes <- c("2016-04-13(11-30)", "2016-04-13(11-30)", 
+                        "2016-04-13(11-30)")
+
+# Load Bayesian results
+results <- list()
+for (time in 1:length(bayesAnalysisTimes)) {
+  bayesResultsFolder <- file.path(resultsFolder, 
+    paste("Cascade_Bayes_", bayesAnalysisTime[time], sep = ""))
+  load(file.path(bayesResultsFolder, paste(bayesAnalysisTime,
+    "_Cascade_Bayes_results.rda", sep = "")))
+  
+  # Create prior and posterior frames
+  priorFrame <- data.frame(beta = beta, 
+                           beta1 = beta1,
+                           beta2 = beta2,
+                           beta3 = beta3,
+                           beta4 = beta4,
+                           f1 = f1,
+                           f2 = f2,
+                           f3 = f3,
+                           f4 = f4)
+  
+  posteriorFrame <- data.frame(beta = beta[resampleIndices],
+                               beta1 = beta1[resampleIndices],
+                               beta2 = beta2[resampleIndices],
+                               beta3 = beta3[resampleIndices],
+                               beta4 = beta4[resampleIndices],
+                               f1 = f1[resampleIndices],
+                               f2 = f2[resampleIndices],
+                               f3 = f3[resampleIndices],
+                               f4 = f4[resampleIndices])
+
+  # Save as list and add to a list
+  distributions <- list("priors" = priorFrame, 
+                        "posteriors" = posteriorFrame)
+  
+  results[ii] <- distributions
+  
+}
+
+# Useful info 
+# cascadeBest <- cascadeBestBayes
+years <- cascadeBest$year
+numyears <- length(years)
+
+```

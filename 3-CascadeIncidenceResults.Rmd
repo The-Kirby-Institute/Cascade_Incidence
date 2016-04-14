@@ -37,9 +37,6 @@ fmStr <- FrontMatter(mainPackages, rstudio = "0.99.891")
 cat(fmStr)
 ```
 
-This analysis was conducted using R within Rstudio:      
-`r cat(fmStr)`. 
-
 ```{r Load results}
 # Load the previoulsy generated results from the regression analysis
 # and the Bayesian melding analysis. Extract useful numbers and organize
@@ -48,7 +45,7 @@ This analysis was conducted using R within Rstudio:
 # Specify the results production times/string for selecting the correct 
 # folder
 regAnalysisTime <- "2016-03-29(16-09)" 
-bayesAnalysisTime <- "2016-04-13(11-30)" 
+bayesAnalysisTime <- "2016-04-14(11-10)" 
 
 # Load regression results 
 load(file.path(resultsFolder, 
