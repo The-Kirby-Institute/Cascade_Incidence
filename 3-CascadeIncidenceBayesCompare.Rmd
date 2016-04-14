@@ -1,11 +1,11 @@
 # HIV Cascade Incidence - Bayesian Results Caomparison
 # ====================================================
 
-This Rmarkdown scipt generates the figures and results from the HIV cascade
-incidence analysis. The aim of this analysis is to estimate the proportion
-of new infections attributable to GBM living with HIV who are undiagnosed, 
-diagnosed but not on ART, on ART but with unsuppressed virus, and those on 
-ART with suppressed virus. 
+This Rmarkdown scipt generates the figures and results from the HIV 
+cascade incidence analysis. The aim of this analysis is to estimate the
+proportion of new infections attributable to GBM living with HIV who are
+undiagnosed, diagnosed but not on ART, on ART but with unsuppressed virus,
+and those on ART with suppressed virus. 
 
 ```{r Initialization}
 # Clear workspace
@@ -30,54 +30,78 @@ source(file.path(Rcode, "TidyLongitudinal.R"))
 
 ```
 
-```{r Load results}
+```{r Load results and plot comparisons}
 # Load the previoulsy generated results we want to compare
 
 # Specify the results production times/string for selecting the correct 
 # folder
-bayesAnalysisTimes <- c("2016-04-13(11-30)", "2016-04-13(11-30)", 
-                        "2016-04-13(11-30)")
+bayesAnalysisTimes <- c("2016-04-14(11-10)", "2016-04-14(13-02)", 
+                        "2016-04-14(13-32)")
+compareVariable <- "beta4"
+savePlots <- TRUE
 
 # Load Bayesian results
-results <- list()
 for (time in 1:length(bayesAnalysisTimes)) {
   bayesResultsFolder <- file.path(resultsFolder, 
-    paste("Cascade_Bayes_", bayesAnalysisTime[time], sep = ""))
-  load(file.path(bayesResultsFolder, paste(bayesAnalysisTime,
+    paste("Cascade_Bayes_", bayesAnalysisTimes[time], sep = ""))
+  load(file.path(bayesResultsFolder, paste(bayesAnalysisTimes[time],
     "_Cascade_Bayes_results.rda", sep = "")))
   
-  # Create prior and posterior frames
-  priorFrame <- data.frame(beta = beta, 
-                           beta1 = beta1,
-                           beta2 = beta2,
-                           beta3 = beta3,
-                           beta4 = beta4,
-                           f1 = f1,
-                           f2 = f2,
-                           f3 = f3,
-                           f4 = f4)
+  if (time == 1) {
+    # Intilaize result arrays
+    priorMatrix <- matrix(0, numBayesSamples, length(bayesAnalysisTimes))
+    posteriorMatrix <- priorMatrix
+  }
   
-  posteriorFrame <- data.frame(beta = beta[resampleIndices],
-                               beta1 = beta1[resampleIndices],
-                               beta2 = beta2[resampleIndices],
-                               beta3 = beta3[resampleIndices],
-                               beta4 = beta4[resampleIndices],
-                               f1 = f1[resampleIndices],
-                               f2 = f2[resampleIndices],
-                               f3 = f3[resampleIndices],
-                               f4 = f4[resampleIndices])
-
-  # Save as list and add to a list
-  distributions <- list("priors" = priorFrame, 
-                        "posteriors" = posteriorFrame)
-  
-  results[ii] <- distributions
+  # Create prior and posterior samples
+  priorMatrix[, time] <- get(compareVariable)
+  posteriorMatrix[, time] <- get(compareVariable)[resampleIndices]
   
 }
 
-# Useful info 
-# cascadeBest <- cascadeBestBayes
-years <- cascadeBest$year
-numyears <- length(years)
+# Organize results
+priors <- as.data.frame(priorMatrix)
+colnames(priors) <- c("p1", "p2", "p3")
+priors <- gather(priors, "prior", "sample", 1:3)
+
+posteriors <- as.data.frame(posteriorMatrix)
+colnames(posteriors) <- c("p1", "p2", "p3")
+posteriors <- gather(posteriors, "posterior", "sample", 1:3)
+
+# Plot prior and posterior comparions ------------------------------------
+
+# Labels to specify priors
+legLabels <- c("High ART efficacy", "Medium ART efficacy", 
+               "Low ART efficacy")
+
+# Prior plot
+priorPlot <- ggplot(data = priors, aes(x = sample, group = prior, 
+                          colour = factor(prior))) + 
+  geom_line(size = 1.2, stat = "density") +  
+  scale_colour_brewer(palette = "Set1", name = "Prior",
+                      labels = legLabels) + 
+  ylab("Density") + 
+  xlab(compareVariable) +
+  plotOpts + theme(legend.position = "right")
+
+# Plot prior and posterior comparions 
+postPlot <- ggplot(data = posteriors, aes(x = sample, group = posterior, 
+                          colour = factor(posterior))) + 
+  geom_line(size = 1.2, stat = "density") +  
+  scale_colour_brewer(palette = "Set1", name = "Posterior",
+                      labels = legLabels) + 
+  ylab("Density") + 
+  xlab(compareVariable) +
+  plotOpts + theme(legend.position = "right")
+
+if (savePlots) {
+  ggsave(file.path(resultsFolder, "Compare_figures", 
+    paste("Compare_priors_", compareVariable, ".png", sep = "")), 
+    plot = priorPlot, width = 12, height = 10, units = "cm")
+  
+  ggsave(file.path(resultsFolder, "Compare_figures",
+    paste("Compare_posteriors_", compareVariable, ".png", sep = "")), 
+    plot = postPlot, width = 12, height = 10, units = "cm")
+}
 
 ```

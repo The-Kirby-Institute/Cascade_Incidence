@@ -83,12 +83,12 @@ useSaved <- TRUE  # use previous set of sampled priors
 saveSims <- FALSE   # save sample priors and weights
 
 # Specify f4 prior 
-f4Prior <- SuppressedOption("option6")
+f4Prior <- SuppressedOption("option8")
 
 # Details of inputs if required ------------------------------------------
 if (useSaved) {
   # Specify details of saved file
-  currTime <- "2016-04-14(11-10)" # in %Y-%m-%d(%H-%M) format 
+  currTime <- "2016-04-14(13-32)" # in %Y-%m-%d(%H-%M) format 
                                    # or some other name
   folder <- paste("Cascade_Bayes_", currTime, sep = "")
   outputFolder <- file.path(resultsFolder, folder)

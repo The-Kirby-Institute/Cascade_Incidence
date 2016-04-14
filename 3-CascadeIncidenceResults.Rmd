@@ -45,7 +45,7 @@ cat(fmStr)
 # Specify the results production times/string for selecting the correct 
 # folder
 regAnalysisTime <- "2016-03-29(16-09)" 
-bayesAnalysisTime <- "2016-04-14(11-10)" 
+bayesAnalysisTime <- "2016-04-14(13-32)" 
 
 # Load regression results 
 load(file.path(resultsFolder, 
@@ -379,8 +379,17 @@ if (priorApproach == "independent") {
     select(beta, f1, f2, f3, f4) 
 }
 
+# Create a wrapper function for the lower plots
+lowerFn <- function(data, mapping, method = "lm", ...) {
+  p <- ggplot(data = data, mapping = mapping) +
+    geom_point(colour = "blue") +
+    geom_smooth(method = method, color = "red", ...)
+  p
+}
+
 # Create corner plot
 cornerPlot <- ggpairs(bivariateData, 
+  lower = list(continuous = wrap(lowerFn, method = "lm")), 
   title = "Bivariate correlations between posterior parameter estimates",
   axisLabels = "none") +
   plotOpts
