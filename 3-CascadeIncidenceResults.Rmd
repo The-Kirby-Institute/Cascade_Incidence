@@ -235,37 +235,45 @@ if (savePlots) {
 
 ```{r Prior posterior plots}
 # Parameter prior and posterior distributions -------------------------
-priorFrame <- data.frame(beta1 = beta1,
+priorFrame <- data.frame(beta = beta, 
+                         beta1 = beta1,
                          beta2 = beta2,
                          beta3 = beta3,
                          beta4 = beta4,
                          f1 = f1,
+                         f2 = f2,
                          f3 = f3,
                          f4 = f4)
 
-posteriorFrame <- data.frame(beta1 = beta1[resampleIndices],
+posteriorFrame <- data.frame(beta = beta[resampleIndices],
+                             beta1 = beta1[resampleIndices],
                              beta2 = beta2[resampleIndices],
                              beta3 = beta3[resampleIndices],
                              beta4 = beta4[resampleIndices],
                              f1 = f1[resampleIndices],
+                             f2 = f2[resampleIndices],
                              f3 = f3[resampleIndices],
                              f4 = f4[resampleIndices])
 
+betaPlot <- ParameterPlot("beta", priorFrame, posteriorFrame)
 beta1Plot <- ParameterPlot("beta1", priorFrame, posteriorFrame)
 beta2Plot <- ParameterPlot("beta2", priorFrame, posteriorFrame)
 beta3Plot <- ParameterPlot("beta3", priorFrame, posteriorFrame)
 beta4Plot <- ParameterPlot("beta4", priorFrame, posteriorFrame)
 f1Plot <- ParameterPlot("f1", priorFrame, posteriorFrame)
+f2Plot <- ParameterPlot("f2", priorFrame, posteriorFrame)
 f3Plot <- ParameterPlot("f3", priorFrame, posteriorFrame)
 f4Plot <- ParameterPlot("f4", priorFrame, posteriorFrame)
 
 if (savePlots) {
   # Print figures to separate files
+  SaveFigure(outputFolder, "Beta_distributions", betaPlot)
   SaveFigure(outputFolder, "Beta1_distributions", beta1Plot)
   SaveFigure(outputFolder, "Beta2_distributions", beta2Plot)
   SaveFigure(outputFolder, "Beta3_distributions", beta3Plot)
   SaveFigure(outputFolder, "Beta4_distributions", beta4Plot)
   SaveFigure(outputFolder, "f1_distributions", f1Plot)
+  SaveFigure(outputFolder, "f2_distributions", f2Plot)
   SaveFigure(outputFolder, "f3_distributions", f3Plot)
   SaveFigure(outputFolder, "f4_distributions", f4Plot)
 }
@@ -371,7 +379,7 @@ if (priorApproach == "independent") {
 } else {
   # relative approach
   bivariateData <- posteriorFrame %>%
-    select(f1, beta2, f3, f4) 
+    select(beta, f1, f2, f3, f4) 
 }
 
 # Create corner plot

@@ -125,42 +125,48 @@ if (useSaved) {
   errN4 <- as.numeric(errorRange[4, 2:3])
   
   # Specify some common info for the beta values
-  beta <- c(0.005, 0.06)
+  betaRange <- c(0.005, 0.06)
   beta1Rel <- c(0.9, 30)
   beta3Rel <- c(0.05, 5)
   
   if (priorApproach == "independent") {
     # Specify uniform priors between min and max
     beta1 <- runif(numBayesSamples, 
-                   beta1Rel[1] * beta[1] * errN1[1], 
-                   beta1Rel[2] * beta[2] * errN1[2]) 
+                   beta1Rel[1] * betaRange[1] * errN1[1], 
+                   beta1Rel[2] * betaRange[2] * errN1[2]) 
     beta2 <- runif(numBayesSamples, 
-                   beta[1] * errN2[1], 
-                   beta[2] * errN2[2]) 
+                   betaRange[1] * errN2[1], 
+                   betaRange[2] * errN2[2]) 
     beta3 <- runif(numBayesSamples, 
-                   beta3Rel[1] * beta[1] * errN3[1], 
-                   beta3Rel[2] * beta[2] * errN3[2])   
+                   beta3Rel[1] * betaRange[1] * errN3[1], 
+                   beta3Rel[2] * betaRange[2] * errN3[2])   
     
     # Calculate multiplicative factor (f) values
+    beta <- beta2
     f1 <- beta1 / beta2
+    f2 <- beta2 / beta2
     f3 <- beta3 / beta2
     
   } else if(priorApproach == "relative") {
-    # Set up beta2 prior
-    beta2 <- PriorSample(numBayesSamples, "unif", c(beta[1], beta[2])) * 
-      runif(numBayesSamples, errN2[1], errN2[2])
-  
+    # Set up beta prior
+    beta <- PriorSample(numBayesSamples, "unif", 
+                        c(betaRange[1], betaRange[2])) 
+      
     # Set up priors for multiplicative factors
     f1 <-PriorSample(numBayesSamples, "unif", 
                      c(beta1Rel[1], beta1Rel[2]))* 
       runif(numBayesSamples, errN1[1], errN1[2])
+    
+    f2 <- runif(numBayesSamples, errN2[1], errN2[2]) # just the error
+    
     f3 <-PriorSample(numBayesSamples, "unif",
                      c(beta3Rel[1], beta3Rel[2])) * 
       runif(numBayesSamples, errN3[1], errN3[2])
     
     # Calculate corresponding beta values
-    beta1 <- f1 * beta2
-    beta3 <- f3 * beta3
+    beta1 <- f1 * beta
+    beta2 <- f2 * beta
+    beta3 <- f3 * beta
   
   } else {
     stop("Unspecified approach to generating priors")
@@ -171,7 +177,7 @@ if (useSaved) {
     runif(numBayesSamples, errN4[1], errN4[2])
   
   # Calculate corresponding beta 4 values
-  beta4 <- beta2 * f4
+  beta4 <- beta * f4
   
   # Run simulations ------------------------------------------------------
   
@@ -260,7 +266,7 @@ if (useSaved) {
     # Save the output
     cascadeBestBayes <- cascadeBest
     save(cascadeBestBayes, numBayesSamples, priorApproach, f4Prior,
-         beta1, beta2, beta3, beta4, f1, f3, f4,
+         beta, beta1, beta2, beta3, beta4, f1, f2, f3, f4,
          incidenceMatrix, weights, resamples, resampleIndices, 
          file = file.path(outputFolder, paste(currTime, 
          "_Cascade_Bayes_Results.rda", sep = "")))
