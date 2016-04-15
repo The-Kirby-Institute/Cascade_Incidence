@@ -45,7 +45,7 @@ cat(fmStr)
 # Specify the results production times/string for selecting the correct 
 # folder
 regAnalysisTime <- "2016-03-29(16-09)" 
-bayesAnalysisTime <- "2016-04-14(13-32)" 
+bayesAnalysisTime <- "2016-04-14(11-10)" 
 
 # Load regression results 
 load(file.path(resultsFolder, 
@@ -73,7 +73,7 @@ betaBestRel <- betaBest / betaBest[2]
 
 ```{r Script options}
 # Setup script options
-savePlots <- TRUE    # save plots as separate files
+savePlots <- TRUE # save plots as separate files
 saveTables <- TRUE
 
 if (savePlots) {
@@ -256,11 +256,47 @@ betaPlot <- ParameterPlot("beta", priorFrame, posteriorFrame)
 beta1Plot <- ParameterPlot("beta1", priorFrame, posteriorFrame)
 beta2Plot <- ParameterPlot("beta2", priorFrame, posteriorFrame)
 beta3Plot <- ParameterPlot("beta3", priorFrame, posteriorFrame)
-beta4Plot <- ParameterPlot("beta4", priorFrame, posteriorFrame)
+beta4Plot <- ParameterPlot("beta4", priorFrame, posteriorFrame, 
+                           logCoords = TRUE)
 f1Plot <- ParameterPlot("f1", priorFrame, posteriorFrame)
 f2Plot <- ParameterPlot("f2", priorFrame, posteriorFrame)
 f3Plot <- ParameterPlot("f3", priorFrame, posteriorFrame)
-f4Plot <- ParameterPlot("f4", priorFrame, posteriorFrame)
+f4Plot <- ParameterPlot("f4", priorFrame, posteriorFrame,
+                        logCoords = TRUE)
+
+# Plot beta posteriors separately
+beta1PlotPost <- ParameterPlot("beta1", priorFrame, posteriorFrame, 
+                           singleplot = TRUE)
+beta2PlotPost <- ParameterPlot("beta2", priorFrame, posteriorFrame,
+                           singleplot = TRUE)
+beta3PlotPost <- ParameterPlot("beta3", priorFrame, posteriorFrame,
+                           singleplot = TRUE)
+beta4PlotPost <- ParameterPlot("beta4", priorFrame, posteriorFrame, 
+                           logCoords = TRUE, singleplot = TRUE)
+
+# Plot beta posteriors on one plot
+combinePost <- ggplot(data = posteriorFrame) +
+  geom_density(aes(x = beta1, colour = "beta1", 
+                   fill = "beta1"), alpha = 0.2) + 
+  geom_density(aes(x = beta2, colour = "beta2",
+                   fill = "beta2"), alpha = 0.2) + 
+  geom_density(aes(x = beta3, colour = "beta3",
+                   fill = "beta3"), alpha = 0.2) + 
+  geom_density(aes(x = beta4, colour = "beta4",
+                   fill = "beta4"), alpha = 0.2) +
+  scale_colour_manual(name = "",
+    values = asrcols[c(1:2, 3:4)],
+    breaks = c("beta1", "beta2", "beta3", "beta4"),
+    labels = c("Undiagnosed", "Diagnosed", "Unsuppressed", "Suppressed")) +
+  scale_fill_manual(name = "",
+    values = asrcols[c(1:2, 3:4)],
+    breaks = c("beta1", "beta2", "beta3", "beta4"),
+    labels = c("Undiagnosed", "Diagnosed", "Unsuppressed", "Suppressed")) +
+  ylab("Density") + 
+  xlab("Value, log10 scale") + 
+  scale_x_log10(breaks = c(1e-05, 1e-04, 1e-03, 1e-02, 1e-01, 1)) +
+  plotOpts
+
 
 if (savePlots) {
   # Print figures to separate files
@@ -273,6 +309,13 @@ if (savePlots) {
   SaveFigure(outputFolder, "f2_distributions", f2Plot)
   SaveFigure(outputFolder, "f3_distributions", f3Plot)
   SaveFigure(outputFolder, "f4_distributions", f4Plot)
+  SaveFigure(outputFolder, "Beta_distributions", betaPlot)
+  SaveFigure(outputFolder, "Beta1_post_distribution", beta1PlotPost)
+  SaveFigure(outputFolder, "Beta2_post_distribution", beta2PlotPost)
+  SaveFigure(outputFolder, "Beta3_post_distribution", beta3PlotPost)
+  SaveFigure(outputFolder, "Beta4_post_distribution", beta4PlotPost)
+  SaveFigure(outputFolder, "Beta_post_distributions", combinePost, 
+             width = 20)
 }
 
 ```

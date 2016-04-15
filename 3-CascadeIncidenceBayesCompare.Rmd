@@ -94,6 +94,14 @@ postPlot <- ggplot(data = posteriors, aes(x = sample, group = posterior,
   xlab(compareVariable) +
   plotOpts + theme(legend.position = "right")
 
+if (compareVariable %in% c("f4", "beta4")) {
+  # Use logged coordinates
+  priorPlot <- priorPlot + scale_x_log10() + 
+    xlab(paste(compareVariable, ", log10 scale"))
+  postPlot <- postPlot + scale_x_log10() + 
+    xlab(paste(compareVariable, ", log10 scale"))
+}
+
 if (savePlots) {
   ggsave(file.path(resultsFolder, "Compare_figures", 
     paste("Compare_priors_", compareVariable, ".png", sep = "")), 

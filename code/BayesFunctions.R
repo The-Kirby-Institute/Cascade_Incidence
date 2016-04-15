@@ -177,7 +177,8 @@ NumInfections <- function(cascadeData, betaValues) {
 # PlotOptions.R needs to be sourced for these functions to work
 
 ParameterPlot <- function(parameter, priorsSamples, posteriorSamples, 
-                          savefolder = NULL) {
+                          savefolder = NULL, logCoords = FALSE, 
+                          singleplot = FALSE) {
   # This function generates a plot of the prior and posterior for each
   # parameter. Specifically set up for this project. Parameters and inputs 
   # must correspond to the incidence model.
@@ -189,7 +190,9 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
   #     the prior parameter distributions
   #   posteriorSamples: Data frame with columns corresponding to samples 
   #     from the posterior parameter distributions
-  #   savefolder: (Optional) Set to true if you want to save the plot
+  #   savefolder: (Optional) Set to a folder to save the plot
+  #   logCoords: (Optional) Set to TRUE tse log coordinates on x-axis 
+  #   singleplot: (Optional) If TRUE only plots the posterior
   # Returns:
   #   Plot handle corresponding to the created plot
   #
@@ -210,11 +213,23 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
               "f2" = "Diagnosed factor",
               "f3" = "Unsuppressed factor",
               "f4" = "Suppressed factor")
+  yLabel <- labels[parameter]
   
   priorDist <- priorFrame[, parameter]
   postDist <- posteriorFrame[, parameter]
-  plotRange <- range(priorDist)
-  plotStats <- paste("Mean, median, mode:   \n", 
+  
+  if (singleplot) {
+    plotRange <- range(postDist)
+    plotStats <- paste("Mean = ", 
+                       toString(signif(mean(postDist), digits = 2)), 
+                       "   \n",
+                       "95% CI = ",
+                       toString(signif(range(postDist), digits = 2)),
+                       "   \n",
+                       sep = "")
+  } else {
+    plotRange <- range(priorDist)
+    plotStats <- paste("Mean, median, mode:   \n", 
                      "prior = ", 
                      toString(signif(mean(priorDist), digits = 2)), ", ",
                      toString(signif(median(priorDist), digits = 2)), ", ",
@@ -226,19 +241,45 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
                      toString(signif(GetMode(postDist), digits = 2)), 
                      "   \t\n", 
                      sep = "")
+  }
   
+  # Start plot
   postPlot <- ggplot(data = posteriorFrame, aes_string(x = parameter)) +
-    geom_density(data = priorFrame, fill = "black", 
-              alpha = 0.2) +
     geom_density(colour = "red", fill = "red", 
-              alpha = 0.1) +
-    coord_cartesian(xlim = plotRange) +
-    ylab("Density") + 
-    xlab(labels[parameter]) +
-    annotate("text", label = plotStats, 
-             x = Inf, y = Inf, hjust = 1, vjust = 1) +
-    plotOpts
+              alpha = 0.1)
   
+  # Add prior if necessary
+  if (!singleplot) {
+    postPlot <- postPlot + 
+      geom_density(data = priorFrame, fill = "black", 
+                 alpha = 0.2)
+  }
+  
+  # Transform coordinates if required
+  if (logCoords) {
+    postPlot <- postPlot + scale_x_log10()
+    yLabel <- paste(yLabel, ", log10 scale") 
+  }
+  
+  # Get the amximum desnity value for setting 7 axes
+  if (singleplot) {
+    ymax <- max(ggplot_build(postPlot)$data[[1]]$density)
+    yLimit <- ymax * 1.2
+  } else {
+    ymax <- max(max(ggplot_build(postPlot)$data[[1]]$density), 
+                max(ggplot_build(postPlot)$data[[2]]$density))
+    yLimit <- ymax * 1.4
+  }
+  
+  # Finish the plot
+  postPlot <- postPlot +
+    coord_cartesian(xlim = plotRange, ylim = c(0, yLimit)) +
+    ylab("Density") + 
+    xlab(yLabel) + plotOpts +
+    annotate("text", label = plotStats, 
+             x = Inf, y = Inf, hjust = 1, vjust = 1) 
+  
+  # Save plot if required
   if (!is.null(savefolder)) {
     ggsave(file.path(resultsFolder, 
                      paste("parameter_distribution-", paramter, ".png", 
