@@ -37,8 +37,18 @@ source(file.path(Rcode, "TidyLongitudinal.R"))
 # folder
 bayesAnalysisTimes <- c("2016-04-14(11-10)", "2016-04-14(13-02)", 
                         "2016-04-14(13-32)")
-compareVariable <- "beta4"
-savePlots <- TRUE
+compareVariable <- "f4"
+savePlots <- FALSE
+
+labels <- c("beta" = "Overall beta",
+            "beta1" = "Undiagnosed Beta",
+            "beta2" = "Diagnosed Beta",
+            "beta3" = "Unsuppressed Beta",
+            "beta4" = "Suppressed Beta",
+            "f1" = "Undiagnosed factor",
+            "f2" = "Diagnosed factor",
+            "f3" = "Unsuppressed factor",
+            "f4" = "Suppressed factor")
 
 # Load Bayesian results
 for (time in 1:length(bayesAnalysisTimes)) {
@@ -81,7 +91,7 @@ priorPlot <- ggplot(data = priors, aes(x = sample, group = prior,
   scale_colour_brewer(palette = "Set1", name = "Prior",
                       labels = legLabels) + 
   ylab("Density") + 
-  xlab(compareVariable) +
+  xlab(labels[compareVariable]) +
   plotOpts + theme(legend.position = "right")
 
 # Plot prior and posterior comparions 
@@ -91,15 +101,15 @@ postPlot <- ggplot(data = posteriors, aes(x = sample, group = posterior,
   scale_colour_brewer(palette = "Set1", name = "Posterior",
                       labels = legLabels) + 
   ylab("Density") + 
-  xlab(compareVariable) +
+  xlab(labels[compareVariable]) +
   plotOpts + theme(legend.position = "right")
 
 if (compareVariable %in% c("f4", "beta4")) {
   # Use logged coordinates
   priorPlot <- priorPlot + scale_x_log10() + 
-    xlab(paste(compareVariable, ", log10 scale"))
+    xlab(paste(labels[compareVariable], ", log10 scale"))
   postPlot <- postPlot + scale_x_log10() + 
-    xlab(paste(compareVariable, ", log10 scale"))
+    xlab(paste(labels[compareVariable], ", log10 scale"))
 }
 
 if (savePlots) {
