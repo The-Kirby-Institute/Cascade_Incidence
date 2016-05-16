@@ -44,9 +44,9 @@ pldhivFile <- file.path(dataFolder, "pldhiv_estimates_gbm.csv")
 # newInfectionsFile <- file.path(dataFolder, "new_infections_gbm.csv")
 
 # Save and plot
-saveCascade <- FALSE
+saveCascade <- TRUE
 plotCascade <- TRUE
-savePlots <- FALSE
+savePlots <- TRUE
 
 # Option for undiagnosed proportion ---------------------------------------
 
@@ -54,10 +54,9 @@ savePlots <- FALSE
 # undiagnosed. This can either be the same as COUNT in 2014 (~8.9% see 
 # below) or a linear change from a specified value in 2004 to the COUNT 
 # estimate. 
-undiagnosedOption <- "count"; # or "linear"
+undiagnosedOption <- "linear"; # "count" or "linear"
 if (undiagnosedOption == "linear") {
-  startYearPercent = 20
-  startYearRange = c(13, 30)
+  startYearProp = c(0.2,0.13, 0.30) # c(best, lower, upper)
 }
 
 
@@ -72,19 +71,23 @@ pldhiv <- read.csv(pldhivFile)
 
 # Hard coded data values --------------------------------------------------
 
+# Proportion undiagnosed from COUNT results (2014)
+undiagnosedCount <- c(0.089, 0.058, 0.135) 
+
 # Specify undiagnosed proportion
 if (undiagnosedOption == "count") {
-  # Proportion undiagnosed from COUNT results (2014)
-  undiagnosedProp <- c(0.089, 0.058, 0.135) 
-  undiagnosedMatrix <- matrix(rep(undiagnosedProp, 11), ncol = 11)
+  # Convert count data into a matrix
+  undiagnosedMatrix <- matrix(rep(undiagnosedCount, 11), ncol = 11)
 } else {
-  # Create best estimate
-  
-  
+  # Create best estimate using linear change
+  undiagnosedMatrix <- matrix(0, nrow = 3, ncol = 11)
+  undiagnosedMatrix[1, ] <- seq(startYearProp[1], undiagnosedCount[1], 
+                                length = 11)
+  undiagnosedMatrix[2, ] <- seq(startYearProp[2], undiagnosedCount[2],
+                                length = 11)
+  undiagnosedMatrix[3, ] <- seq(startYearProp[3], undiagnosedCount[3],
+                                length = 11)
 }
-
-# Variation in proportion un diagnosed
-
 
 # Proportion on treatment from Gay Community Periodic Surveys for
 # 2004-2014. Note first value is an assumption 
@@ -145,9 +148,9 @@ hivCascade <- rbind(hivCascade,
                                upper = plhivUpper))
 
 # Number undiagnosed
-undiagnosed <- plhiv * undiagnosedProp[1]
-undiagnosedLower <- plhivLower * undiagnosedProp[2]
-undiagnosedUpper <- plhivUpper * undiagnosedProp[3]
+undiagnosed <- plhiv * undiagnosedMatrix[1, ]
+undiagnosedLower <- plhivLower * undiagnosedMatrix[2, ]
+undiagnosedUpper <- plhivUpper * undiagnosedMatrix[3, ]
 
 hivCascade <- rbind(hivCascade, 
                     data.frame(year = years,
@@ -225,8 +228,19 @@ print(results$value/sum(results$value))
 
 # Save our HIV cascade to a csv file
 if (saveCascade) {
+  
+  if (undiagnosedOption == "count") {
+    undiagString <- "count"
+  } else {
+    undiagString <- paste(toString(round(100*undiagnosedMatrix[1, 1], 2)), 
+                      "(", toString(round(100*undiagnosedMatrix[2, 1], 2)),
+                      "-", toString(round(100*undiagnosedMatrix[3, 1], 3)),
+                      ")", sep = "")
+  }
+  
   saveString <- file.path(resultsFolder, paste("gbm_hiv_cascade-", ... = 
-    toString(analysisYear), sep = ""))
+    toString(analysisYear), "_", undiagString,
+    sep = ""))
   
   write.csv(hivCascade, file = paste(saveString, ".csv", sep =""), 
             row.names = FALSE)
@@ -279,12 +293,14 @@ if (plotCascade) {
     
     # Do the plots
     ggsave(file.path(figFolder, paste("cascadeIncidence-", "numPLHIV", 
-      "-", toString(analysisYear), ".png",sep ="")),
+      "-", toString(analysisYear), "_", undiagString,
+      ".png",sep ="")),
       plot = plhivPlotNum, width = plotWidth, height = plotHeight, 
       units = plotUnits)
     
     ggsave(file.path(figFolder, paste("cascadeIncidence-", "numDiags",
-      "-", toString(analysisYear), ".png",sep ="")), 
+      "-", toString(analysisYear), "_", undiagString,
+      ".png",sep ="")), 
       plot = plhivPlotProp, width = plotWidth, height = plotHeight, 
       units = plotUnits)
   }
@@ -323,7 +339,8 @@ if (plotCascade) {
       plotUnits <- "cm"
       
       ggsave(file.path(figFolder, paste("GBMstage-", ii, "_", 
-        toString(startYear), "-", toString(analysisYear), 
+        toString(startYear), "-", toString(analysisYear),
+        "_", undiagString,
         ".png", sep = "")), plot = plotCurrent, width = plotWidth, 
         height = plotHeight, units = plotUnits) 
     }
