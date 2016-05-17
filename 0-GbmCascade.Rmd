@@ -2,7 +2,8 @@ GBM HIV Cascade Estimates
 =========================
 
 This Rmarkdown script is used to generate estimates for a HIV care and 
-diagnosis cascade for Australian gay and bisexual men. 
+diagnosis cascade for Australian gay and bisexual men. NOTE: specific 
+scenarios are hard coded.
 
 ```{r initialization}
 # Clear workspace
@@ -54,9 +55,11 @@ savePlots <- TRUE
 # undiagnosed. This can either be the same as COUNT in 2014 (~8.9% see 
 # below) or a linear change from a specified value in 2004 to the COUNT 
 # estimate. 
-undiagnosedOption <- "linear"; # "count" or "linear"
+undiagnosedOption <- "count"; # "count" or "linear"
 if (undiagnosedOption == "linear") {
-  startYearProp = c(0.2,0.13, 0.30) # c(best, lower, upper)
+  startYearProp <- c(0.1, 0.06, 1.4) # c(best, lower, upper)
+  # c(0.2,0.13, 0.30), c(0.3,0.2, 0.4), c(0.1, 0.06, 1.4)
+  fileTag <- "Lower" # Add to file when saving results 
 }
 
 
@@ -232,10 +235,7 @@ if (saveCascade) {
   if (undiagnosedOption == "count") {
     undiagString <- "count"
   } else {
-    undiagString <- paste(toString(round(100*undiagnosedMatrix[1, 1], 2)), 
-                      "(", toString(round(100*undiagnosedMatrix[2, 1], 2)),
-                      "-", toString(round(100*undiagnosedMatrix[3, 1], 3)),
-                      ")", sep = "")
+    undiagString <- fileTag
   }
   
   saveString <- file.path(resultsFolder, paste("gbm_hiv_cascade-", ... = 
