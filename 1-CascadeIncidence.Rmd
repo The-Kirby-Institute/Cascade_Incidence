@@ -10,7 +10,9 @@ viral load; and people recieving ART with undetectable viral load. The
 analysis either uses annual estimates for new infections or recorded HIV 
 notifications. 
 
-This script is designed to be as self contained as possible. 
+This script is designed to be as self contained as possible. Note it is 
+designed for the chunks to be run independently. Running the whole script
+in on go could produce errors.
 
 UPDATE 2016-03-24: Decided the sampling approach doesn't work and is 
 incorrect generally. I am pretty sure it is okay when just using the best 
@@ -43,6 +45,7 @@ saveRegression <- TRUE     # save regression results
 runExperiments <- FALSE     # run experimental fitting
 saveplots <- FALSE
 useSampling <- FALSE        # use a sampled range or the best estimates
+quickPlot <- FALSE
 
 # Years of analysis
 startYear <- 2005 # minimum assumed to be 2004
@@ -50,13 +53,14 @@ try(if (startYear < 2004) stop("Start year before 2004"))
 analysisYear <- 2014
 
 # Input data 
-inputFile <- paste("gbm_hiv_cascade-", toString(analysisYear), 
-                   ".csv", sep = "")
+inputFileTag <- "Lower"
+inputFile <- paste("gbm_hiv_cascade-", toString(analysisYear), "_",
+                   inputFileTag, ".csv", sep = "")
 
 # Details of where to store outputs if desired
 if (saveCascadeSample || saveRegression) {
   currTime <- format(Sys.time(), "%Y-%m-%d(%H-%M)") # to append to files
-  folder <- paste("CountAnalysis_",currTime,sep="")
+  folder <- paste("CountAnalysis_", currTime, sep="")
   
   # Create directory
   dir.create(file.path(resultsFolder,folder), showWarnings = FALSE)
@@ -148,7 +152,7 @@ if (saveCascadeSample){
   # Save the output
   save(cascadeSample, cascadeAverage, 
     file = file.path(outputFolder, paste(currTime, 
-    "_Cascade_Sample.rda", sep ="")))
+    "_Cascade_Sample", inputFileTag, ".rda", sep ="")))
 }
 
 # Display some output
@@ -186,7 +190,8 @@ countplotAve <- ggplot(data = plotDataAve,
 print(countplotAve)
 if (saveCascadeSample){
   ggsave(file.path(outputFolder, 
-                   paste(currTime, "_CountPlot.png", sep = "")))
+                   paste(currTime, "_CountPlot", inputFileTag,
+                         ".png", sep = "")))
 }
 
 ```
@@ -452,12 +457,14 @@ approach seems to be way off!
 
 ```{r quickplot}
 # A quick plot comparison
-ggplot(data = cascadeBest, aes(x = year, y = infections)) +
-  geom_point() + 
-  geom_line(aes(y = lmInc)) + 
-  geom_line(aes(y = bayesInc)) + 
-  coord_cartesian(ylim = c(0, 1500)) + 
-  theme_bw() 
+if (quickPlot) {
+  ggplot(data = cascadeBest, aes(x = year, y = infections)) +
+    geom_point() + 
+    geom_line(aes(y = lmInc)) + 
+    geom_line(aes(y = bayesInc)) + 
+    coord_cartesian(ylim = c(0, 1500)) + 
+    theme_bw() 
+}
 ```
 
 ```{r saveregression}
@@ -470,7 +477,7 @@ if (saveRegression) {
   save(coefUnadjustedOverall, cascadeAdjust, cascadeBest, 
        undetectAdjustAnalysis, artAdjustAnalysis, sampleAnalysis,
     file = file.path(outputFolder, paste(currTime, 
-    "_Cascade_Regression_Results.rda", sep ="")))
+    "_Cascade_Regression_Results_", inputFileTag,".rda", sep ="")))
 }
 
 ```

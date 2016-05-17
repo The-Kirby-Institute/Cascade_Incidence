@@ -35,8 +35,9 @@ source(file.path(Rcode, "BayesFunctions.R"), echo = TRUE)
 analysisYear <- 2014
 
 # Input data 
-inputFile <- paste("gbm_hiv_cascade-", toString(analysisYear), 
-                   ".csv", sep = "")
+inputFileTag <- "count"
+inputFile <- paste("gbm_hiv_cascade-", toString(analysisYear), "_",
+                   inputFileTag, ".csv", sep = "")
 
 # Load hivCascade data
 hivCascade <- read.csv(file.path(resultsFolder, inputFile), as.is = c(2))
