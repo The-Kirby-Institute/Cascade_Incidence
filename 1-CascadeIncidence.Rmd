@@ -53,7 +53,7 @@ try(if (startYear < 2004) stop("Start year before 2004"))
 analysisYear <- 2014
 
 # Input data 
-inputFileTag <- "Lower"
+inputFileTag <- "Middle"
 inputFile <- paste("gbm_hiv_cascade-", toString(analysisYear), "_",
                    inputFileTag, ".csv", sep = "")
 
@@ -174,12 +174,12 @@ print(cascadeAverage)
 # to do
 
 # Melt data into a plotting data frame
-plotDataAve <- gather(cascadeAverage, "stage", "average", 3:6)
+plotDataAve <- gather(cascadeAverage, "stage", "average", 2:5)
 # plotDataAve$diagnoses <- newInfects$diagnoses
 
 # Create a plot looking at the relationships
 countplotAve <- ggplot(data = plotDataAve, 
-                       aes(x = average, y = diagnoses)) + geom_point() + 
+                       aes(x = average, y = infections)) + geom_point() + 
   facet_wrap(~stage, scales = "free_x") + theme_bw()
 
 countplotAve <- ggplot(data = plotDataAve, 
@@ -457,11 +457,25 @@ approach seems to be way off!
 
 ```{r quickplot}
 # A quick plot comparison
+
+countlm <- c(0.3346335695, 0.0125424718, 0.05476531131, 0.0006271236)
+lowerlm <- c(0.3346335695, 0.0125424718, 0.0547653113, 0.0006271236)
+
+lmBeta <- as.numeric(undetectAdjustAnalysis)
+lmInc <- apply(cascadeBest[ ,2:5], 1, 
+               function(x) sum(x *  lmBeta))
+lmInc2 <- apply(cascadeBest[ ,2:5], 1, 
+               function(x) sum(x *  countlm))
+lmInc3 <- apply(cascadeBest[ ,2:5], 1, 
+               function(x) sum(x *  lowerlm))
+
 if (quickPlot) {
   ggplot(data = cascadeBest, aes(x = year, y = infections)) +
     geom_point() + 
     geom_line(aes(y = lmInc)) + 
-    geom_line(aes(y = bayesInc)) + 
+    geom_line(aes(y = lmInc2), color = "red") + 
+    geom_line(aes(y = lmInc3), color = "blue") +
+    # geom_line(aes(y = bayesInc)) + 
     coord_cartesian(ylim = c(0, 1500)) + 
     theme_bw() 
 }
@@ -630,7 +644,7 @@ The final results are presented in this section.
 # thorough analysis is done separately. 
 
 # Specify the results we want
-results <- "art"
+results <- "undetect"
 
 if (results == "undetect") {
   resultsCoefs <- undetectAdjustAnalysis

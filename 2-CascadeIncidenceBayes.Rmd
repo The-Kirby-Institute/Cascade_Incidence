@@ -2,7 +2,9 @@ HIV Cascade Incidence - Bayesian Approach
 =========================================
   
 This Rmarkdown script builds on the cascade incidence regression analysis 
-and applies a Bayesian Melding approach. 
+and applies a Bayesian Melding approach. Note it is designed for the
+chunks to be run independently. Running the whole script in on go could
+produce errors.
 
 ```{r initialization}
 rm(list = ls()) 
@@ -82,9 +84,10 @@ priorApproach <- "relative" # independent or relative
 
 useSaved <- TRUE  # use previous set of sampled priors
 saveSims <- FALSE   # save sample priors and weights
+fileTag <- "count"
 
 # Specify f4 prior 
-f4Prior <- SuppressedOption("option8")
+f4Prior <- SuppressedOption("option6")
 
 # Details of inputs if required ------------------------------------------
 if (useSaved) {
@@ -93,7 +96,8 @@ if (useSaved) {
                                    # or some other name
   folder <- paste("Cascade_Bayes_", currTime, sep = "")
   outputFolder <- file.path(resultsFolder, folder)
-  savedFile <- paste(currTime, "_Cascade_Bayes_Sims.rda", sep = "")
+  savedFile <- paste(currTime, "_Cascade_Bayes_Sims_", fileTag,
+                     ".rda", sep = "")
 }
 
 # Details of where to store outputs if desired
@@ -228,7 +232,7 @@ if (useSaved) {
          beta, beta1, beta2, beta3, beta4, 
          f1, f2, f3, f4, incidenceMatrix, weights,
          file = file.path(outputFolder, paste(currTime, 
-          "_Cascade_Bayes_Sims.rda", sep = "")))
+          "_Cascade_Bayes_Sims_", fileTag,".rda", sep = "")))
   }
 }
 
@@ -239,16 +243,17 @@ if (useSaved) {
 # psoteriors
 
 resamples <- 40000
-useSaved <- FALSE
-saveOutputs <- TRUE
+useSaved <- TRUE
+saveOutputs <- FALSE
 
 if (useSaved) {
   # Specify details of saved file
-  simTime <- "2016-04-12(22-51)" # in %Y-%m-%d(%H-%M) format 
+  simTime <- "2016-04-14(13-32)" # in %Y-%m-%d(%H-%M) format 
                                   # or some other name
   folder <- paste("Cascade_Bayes_", simTime, sep = "")
   inputFolder <- file.path(resultsFolder, folder)
-  savedFile <- paste(simTime, "_Cascade_Bayes_Results.rda", sep = "")
+  savedFile <- paste(simTime, "_Cascade_Bayes_Results_", fileTag,
+                     ".rda", sep = "")
   
   # Load saved file
   load(file.path(inputFolder, savedFile))
@@ -270,7 +275,7 @@ if (useSaved) {
          beta, beta1, beta2, beta3, beta4, f1, f2, f3, f4,
          incidenceMatrix, weights, resamples, resampleIndices, 
          file = file.path(outputFolder, paste(currTime, 
-         "_Cascade_Bayes_Results.rda", sep = "")))
+         "_Cascade_Bayes_Results_", fileTag, ".rda", sep = "")))
   }
 }
 
@@ -295,7 +300,7 @@ betaBestRel <- betaBest / betaBest[2]
 
 # General exploration -----------------------------------------------------
 
-hist(beta3[resampleIndices], breaks = 100) # posterior
+hist(beta4[resampleIndices], breaks = 100) # posterior
 hist(beta4, breaks = 100) # prior
 
 hist(f4[resampleIndices], breaks = 100) # posterior

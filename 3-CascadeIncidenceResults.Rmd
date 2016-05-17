@@ -44,19 +44,21 @@ cat(fmStr)
 
 # Specify the results production times/string for selecting the correct 
 # folder
-regAnalysisTime <- "2016-03-29(16-09)" 
-bayesAnalysisTime <- "2016-04-14(11-10)" 
+regAnalysisTime <- "2016-05-17(16-32)" 
+bayesAnalysisTime <- "2016-05-17(16-58)" 
+fileTag <- "Middle"
 
 # Load regression results 
 load(file.path(resultsFolder, 
   paste("Cascade_Analysis_", regAnalysisTime, sep = ""),
-  paste(regAnalysisTime, "_Cascade_Regression_Results.rda", sep = "")))
+  paste(regAnalysisTime, "_Cascade_Regression_Results_", fileTag,
+        ".rda", sep = "")))
 
 # Load Bayesian results
 bayesResultsFolder <- file.path(resultsFolder, 
   paste("Cascade_Bayes_", bayesAnalysisTime, sep = ""))
 load(file.path(bayesResultsFolder, paste(bayesAnalysisTime,
-  "_Cascade_Bayes_results.rda", sep = "")))
+  "_Cascade_Bayes_results_", fileTag,".rda", sep = "")))
 
 # Useful info and results
 # cascadeBest <- cascadeBestBayes
@@ -73,8 +75,8 @@ betaBestRel <- betaBest / betaBest[2]
 
 ```{r Script options}
 # Setup script options
-savePlots <- TRUE # save plots as separate files
-saveTables <- TRUE
+savePlots <- FALSE # save plots as separate files
+saveTables <- FALSE
 
 if (savePlots) {
   # Create folder for the plots using the current time
