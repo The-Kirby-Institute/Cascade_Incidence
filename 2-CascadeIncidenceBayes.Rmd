@@ -37,7 +37,7 @@ source(file.path(Rcode, "BayesFunctions.R"), echo = TRUE)
 analysisYear <- 2014
 
 # Input data 
-inputFileTag <- "count"
+inputFileTag <- "ecdc"
 inputFile <- paste("gbm_hiv_cascade-", toString(analysisYear), "_",
                    inputFileTag, ".csv", sep = "")
 
@@ -57,7 +57,8 @@ cascadeBest <- hivCascade[, 1:3] %>%
   spread(stage, value) %>% 
   select(year, undiagnosed, diagnosed, unsuppressed, suppressed)
 
-cascadeBest$infections <- newInfects$diagnoses
+# cascadeBest$infections <- newInfects$diagnoses
+cascadeBest$infections <- newInfects$infections
 
 # Estimate error bounds - store information in a data frame for 
 # ease of extraction when creating priors
@@ -75,16 +76,16 @@ errorRange <- hivCascade %>%
 ```{r bayessims}
 # In this chunk we apply a Bayesian melding methodology by sampling from 
 # priors and running the samples in our model. It takes some time
-# time so it is set up to be optional.
+# so it is set up to be optional.
 
 # Chunk Options ----------------------------------------------------------
 
-numBayesSamples <- 1e6 # number of prior samples
-priorApproach <- "relative" # independent or relative
+numBayesSamples <- 1e5 # number of prior samples
+priorApproach <- "independent" # independent or relative
 
-useSaved <- TRUE  # use previous set of sampled priors
-saveSims <- FALSE   # save sample priors and weights
-fileTag <- "count"
+useSaved <- FALSE  # use previous set of sampled priors
+saveSims <- TRUE   # save sample priors and weights
+fileTag <- "ecdc"
 
 # Specify f4 prior 
 f4Prior <- SuppressedOption("option6")
@@ -243,12 +244,12 @@ if (useSaved) {
 # psoteriors
 
 resamples <- 40000
-useSaved <- TRUE
+useSaved <- FALSE
 saveOutputs <- FALSE
 
 if (useSaved) {
   # Specify details of saved file
-  simTime <- "2016-04-14(13-32)" # in %Y-%m-%d(%H-%M) format 
+  simTime <- "2016-08-01(22-08)" # in %Y-%m-%d(%H-%M) format 
                                   # or some other name
   folder <- paste("Cascade_Bayes_", simTime, sep = "")
   inputFolder <- file.path(resultsFolder, folder)
@@ -259,7 +260,7 @@ if (useSaved) {
   load(file.path(inputFolder, savedFile))
 } else {
   
-  # Resample by weight with replacement -----------------------------------
+  # Resample by weight with replacement ----------------------------------
   resampleIndices <- sample(1:numBayesSamples, resamples, prob = weights, 
                             replace = TRUE) 
   
@@ -298,7 +299,7 @@ betaBest <- c(beta1[bestFit], beta2[bestFit], beta3[bestFit],
               beta4[bestFit])
 betaBestRel <- betaBest / betaBest[2]   
 
-# General exploration -----------------------------------------------------
+# General exploration ----------------------------------------------------
 
 hist(beta4[resampleIndices], breaks = 100) # posterior
 hist(beta4, breaks = 100) # prior
