@@ -13,7 +13,8 @@ GetMode <- function(vector) {
   uniqueElements[which.max(tabulate(match(vector, uniqueElements)))]
 }
 
-IncFunc <- function(cascadeData, beta1, beta2, beta3, beta4) {
+IncFunc <- function(cascadeData, beta1, beta2, beta3, beta4, 
+                    undiagProp = NULL) {
   # Function for can easily calculating the incidence values
   # for each sample of the beta values
   #
@@ -25,10 +26,21 @@ IncFunc <- function(cascadeData, beta1, beta2, beta3, beta4) {
   #   Estimated incidence for each year in data
   # 
   
-  return(beta1 * cascadeData$undiag  + 
-           beta2 * cascadeData$diag  + 
-           beta3 * cascadeData$unsuppressed  + 
-           beta4 * cascadeData$suppressed)
+  if (is.null(undiagProp)) {
+    return(beta1 * cascadeData$undiagnosed  + 
+             beta2 * cascadeData$diagnosed  + 
+             beta3 * cascadeData$unsuppressed  + 
+             beta4 * cascadeData$suppressed)
+  } else {
+    propUndiag <- seq(undiagProp[1], undiagProp[2], 
+                      length = length(cascadeData$pldhiv))
+    
+    numUndiag <- (cascadeData$pldhiv/(1-propUndiag) - cascadeData$pldhiv)
+    return(beta1 * numUndiag  + 
+             beta2 * cascadeData$diagnosed + 
+             beta3 * cascadeData$unsuppressed + 
+             beta4 * cascadeData$suppressed)
+  }
 }
 
 WeightError <- function(dataValues, estimatedValues, dataError) {
@@ -50,8 +62,15 @@ WeightError <- function(dataValues, estimatedValues, dataError) {
   # Differences between observed and simulated
   distance <- dataValues - estimatedValues 
   
-  sigma <- dataValues * dataError / 100 # standard deviation: convert 
+  # if (length(dataError) == 1) {
+    # Assume error is for entire time period
+    sigma <- dataValues * dataError / 100 # standard deviation: convert 
                                         # percentage to proportion
+  # } else {
+  #   # Assume error is for each time point (allows variation in error)
+  #   # In this case dataError is entered as an upper bound on the data values
+  #   sigma <- (dataError - dataValues) # standard deviation
+  # }
   
   mu <- rep(0, numData) # mean of x is zero it matches the data exactly
   
@@ -83,7 +102,7 @@ PriorSample <- function(samples, dist, parameters) {
   } else if (dist == "lognorm") {
     return(rlnorm(samples, parameters[1], parameters[2]))
   } else if (dist == "truncln") {
-    # Assume EnvStats package already loaded
+    # Assume EnvStats package already loaded 
     return(rlnormTrunc(samples, parameters[1], parameters[2], max = 1))
   } else {
     stop("Unknown distribution")
@@ -199,7 +218,7 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
   
   # Check input paramter is appropriate
   if (!(parameter %in% c("beta", "beta1", "beta2", "beta3", "beta4", 
-                         "f1", "f2", "f3", "f4"))) {
+                         "f1", "f2", "f3", "f4", "startundiag"))) {
     stop("Unknown parameter entered")
   }
   
@@ -212,7 +231,8 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
               "f1" = "Undiagnosed factor",
               "f2" = "Diagnosed factor",
               "f3" = "Unsuppressed factor",
-              "f4" = "Suppressed factor")
+              "f4" = "Suppressed factor",
+              "startundiag" = "Undiagnosed proportion")
   yLabel <- labels[parameter]
   
   priorDist <- priorFrame[, parameter]
