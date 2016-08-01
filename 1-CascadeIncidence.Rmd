@@ -16,7 +16,7 @@ in on go could produce errors.
 
 UPDATE 2016-03-24: Decided the sampling approach doesn't work and is 
 incorrect generally. I am pretty sure it is okay when just using the best 
-estimates. Overall I am replacing the analysis with a Bayesian approach
+estimates. Overall I am replacing the analysis with a Bayesian approach.
 
 ```{r initialization}
 # Clear workspace
@@ -24,7 +24,7 @@ rm(list=ls())
 options(scipen=999)  # To get rid of scientific notation
 
 # Source to current directory and set working directory
-setwd("~/Research/!Evaluation_Modelling/subprojects/2015_cascade_incidence")
+# setwd("~/Research/!Evaluation_Modelling/subprojects/2015_cascade_incidence")
 basePath <- getwd()
 
 # Various directories
@@ -53,11 +53,11 @@ try(if (startYear < 2004) stop("Start year before 2004"))
 analysisYear <- 2014
 
 # Input data 
-inputFileTag <- "" # "Middle"
-# inputFile <- paste("gbm_hiv_cascade-", toString(analysisYear), "_",
-#                    inputFileTag, ".csv", sep = "")
-inputFile <- paste("test_hiv_cascade-", toString(analysisYear), 
+inputFileTag <- "ecdc" # "Middle"
+inputFile <- paste("gbm_hiv_cascade-", toString(analysisYear), "_",
                    inputFileTag, ".csv", sep = "")
+# inputFile <- paste("test_hiv_cascade-", toString(analysisYear), 
+#                    inputFileTag, ".csv", sep = "")
 
 # Details of where to store outputs if desired
 if (saveCascadeSample || saveRegression) {
@@ -104,16 +104,18 @@ cascadeBest <- hivCascade[, 1:3] %>%
          suppressed, plhiv, pldhiv)
 
 cascadeBest$diagnoses <- newInfects$diagnoses
+cascadeBest$infections <- newInfects$infections
+
 
 # Alternative estimate
-changePlhiv <- diff(cascadeBest$plhiv)
-cascadeBest$infections <- c(changePlhiv[1], changePlhiv)
+# changePlhiv <- diff(cascadeBest$plhiv)
+# cascadeBest$infections <- c(changePlhiv[1], changePlhiv)
 
 ```
 
 ```{r sampling}
-# Produce a randomly sampled set of numbers for fitting from the ranges in 
-# the countClean dataframe. The data comes in long foramt and we store the 
+# Produce a randomly sampled set of numbers for fitting from the ranges in
+# the countClean dataframe. The data comes in long foramt and we store the
 # samples in wide format. 
 
 # Can decide not to sample and use best estimates instead
@@ -128,7 +130,7 @@ selectHivCascade <- filter(hivCascade, stage %in% c("undiagnosed",
 numStages <- 4
 selectHivCascade$infections <- rep(newInfects$diagnoses, numStages) 
 
-# Use apply to loop through every row of the cascade data frame and sample 
+# Use apply to loop through every row of the cascade data frame and sample
 # from lower and upper bounds. Return a matrix with samples from each row 
 # as columns.
 sampleMatrix <- t(apply(selectHivCascade[,c("lower", "upper")], 1, 
@@ -177,8 +179,8 @@ print(cascadeAverage)
 ```
 
 ```{r exploration}
-# Before we get serious lets have a look at the data and what we are trying
-# to do
+# Before we get serious lets have a look at the data and what we are
+#  trying to do
 
 # Melt data into a plotting data frame
 plotDataAve <- gather(cascadeAverage, "stage", "average", 2:5)
@@ -205,12 +207,12 @@ if (saveCascadeSample){
 
 # Analysis
 
-This section describes the various calculations and approaches. Each should
-be run independently unless otherwise indicated
+This section describes the various calculations and approaches. Each
+should be run independently unless otherwise indicated.
 
 ## Simple regression analysis
 
-I tried a standard linear regresiion first without adjusting for 
+I tried a standard linear regresion first without adjusting for 
 known/expected biological effects. 
 
 ```{r simpleanalysis}
@@ -219,7 +221,8 @@ if(useDiagnoses) {
   lm <- lm(infections ~ 0 + undiagnosed + diagnosed + unsuppressed + 
              suppressed, data = cascadeSample)
 } else { 
-#   lm <- lm(newinfects ~ 0 + undiagnosed + diagnosed + detectable + undetectable, data = countSample)
+#   lm <- lm(newinfects ~ 0 + undiagnosed + diagnosed + detectable +
+#    undetectable, data = countSample)
 }
 
 print(lm)
@@ -241,8 +244,8 @@ the beta for those on ART but with detectable viral load free to be fitted
 by the regression. 
 
 ```{r suppressedconstraint}
-# Perform an adjusted regression analysis were we contrain the beta values 
-# for those on ART to better reflect known biological data
+# Perform an adjusted regression analysis were we contrain the beta values
+# # for those on ART to better reflect known biological data
 
 # Biogically we know undiagnosed people are more infectious due to acute 
 # infection or at least as infectious as diagnosed people. We also know 
@@ -257,10 +260,12 @@ numRows <- nrow(cascadeAdjust)
 # Set up a distribution for the reduction multiplicative factor
 
 # Uniform distribution
-# cascadeAdjust$beta4 <- runif(numRows, 0.01,0.3) # HPTN-052 transmission rate
+# cascadeAdjust$beta4 <- runif(numRows, 0.01,0.3) # HPTN-052 transmission
+#  rate
 
 # Beta distribution
-# source('~/Research/!Evaluation_Modelling/project_care_cascades/code/FindBeta.R')
+# source('~/Research/!Evaluation_Modelling/project_care_cascades/code/Find
+# Beta.R')
 # quantile1 <- list(p=0.5, x=0.03)
 # quantile2 <- list(p=0.975, x=0.27)
 # quantile3 <- list(p=0.025, x=0.01)
@@ -316,11 +321,11 @@ if (useSampling) {
   undetectAdjustAnalysis <- data.frame(undiag = runif(numRows,
                                                       coefLowerTemp[1],
                                                       coefUpperTemp[1]),
-                                       diag = sampleDiag,
-                                       detect = runif(numRows, 
+                             diag = sampleDiag,
+                             detect = runif(numRows, 
                                                       coefLowerTemp[3],
                                                       coefUpperTemp[3]),
-                                       undetect = cascadeAdjust$beta4 * sampleDiag)
+                              undetect = cascadeAdjust$beta4 * sampleDiag)
   
   
 } else {
@@ -348,7 +353,7 @@ beta for those on ART with detectable viral load.
 
 ```{r artconstraint}
 # WARNING: THINK THERE MUST BE A BUG HERE AS THE FIT IS WAY OFF
-# See quickplot chunck below
+# See quickplot chunk below
 
 # Add an extra constraint on the on ART but detectable coefficient 
 # We are assuming detectable viral load is has a multiplicative factor 
@@ -387,18 +392,23 @@ if (useSampling) {
   sampleDiag2 <- runif(numRows, coefLowerTemp[2], coefUpperTemp[2])
   
   # Store resulting samples for the cascade beta values
-  artAdjustAnalysis <- data.frame (undiag = runif(numRows, coefLowerTemp[1],
+  artAdjustAnalysis <- data.frame (undiag = runif(numRows,
+                                                  coefLowerTemp[1],
                                                   coefUpperTemp[1]),
                                    diag = sampleDiag2,
-                                   detect = cascadeAdjust$beta2 * sampleDiag2, 
-                                   undetect = cascadeAdjust$beta4 * sampleDiag2)
+                                   detect = cascadeAdjust$beta2 *
+                                     sampleDiag2, 
+                                   undetect = cascadeAdjust$beta4 *
+                                     sampleDiag2)
   
   
 } else {
   artAdjustAnalysis <- data.frame (undiag = coefAdjustedArt[1],
                                    diag = coefAdjustedArt[2],
-                                   detect = cascadeAdjust$beta2[1] * coefAdjustedArt[2], 
-                                   undetect = cascadeAdjust$beta4[1] * coefAdjustedArt[2])
+                                   detect = cascadeAdjust$beta2[1] *
+                                     coefAdjustedArt[2], 
+                                   undetect = cascadeAdjust$beta4[1] *
+                                     coefAdjustedArt[2])
   
 }
 # Display some summary stats
@@ -415,7 +425,7 @@ sketchy I think and I would prefer to use a more robust approach.
 
 An alternative I decided to try applying the regression for each sample
 and then collate the regression parameters. This is kind of like a 
-bootstrap approach which I think is a little more rigorous
+bootstrap approach which I think is a little more rigorous.
 
 ```{r samplelm}
 
@@ -505,17 +515,18 @@ if (saveRegression) {
 
 ## Experiemental approaches
 
-Given my reservations with the constrained regression approach. I tried some
-other experimental approaches for doing the regression. First I tried
-using non-linear least squares with upper and lower limits. Note warining in 
-documentation for nls() when using limits. 
+Given my reservations with the constrained regression approach. I tried
+some other experimental approaches for doing the regression. First I tried
+using non-linear least squares with upper and lower limits. Note warining 
+in documentation for nls() when using limits. 
 
 ```{r experimental}
-# Try using nls to constrain the upper and lower values of the regression. 
+# Try using nls to constrain the upper and lower values of the regression.
+#  
 # Note it will always try to reach the linear regression values. 
 # WARNING FROM DOCUMENTATION: "The algorithm = 'port'code appears 
-# unfinished, and does not even check that the starting value is within the
-# bounds. Use with caution, especially where bounds are supplied."
+# unfinished, and does not even check that the starting value is within
+#  the bounds. Use with caution, especially where bounds are supplied."
 
 # NOTE: code needs updating to run properly!!
 
@@ -531,9 +542,10 @@ if (runExperiments) {
       upper = list(f1 = 5, b2 = 0.1, f2 = 1.1, f3 = 0.),
       algorithm = "port")
   
-  # Optimization tools ----------------------------------------------------
+  # Optimization tools ---------------------------------------------------
   
-  # The next approach tried to use an optimization method to keep the beta 
+  # The next approach tried to use an optimization method to keep the beta
+  # 
   # values between specified ranges. We tried using various optimization 
   # tools to perform the analysis.
   
@@ -588,11 +600,11 @@ if (runExperiments) {
   # beta value for those with detectable viral loads << than the beta for 
   # suppressed virus. 
   
-  # Optimization weighted -------------------------------------------------
+  # Optimization weighted ------------------------------------------------
   
-  # The next approach tried to encode an optimization approach by weighting 
-  # for parameters such that beta1 > beta2 > beta3 > beta4. This has not 
-  # been finalized and I  don't think I can get it to work. 
+  # The next approach tried to encode an optimization approach by
+  # weighting for parameters such that beta1 > beta2 > beta3 > beta4.
+  # This has not been finalized and I  don't think I can get it to work. 
   
   # Using optimization tools to perform the analysis where unrealistic 
   # beta values are eliminated. 
@@ -607,7 +619,7 @@ if (runExperiments) {
       output <- 1e10
     } else {
       output <- with(data, sum((par[1]*undiagnosed + par[2]*diagnosed + 
-                                  par[3]*detectable + par[4]*undetectable - 
+                                par[3]*detectable + par[4]*undetectable - 
                                   newinfects)^2))
     }
     output # Return
@@ -683,7 +695,7 @@ print(medCoeffs/medCoeffs[2])
 print(medCoeffs + iqrCoeffs/2)
 print(medCoeffs - iqrCoeffs/2)
 
-# Now estimate the uncertainty and proportion of infections caused by each 
+# Now estimate the uncertainty and proportion of infections caused by each
 # stage
 
 numUndiag <- resultsCoefs$undiag*cascadeSample$undiagnosed
