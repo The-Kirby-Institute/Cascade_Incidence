@@ -44,9 +44,9 @@ pldhivFile <- file.path(dataFolder, "pldhiv_estimates_gbm.csv")
 # newInfectionsFile <- file.path(dataFolder, "new_infections_gbm.csv")
 
 # Save and plot
-saveCascade <- FALSE
+saveCascade <- TRUE
 plotCascade <- TRUE
-savePlots <- FALSE
+savePlots <- TRUE
 
 # Option for undiagnosed proportion ---------------------------------------
 
@@ -54,15 +54,24 @@ savePlots <- FALSE
 # undiagnosed. This can either be the same as COUNT in 2014 (~8.9% see 
 # below) or a linear change from a specified value in 2004 to the COUNT 
 # estimate. 
-undiagnosedOption <- "count"; # "count" or "linear"
+undiagnosedOption <- "ecdc"; # "count" or "linear" or "ecdc"
+
 if (undiagnosedOption == "linear") {
   startYearProp <- c(0.2,0.13, 0.30) # c(best, lower, upper)
   # c(0.2,0.13, 0.30), c(0.3,0.2, 0.4), c(0.1, 0.06, 0.14)
   # Bestfit from Bayes, Medianfit from Bayes
   fileTag <- "Middle" # Add to file when saving results 
-}
-
-
+} else if (undiagnosedOption == "ecdc"){
+  # Use results from the ECDC HIV Modelling Tool
+  ecdcEstimates <- c(13.69, 13.06, 12.78, 12.43, 12.07, 
+                     11.69, 11.38, 11.09, 10.84, 10.66, 10.59) / 100
+  
+  ecdcEstimatesLower <- c(12.91, 12.28, 12.09, 11.79, 11.43, 10.99, 10.60,
+                          10.32, 10.08, 9.66, 9.30) / 100
+  ecdcEstimatesUpper <- c(14.87, 14.26, 13.81, 13.39, 12.91, 12.44, 12.29,
+                          12.25, 12.25, 12.29, 12.94) / 100
+    
+}  
 ```
 
 ```{r data}
@@ -81,6 +90,14 @@ undiagnosedCount <- c(0.089, 0.058, 0.135)
 if (undiagnosedOption == "count") {
   # Convert count data into a matrix
   undiagnosedMatrix <- matrix(rep(undiagnosedCount, 11), ncol = 11)
+} else if (undiagnosedOption == "ecdc") {  
+  # Use ECDC estimate for proportion undiagnosed and uncertainty from 
+  # count
+  undiagnosedMatrix <- matrix(0, nrow = 3, ncol = 11)
+  undiagnosedMatrix[1, ] <- ecdcEstimates
+  undiagnosedMatrix[2, ] <- ecdcEstimatesLower
+  undiagnosedMatrix[3, ] <- ecdcEstimatesUpper
+  
 } else {
   # Create best estimate using linear change
   undiagnosedMatrix <- matrix(0, nrow = 3, ncol = 11)
@@ -234,6 +251,8 @@ if (saveCascade) {
   
   if (undiagnosedOption == "count") {
     undiagString <- "count"
+  } else if (undiagnosedOption == "ecdc") {
+    undiagString <- "ecdc"
   } else {
     undiagString <- fileTag
   }
@@ -252,6 +271,8 @@ if (saveCascade) {
 if (plotCascade) {
   # Load default plot options
   source(file.path(Rcode, "PlotOptions.R"), echo = TRUE)
+  
+  # Create
   
   # Tidy up data for plotting
   plotData <- hivCascade %>%
@@ -290,6 +311,9 @@ if (plotCascade) {
     plotWidth <- 12
     plotHeight <- 10
     plotUnits <- "cm"
+    
+    # Create figure folder
+    dir.create(figFolder, showWarnings = FALSE)
     
     # Do the plots
     ggsave(file.path(figFolder, paste("cascadeIncidence-", "numPLHIV", 
