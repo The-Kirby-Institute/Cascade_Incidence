@@ -1,4 +1,5 @@
 data/countData/
+data/*.xlsx
 docs/
 misc/
 output/
