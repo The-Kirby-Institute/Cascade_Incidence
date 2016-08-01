@@ -53,14 +53,16 @@ try(if (startYear < 2004) stop("Start year before 2004"))
 analysisYear <- 2014
 
 # Input data 
-inputFileTag <- "Middle"
-inputFile <- paste("gbm_hiv_cascade-", toString(analysisYear), "_",
+inputFileTag <- "" # "Middle"
+# inputFile <- paste("gbm_hiv_cascade-", toString(analysisYear), "_",
+#                    inputFileTag, ".csv", sep = "")
+inputFile <- paste("test_hiv_cascade-", toString(analysisYear), 
                    inputFileTag, ".csv", sep = "")
 
 # Details of where to store outputs if desired
 if (saveCascadeSample || saveRegression) {
   currTime <- format(Sys.time(), "%Y-%m-%d(%H-%M)") # to append to files
-  folder <- paste("CountAnalysis_", currTime, sep="")
+  folder <- paste("Cascade_Analysis_", currTime, sep="")
   
   # Create directory
   dir.create(file.path(resultsFolder,folder), showWarnings = FALSE)
@@ -98,9 +100,14 @@ years <- newInfects$year
 # Create a best estimate cascade
 cascadeBest <- hivCascade[, 1:3] %>% 
   spread(stage, value) %>% 
-  select(year, undiagnosed, diagnosed, unsuppressed, suppressed)
+  select(year, undiagnosed, diagnosed, unsuppressed, 
+         suppressed, plhiv, pldhiv)
 
-cascadeBest$infections <- newInfects$diagnoses
+cascadeBest$diagnoses <- newInfects$diagnoses
+
+# Alternative estimate
+changePlhiv <- diff(cascadeBest$plhiv)
+cascadeBest$infections <- c(changePlhiv[1], changePlhiv)
 
 ```
 

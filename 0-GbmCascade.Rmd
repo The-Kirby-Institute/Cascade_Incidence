@@ -25,7 +25,6 @@ source(file.path(Rcode, "DataLibraries.R"), echo = TRUE)
 
 ```{r scriptdetails}
 #Script parameters
-saveplots <- TRUE
 startYear <- 2005 # minimum for plotting; miumum assumed to be 2004 in 
                   # analysis
 try(if (startYear < 2004) stop("Start year before 2004"))
@@ -55,10 +54,11 @@ savePlots <- FALSE
 # undiagnosed. This can either be the same as COUNT in 2014 (~8.9% see 
 # below) or a linear change from a specified value in 2004 to the COUNT 
 # estimate. 
-undiagnosedOption <- "linear"; # "count" or "linear"
+undiagnosedOption <- "count"; # "count" or "linear"
 if (undiagnosedOption == "linear") {
   startYearProp <- c(0.2,0.13, 0.30) # c(best, lower, upper)
   # c(0.2,0.13, 0.30), c(0.3,0.2, 0.4), c(0.1, 0.06, 0.14)
+  # Bestfit from Bayes, Medianfit from Bayes
   fileTag <- "Middle" # Add to file when saving results 
 }
 
