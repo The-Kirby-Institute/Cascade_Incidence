@@ -63,13 +63,14 @@ if (undiagnosedOption == "linear") {
   fileTag <- "Middle" # Add to file when saving results 
 } else if (undiagnosedOption == "ecdc"){
   # Use results from the ECDC HIV Modelling Tool
-  ecdcEstimates <- c(13.69, 13.06, 12.78, 12.43, 12.07, 
-                     11.69, 11.38, 11.09, 10.84, 10.66, 10.59) / 100
+  ecdcEstimates <- c(14.63, 14.04, 13.38, 12.63, 11.89, 11.17, 10.60, 10.11,
+                     9.70, 9.37, 9.13) / 100
   
-  ecdcEstimatesLower <- c(12.91, 12.28, 12.09, 11.79, 11.43, 10.99, 10.60,
-                          10.32, 10.08, 9.66, 9.30) / 100
-  ecdcEstimatesUpper <- c(14.87, 14.26, 13.81, 13.39, 12.91, 12.44, 12.29,
-                          12.25, 12.25, 12.29, 12.94) / 100
+  ecdcEstimatesLower <- c(13.79, 13.20, 12.49, 11.81, 11.19, 10.61, 9.99,
+                          9.42, 9.04, 8.70, 8.06) / 100
+  
+  ecdcEstimatesUpper <- c(15.30, 14.71, 14.17, 13.41, 12.59, 11.89, 11.36,
+                          10.95, 10.60, 10.40, 10.48) / 100
     
 }  
 ```
