@@ -60,6 +60,18 @@ cascadeBest <- hivCascade[, 1:3] %>%
 cascadeBest$diagnoses <- newInfects$diagnoses
 cascadeBest$infections <- newInfects$diagnoses_exclude_os # infections
 
+cascadeBest$infections <- c(641.393064,
+644.110739,
+644.888006,
+646.980217,
+653.488845,
+665.822685,
+683.697852,
+706.676585,
+734.32112,
+766.193694,
+801.856544)
+
 # Estimate error bounds - store information in a data frame for 
 # ease of extraction when creating priors
 errorRange <- hivCascade %>%
@@ -258,8 +270,8 @@ if (useSaved) {
 # Using the results from runsims resample with replacement to create 
 # psoteriors
 
-resamples <- 20000
-useSaved <- TRUE
+resamples <- 4000
+useSaved <- FALSE
 saveOutputs <- FALSE
 
 if (useSaved) {
@@ -318,7 +330,7 @@ betaBestRel <- betaBest / betaBest[2]
 
 # General exploration ----------------------------------------------------
 
-hist(beta4[resampleIndices], breaks = 100) # posterior
+hist(beta3[resampleIndices], breaks = 100) # posterior
 hist(beta4, breaks = 100) # prior
 
 hist(f4[resampleIndices], breaks = 100) # posterior
