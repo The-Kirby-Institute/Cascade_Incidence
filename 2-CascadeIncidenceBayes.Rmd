@@ -317,7 +317,7 @@ if (useSaved) {
 
 resamples <- 40000
 useSaved <- FALSE
-saveOutputs <- FALSE
+saveOutputs <- TRUE
 
 if (useSaved) {
   # Specify details of saved file
@@ -439,13 +439,13 @@ propInfectsMed <- PropInfectionsTV(cascadeData, BetaMedstart, BetaMedend)
 # General exploration ----------------------------------------------------
 graphics.off()
 
-hist(f1start, breaks = 100) # prior
-hist(f1start[resampleIndices], breaks = 100) # posterior 
-hist(f1end[resampleIndices], breaks = 100) # posterior 
+hist(f3start, breaks = 100) # prior
+hist(f3start[resampleIndices], breaks = 100) # posterior 
+hist(f3end[resampleIndices], breaks = 100) # posterior 
 
-hist(beta1start, breaks = 100) # prior
-hist(beta1start[resampleIndices], breaks = 100) # posterior
-hist(beta1end[resampleIndices], breaks = 100) # posterior
+hist(betastart, breaks = 100) # prior
+hist(betastart[resampleIndices], breaks = 100) # posterior
+hist(betaend[resampleIndices], breaks = 100) # posterior
 
 hist(log(beta4start), breaks = 100) # prior
 hist(log(beta4start[resampleIndices]), breaks = 100) # posterior
