@@ -44,32 +44,63 @@ cat(fmStr)
 
 # Specify the results production times/string for selecting the correct 
 # folder
-regAnalysisTime <- "2016-05-17(16-32)" 
-bayesAnalysisTime <- "2016-05-17(16-58)" 
-fileTag <- "Middle"
+# regAnalysisTime <- "2016-05-17(16-32)" 
+bayesAnalysisTime <- "2016-08-04(00-26)" 
+fileTag <- "ecdc"
 
 # Load regression results 
-load(file.path(resultsFolder, 
-  paste("Cascade_Analysis_", regAnalysisTime, sep = ""),
-  paste(regAnalysisTime, "_Cascade_Regression_Results_", fileTag,
-        ".rda", sep = "")))
+# load(file.path(resultsFolder, 
+#   paste("Cascade_Analysis_", regAnalysisTime, sep = ""),
+#   paste(regAnalysisTime, "_Cascade_Regression_Results_", fileTag,
+#         ".rda", sep = "")))
 
-# Load Bayesian results
+# Load Bayesian results 
 bayesResultsFolder <- file.path(resultsFolder, 
   paste("Cascade_Bayes_", bayesAnalysisTime, sep = ""))
 load(file.path(bayesResultsFolder, paste(bayesAnalysisTime,
   "_Cascade_Bayes_results_", fileTag,".rda", sep = "")))
 
 # Useful info and results
-# cascadeBest <- cascadeBestBayes
+cascadeBest <- cascadeBestBayes
 years <- cascadeBest$year
 numyears <- length(years)
 
-# Bayesian best fit info
-bestFit <- GetMode(resampleIndices)
-betaBest <- c(beta1[bestFit], beta2[bestFit], beta3[bestFit],
-              beta4[bestFit])
-betaBestRel <- betaBest / betaBest[2]
+# Bayesian best fit and median fit info ------------------------------------
+betaBest <- c(beta1start[bestFit], beta1end[bestFit],
+              beta2start[bestFit], beta2end[bestFit],
+              beta3start[bestFit], beta3end[bestFit],
+              beta4start[bestFit], beta4end[bestFit])
+
+betaBestStart <- c(beta1start[bestFit], beta2start[bestFit],
+              beta3start[bestFit], beta4start[bestFit])
+betaBestEnd <- c(beta1end[bestFit], beta2end[bestFit],
+              beta3end[bestFit], beta4end[bestFit])
+
+betaBestRelStart <- betaBestStart / betaBestStart[2]   
+betaBestRelEnd <- betaBestEnd / betaBestEnd[2] 
+
+# Median values of posteriors
+medBeta1start <- median(beta1start[resampleIndices])
+medBeta2start <- median(beta2start[resampleIndices])
+medBeta3start <- median(beta3start[resampleIndices])
+medBeta4start <- median(beta4start[resampleIndices])
+
+betaMedStart <- c(medBeta1start, medBeta2start, medBeta3start,
+                  medBeta4start)
+betaRelMedStart <- BetaMedstart / BetaMedstart[2]
+
+medBeta1end <- median(beta1end[resampleIndices])
+medBeta2end <- median(beta2end[resampleIndices])
+medBeta3end <- median(beta3end[resampleIndices])
+medBeta4end <- median(beta4end[resampleIndices])
+
+betaMedEnd <- c(medBeta1end, medBeta2end, medBeta3end, medBeta4end)
+betaRelMedEnd <- BetaMedend / BetaMedend[2]
+
+betaMed <- c(medBeta1start, medBeta1end, 
+             medBeta2start, medBeta2end,
+             medBeta3start, medBeta3end,
+             medBeta4start, medBeta4end)
 
 ```
 
@@ -105,25 +136,36 @@ if (savePlots) {
 
 ```{r Incidence results}
 
-# Best fit results --------------------------------------------------------
-bayesInc <- IncFunc(cascadeBest, betaBest[1], betaBest[2], 
-        betaBest[3], betaBest[4])
+# Best fit results -------------------------------------------------------
+bayesIncBest <- IncFuncTV(cascadeBest, 
+                      betaBestStart[1], betaBestEnd[1],
+                      betaBestStart[2], betaBestEnd[2],
+                      betaBestStart[3], betaBestEnd[3],
+                      betaBestStart[4], betaBestEnd[4])
+
+bayesIncMed <- IncFuncTV(cascadeBest, 
+                      betaMedStart[1], betaMedEnd[1],
+                      betaMedStart[2], betaMedEnd[2],
+                      betaMedStart[3], betaMedEnd[3],
+                      betaMedStart[4], betaMedEnd[4])
 
 # Regression best fit
-lmBeta <- as.numeric(undetectAdjustAnalysis)
-lmInc <- apply(cascadeBest[ ,2:5], 1, 
-               function(x) sum(x *  lmBeta))
+# lmBeta <- as.numeric(undetectAdjustAnalysis)
+# lmInc <- apply(cascadeBest[ ,2:5], 1, 
+#                function(x) sum(x *  lmBeta))
 
 comparePlot <- ggplot(data = cascadeBest, aes(x = year, y = infections)) +
   geom_point(aes(colour = "data")) + 
-  geom_line(aes(y = lmInc, colour = "regression")) +
-  geom_line(aes(y = bayesInc, colour = "bayes")) + 
-  coord_cartesian(ylim = c(0, 1000)) + 
+  # geom_line(aes(y = lmInc, colour = "regression")) +
+  geom_line(aes(y = bayesIncBest, colour = "bayes")) + 
+  geom_line(aes(y = bayesIncMed, colour = "bayesMed")) +
+  coord_cartesian(ylim = c(0, 1500)) + 
   scale_colour_manual(name = "",
-    limits = c("data", "regression", "bayes"), 
-    labels = c("Notifications data", "Linear regression fit", 
-               "Bayesian fit"), 
-    values = c("black", "blue", "red")) +
+    limits = c("data", "bayes", "bayesMed"), 
+    labels = c("Estimated new infections",  
+               "Best Bayesian fit",
+               "Median Bayesian fit"), 
+    values = c("black", "red", "blue")) +
   ylab("New infections") + xlab("Year") +
   plotOpts + theme(legend.position = "right")
 
@@ -146,7 +188,7 @@ aesLabels <- c("data", "sims", "mode", "median", "range" ) # legend order
 cols <- c("data" = "black", "sims" = "grey", "median" = "black", 
           "range" = "black", "mode" = "red")
 
-labels <- c("data" = "Notifications data",
+labels <- c("data" = "Estimated new infections",
             "sims" = "Posterior simulations",
             "median" = "Median value",
             "range" = "95% credible interval",
@@ -173,7 +215,7 @@ simsPlot <- ggplot(data = incidenceDF,
                fun.y = rangeLower, linetype = lines["range"]) +
   geom_line(data = cascadeBest, aes(y = bayesInc, colour = "mode",
                                     group = 1), size = 1.2) + 
-  coord_cartesian(ylim = c(0, 1000)) + 
+  coord_cartesian(ylim = c(0, 1500)) + 
   scale_colour_manual(name = "", values = cols[aesLabels],
                       labels = labels[aesLabels],
                       breaks = aesLabels,
@@ -198,8 +240,16 @@ if (savePlots) {
 cascadeData <- select(cascadeBest, undiagnosed, diagnosed,
                       unsuppressed, suppressed)
 
-incNumbers <- NumInfections(cascadeData, betaBest) %>%
-  gather("stage", "infections", 2:5)
+incNumbersBest <- NumInfectionsTV(cascadeData, betaBestStart, 
+                                  betaBestEnd) %>%
+  gather("stage", "infections", 2:5) %>%
+  tbl_df()
+
+incNumbersMed <- NumInfectionsTV(cascadeData, betaMedStart, 
+                                  betaMedEnd) %>%
+  gather("stage", "infections", 2:5) %>%
+  tbl_df()
+
 
 # Set up plots 
 legendLabels <- c("Undiagnosed", "Diagnosed untreated", 
@@ -208,25 +258,48 @@ legendLabels <- c("Undiagnosed", "Diagnosed untreated",
 plotCols <- asrcols[c(1:2, 4:5)]
 xValues <- seq(2004,2014, by = 5)
 
-# Incidence bar charts
-incPlotBase <- ggplot(data = incNumbers, aes(x = year, y = infections, 
-                                            fill = stage)) + 
+# Incidence bar charts - best fit
+incPlotBaseBest <- ggplot(data = incNumbersBest, aes(x = year, 
+                                                     y = infections, 
+                                                     fill = stage)) + 
   xlab("Year") +
   scale_fill_manual(values = plotCols, name = "", labels = legendLabels, 
-                    guide = guide_legend(reverse=TRUE, nrow = 2)) +  
+                    limits = c("undiagnosed", "diagnosed", 
+                               "unsuppressed", "suppressed"), 
+                    guide = guide_legend(nrow = 2)) +  
   scale_x_continuous(breaks = xValues) + plotOpts 
 
 
-incPlotNum <- incPlotBase + geom_bar(stat="identity") + 
+incPlotNumBest <- incPlotBaseBest + geom_bar(stat="identity") + 
   ylab("New infections") 
-incPlotProp <- incPlotBase + geom_bar(stat="identity", 
+incPlotPropBest <- incPlotBaseBest + geom_bar(stat="identity", 
+                                          position= "fill") +
+  ylab("Proportion new infections")
+
+# Incidence bar charts - Median value
+incPlotBaseMed <- ggplot(data = incNumbersMed, aes(x = year, y = infections,
+                                                   fill = stage)) + 
+  xlab("Year") +
+  scale_fill_manual(values = plotCols, name = "", labels = legendLabels, 
+                    limits = c("undiagnosed", "diagnosed", 
+                               "unsuppressed", "suppressed"), 
+                    guide = guide_legend(nrow = 2)) +  
+  scale_x_continuous(breaks = xValues) + plotOpts 
+
+
+incPlotNumMed <- incPlotBaseMed + geom_bar(stat="identity") + 
+  ylab("New infections") 
+incPlotPropMed <- incPlotBaseMed + geom_bar(stat="identity", 
                                           position= "fill") +
   ylab("Proportion new infections")
 
 if (savePlots) {
   # Print figures to separate files
-  SaveFigure(outputFolder, "New_infections_stage", incPlotNum)
-  SaveFigure(outputFolder, "Prop_infections_stage", incPlotProp)
+  SaveFigure(outputFolder, "New_infections_stage_Best", incPlotNum)
+  SaveFigure(outputFolder, "Prop_infections_stage_Best", incPlotProp)
+  
+  SaveFigure(outputFolder, "New_infections_stage_Median", incPlotNumMed)
+  SaveFigure(outputFolder, "Prop_infections_stage_Median", incPlotPropMed)
   
 }
 
@@ -234,50 +307,102 @@ if (savePlots) {
 
 ```{r Prior posterior plots}
 # Parameter prior and posterior distributions -------------------------
-priorFrame <- data.frame(beta = beta, 
-                         beta1 = beta1,
-                         beta2 = beta2,
-                         beta3 = beta3,
-                         beta4 = beta4,
-                         f1 = f1,
-                         f2 = f2,
-                         f3 = f3,
+priorFrameStart <- data.frame(beta = betastart, 
+                         beta1 = beta1start,
+                         beta2 = beta2start,
+                         beta3 = beta3start,
+                         beta4 = beta4start,
+                         f1 = f1start,
+                         f2 = f2start,
+                         f3 = f3start,
                          f4 = f4)
 
-posteriorFrame <- data.frame(beta = beta[resampleIndices],
-                             beta1 = beta1[resampleIndices],
-                             beta2 = beta2[resampleIndices],
-                             beta3 = beta3[resampleIndices],
-                             beta4 = beta4[resampleIndices],
-                             f1 = f1[resampleIndices],
-                             f2 = f2[resampleIndices],
-                             f3 = f3[resampleIndices],
+posteriorFrameStart <- data.frame(beta = betastart[resampleIndices],
+                             beta1 = beta1start[resampleIndices],
+                             beta2 = beta2start[resampleIndices],
+                             beta3 = beta3start[resampleIndices],
+                             beta4 = beta4start[resampleIndices],
+                             f1 = f1start[resampleIndices],
+                             f2 = f2start[resampleIndices],
+                             f3 = f3start[resampleIndices],
                              f4 = f4[resampleIndices])
 
-betaPlot <- ParameterPlot("beta", priorFrame, posteriorFrame)
-beta1Plot <- ParameterPlot("beta1", priorFrame, posteriorFrame)
-beta2Plot <- ParameterPlot("beta2", priorFrame, posteriorFrame)
-beta3Plot <- ParameterPlot("beta3", priorFrame, posteriorFrame)
-beta4Plot <- ParameterPlot("beta4", priorFrame, posteriorFrame, 
-                           logCoords = TRUE)
-f1Plot <- ParameterPlot("f1", priorFrame, posteriorFrame)
-f2Plot <- ParameterPlot("f2", priorFrame, posteriorFrame)
-f3Plot <- ParameterPlot("f3", priorFrame, posteriorFrame)
-f4Plot <- ParameterPlot("f4", priorFrame, posteriorFrame,
+priorFrameEnd <- data.frame(beta = betaend, 
+                         beta1 = beta1end,
+                         beta2 = beta2end,
+                         beta3 = beta3end,
+                         beta4 = beta4end,
+                         f1 = f1end,
+                         f2 = f2end,
+                         f3 = f3end,
+                         f4 = f4)
+
+posteriorFrameEnd<- data.frame(beta = betaend[resampleIndices],
+                             beta1 = beta1end[resampleIndices],
+                             beta2 = beta2end[resampleIndices],
+                             beta3 = beta3end[resampleIndices],
+                             beta4 = beta4end[resampleIndices],
+                             f1 = f1end[resampleIndices],
+                             f2 = f2end[resampleIndices],
+                             f3 = f3end[resampleIndices],
+                             f4 = f4[resampleIndices])
+
+
+betaPlotStart <- ParameterPlot("beta", priorFrameStart,
+                               posteriorFrameStart)
+beta1PlotStart <- ParameterPlot("beta1", priorFrameStart,
+                                posteriorFrameStart)
+beta2PlotStart <- ParameterPlot("beta2", priorFrameStart,
+                                posteriorFrameStart)
+beta3PlotStart <- ParameterPlot("beta3", priorFrameStart,
+                                posteriorFrameStart)
+beta4PlotStart <- ParameterPlot("beta4", priorFrameStart,
+                                posteriorFrameStart, logCoords = TRUE)
+f1PlotStart <- ParameterPlot("f1", priorFrameStart, posteriorFrameStart)
+f2PlotStart <- ParameterPlot("f2", priorFrameStart, posteriorFrameStart)
+f3PlotStart <- ParameterPlot("f3", priorFrameStart, posteriorFrameStart)
+f4PlotStart <- ParameterPlot("f4", priorFrameStart, posteriorFrameStart,
+                        logCoords = TRUE)
+
+betaPlotEnd <- ParameterPlot("beta", priorFrameEnd,
+                               posteriorFrameEnd)
+beta1PlotEnd <- ParameterPlot("beta1", priorFrameEnd,
+                                posteriorFrameEnd)
+beta2PlotEnd <- ParameterPlot("beta2", priorFrameEnd,
+                                posteriorFrameEnd)
+beta3PlotEnd <- ParameterPlot("beta3", priorFrameEnd,
+                                posteriorFrameEnd)
+beta4PlotEnd <- ParameterPlot("beta4", priorFrameEnd,
+                                posteriorFrameEnd, logCoords = TRUE)
+f1PlotEnd <- ParameterPlot("f1", priorFrameEnd, posteriorFrameEnd)
+f2PlotEnd <- ParameterPlot("f2", priorFrameEnd, posteriorFrameEnd)
+f3PlotEnd <- ParameterPlot("f3", priorFrameEnd, posteriorFrameEnd)
+f4PlotEnd <- ParameterPlot("f4", priorFrameEnd, posteriorFrameEnd,
                         logCoords = TRUE)
 
 # Plot beta posteriors separately
-beta1PlotPost <- ParameterPlot("beta1", priorFrame, posteriorFrame, 
-                           singleplot = TRUE)
-beta2PlotPost <- ParameterPlot("beta2", priorFrame, posteriorFrame,
-                           singleplot = TRUE)
-beta3PlotPost <- ParameterPlot("beta3", priorFrame, posteriorFrame,
-                           singleplot = TRUE)
-beta4PlotPost <- ParameterPlot("beta4", priorFrame, posteriorFrame, 
+beta1PlotPostStart <- ParameterPlot("beta1", priorFrameStart,
+                                    posteriorFrameStart, singleplot = TRUE)
+beta2PlotPostStart <- ParameterPlot("beta2", priorFrameStart,
+                                    posteriorFrameStart, singleplot = TRUE)
+beta3PlotPostStart <- ParameterPlot("beta3", priorFrameStart, 
+                                    posteriorFrameStart, singleplot = TRUE)
+beta4PlotPostStart <- ParameterPlot("beta4", priorFrameStart,
+                                    posteriorFrameStart, 
+                           logCoords = TRUE, singleplot = TRUE)
+
+beta1PlotPostEnd <- ParameterPlot("beta1", priorFrameEnd,
+                                    posteriorFrameEnd, singleplot = TRUE)
+beta2PlotPostEnd <- ParameterPlot("beta2", priorFrameEnd,
+                                    posteriorFrameEnd, singleplot = TRUE)
+beta3PlotPostEnd <- ParameterPlot("beta3", priorFrameStart, 
+                                    posteriorFrameEnd, singleplot = TRUE)
+beta4PlotPostEnd <- ParameterPlot("beta4", priorFrameEnd,
+                                    posteriorFrameEnd, 
                            logCoords = TRUE, singleplot = TRUE)
 
 # Plot beta posteriors on one plot
-combinePost <- ggplot(data = posteriorFrame) +
+combinePostStart <- ggplot(data = posteriorFrameStart) +
   geom_density(aes(x = beta1, colour = "beta1", 
                    fill = "beta1"), alpha = 0.2) + 
   geom_density(aes(x = beta2, colour = "beta2",
@@ -289,38 +414,116 @@ combinePost <- ggplot(data = posteriorFrame) +
   scale_colour_manual(name = "",
     values = asrcols[c(1:2, 3:4)],
     breaks = c("beta1", "beta2", "beta3", "beta4"),
-    labels = c("Undiagnosed", "Diagnosed", "Unsuppressed", "Suppressed")) +
+    labels = c("Undiagnosed", "Diagnosed", 
+               "Unsuppressed", "Suppressed")) +
   scale_fill_manual(name = "",
     values = asrcols[c(1:2, 3:4)],
     breaks = c("beta1", "beta2", "beta3", "beta4"),
-    labels = c("Undiagnosed", "Diagnosed", "Unsuppressed", "Suppressed")) +
+    labels = c("Undiagnosed", "Diagnosed", 
+               "Unsuppressed", "Suppressed")) +
   ylab("Density") + 
   xlab("Value, log10 scale") + 
   scale_x_log10(breaks = c(1e-05, 1e-04, 1e-03, 1e-02, 1e-01, 1)) +
   plotOpts
 
+combinePostEnd <- ggplot(data = posteriorFrameEnd) +
+  geom_density(aes(x = beta1, colour = "beta1", 
+                   fill = "beta1"), alpha = 0.2) + 
+  geom_density(aes(x = beta2, colour = "beta2",
+                   fill = "beta2"), alpha = 0.2) + 
+  geom_density(aes(x = beta3, colour = "beta3",
+                   fill = "beta3"), alpha = 0.2) + 
+  geom_density(aes(x = beta4, colour = "beta4",
+                   fill = "beta4"), alpha = 0.2) +
+  scale_colour_manual(name = "",
+    values = asrcols[c(1:2, 3:4)],
+    breaks = c("beta1", "beta2", "beta3", "beta4"),
+    labels = c("Undiagnosed", "Diagnosed", 
+               "Unsuppressed", "Suppressed")) +
+  scale_fill_manual(name = "",
+    values = asrcols[c(1:2, 3:4)],
+    breaks = c("beta1", "beta2", "beta3", "beta4"),
+    labels = c("Undiagnosed", "Diagnosed", 
+               "Unsuppressed", "Suppressed")) +
+  ylab("Density") + 
+  xlab("Value, log10 scale") + 
+  scale_x_log10(breaks = c(1e-05, 1e-04, 1e-03, 1e-02, 1e-01, 1)) +
+  plotOpts
+
+# Compare start and end posteriors
+betaPlotSE <- ParameterPlot("beta", posteriorFrameStart,
+                               posteriorFrameEnd)
+beta1PlotSE <- ParameterPlot("beta1", posteriorFrameStart,
+                                posteriorFrameEnd) +
+  coord_cartesian(xlim= c(0, max(posteriorFrameEnd$beta1)))
+beta2PlotSE<- ParameterPlot("beta2", posteriorFrameStart,
+                                posteriorFrameEnd)
+beta3PlotSE <- ParameterPlot("beta3", posteriorFrameStart,
+                                posteriorFrameEnd)
+beta4PlotSE <- ParameterPlot("beta4", posteriorFrameStart,
+                                posteriorFrameEnd, logCoords = TRUE)
+f1PlotSE <- ParameterPlot("f1", posteriorFrameStart, posteriorFrameEnd)
+f2PlotSE <- ParameterPlot("f2", posteriorFrameStart, posteriorFrameEnd)
+f3PlotSE <- ParameterPlot("f3", posteriorFrameStart, posteriorFrameEnd)
+f4PlotSE <- ParameterPlot("f4", posteriorFrameStart, posteriorFrameEnd,
+                        logCoords = TRUE)
 
 if (savePlots) {
   # Print figures to separate files
-  SaveFigure(outputFolder, "Beta_distributions", betaPlot)
-  SaveFigure(outputFolder, "Beta1_distributions", beta1Plot)
-  SaveFigure(outputFolder, "Beta2_distributions", beta2Plot)
-  SaveFigure(outputFolder, "Beta3_distributions", beta3Plot)
-  SaveFigure(outputFolder, "Beta4_distributions", beta4Plot)
-  SaveFigure(outputFolder, "f1_distributions", f1Plot)
-  SaveFigure(outputFolder, "f2_distributions", f2Plot)
-  SaveFigure(outputFolder, "f3_distributions", f3Plot)
-  SaveFigure(outputFolder, "f4_distributions", f4Plot)
-  SaveFigure(outputFolder, "Beta_distributions", betaPlot)
-  SaveFigure(outputFolder, "Beta1_post_distribution", beta1PlotPost)
-  SaveFigure(outputFolder, "Beta2_post_distribution", beta2PlotPost)
-  SaveFigure(outputFolder, "Beta3_post_distribution", beta3PlotPost)
-  SaveFigure(outputFolder, "Beta4_post_distribution", beta4PlotPost)
-  SaveFigure(outputFolder, "Beta_post_distributions", combinePost, 
+  SaveFigure(outputFolder, "Beta_distributions_start", betaPlotStart)
+  SaveFigure(outputFolder, "Beta1_distributions_start", beta1PlotStart)
+  SaveFigure(outputFolder, "Beta2_distributions_start", beta2PlotStart)
+  SaveFigure(outputFolder, "Beta3_distributions_start", beta3PlotStart)
+  SaveFigure(outputFolder, "Beta4_distributions_start", beta4PlotStart)
+  SaveFigure(outputFolder, "f1_distributions_start", f1PlotStart)
+  SaveFigure(outputFolder, "f2_distributions_start", f2PlotStart)
+  SaveFigure(outputFolder, "f3_distributions_start", f3PlotStart)
+  SaveFigure(outputFolder, "f4_distributions_start", f4PlotStart)
+  SaveFigure(outputFolder, "Beta_distributions_start", betaPlotStart)
+  SaveFigure(outputFolder, "Beta1_post_distribution_start",
+             beta1PlotPostStart)
+  SaveFigure(outputFolder, "Beta2_post_distribution_start",
+             beta2PlotPostStart)
+  SaveFigure(outputFolder, "Beta3_post_distribution_start",
+             beta3PlotPostStart)
+  SaveFigure(outputFolder, "Beta4_post_distribution_start",
+             beta4PlotPostStart)
+  SaveFigure(outputFolder, "Beta_post_distributions_start",
+             combinePostStart, 
              width = 20)
+  
+  SaveFigure(outputFolder, "Beta_distributions_end", betaPlotEnd)
+  SaveFigure(outputFolder, "Beta1_distributions_end", beta1PlotEnd)
+  SaveFigure(outputFolder, "Beta2_distributions_end", beta2PlotEnd)
+  SaveFigure(outputFolder, "Beta3_distributions_end", beta3PlotEnd)
+  SaveFigure(outputFolder, "Beta4_distributions_end", beta4PlotEnd)
+  SaveFigure(outputFolder, "f1_distributions_end", f1PlotEnd)
+  SaveFigure(outputFolder, "f2_distributions_end", f2PlotEnd)
+  SaveFigure(outputFolder, "f3_distributions_end", f3PlotEnd)
+  SaveFigure(outputFolder, "f4_distributions_end", f4PlotEnd)
+  SaveFigure(outputFolder, "Beta_distributions_end", betaPlotEnd)
+  SaveFigure(outputFolder, "Beta1_post_distribution_end", beta1PlotPostEnd)
+  SaveFigure(outputFolder, "Beta2_post_distribution_end", beta2PlotPostEnd)
+  SaveFigure(outputFolder, "Beta3_post_distribution_end", beta3PlotPostEnd)
+  SaveFigure(outputFolder, "Beta4_post_distribution_end", beta4PlotPostEnd)
+  SaveFigure(outputFolder, "Beta_post_distributions_end", combinePostEnd, 
+             width = 20)
+  
+  SaveFigure(outputFolder, "Beta_distributions_se", betaPlotSE)
+  SaveFigure(outputFolder, "Beta1_distributions_se", beta1PlotSE)
+  SaveFigure(outputFolder, "Beta2_distributions_se", beta2PlotSE)
+  SaveFigure(outputFolder, "Beta3_distributions_se", beta3PlotSE)
+  SaveFigure(outputFolder, "Beta4_distributions_se", beta4PlotSE)
+  SaveFigure(outputFolder, "f1_distributions_se", f1PlotSE)
+  SaveFigure(outputFolder, "f2_distributions_se", f2PlotSE)
+  SaveFigure(outputFolder, "f3_distributions_se", f3PlotSE)
+  SaveFigure(outputFolder, "f4_distributions_se", f4PlotSE)
+  SaveFigure(outputFolder, "Beta_distributions_se", betaPlotSE)
 }
 
 ```
+
+# Change in proportional incidence over time
 
 ```{r Proportion incidence}
 # Distribution new infections percentage for each stage
