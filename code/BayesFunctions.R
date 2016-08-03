@@ -13,8 +13,7 @@ GetMode <- function(vector) {
   uniqueElements[which.max(tabulate(match(vector, uniqueElements)))]
 }
 
-IncFunc <- function(cascadeData, beta1, beta2, beta3, beta4, 
-                    undiagProp = NULL) {
+IncFunc <- function(cascadeData, beta1, beta2, beta3, beta4) {
   # Function for can easily calculating the incidence values
   # for each sample of the beta values
   #
@@ -25,22 +24,30 @@ IncFunc <- function(cascadeData, beta1, beta2, beta3, beta4,
   # Returns:
   #   Estimated incidence for each year in data
   # 
-  
-  if (is.null(undiagProp)) {
+
     return(beta1 * cascadeData$undiagnosed  + 
              beta2 * cascadeData$diagnosed  + 
              beta3 * cascadeData$unsuppressed  + 
              beta4 * cascadeData$suppressed)
-  } else {
-    propUndiag <- seq(undiagProp[1], undiagProp[2], 
-                      length = length(cascadeData$pldhiv))
-    
-    numUndiag <- (cascadeData$pldhiv/(1-propUndiag) - cascadeData$pldhiv)
-    return(beta1 * numUndiag  + 
-             beta2 * cascadeData$diagnosed + 
-             beta3 * cascadeData$unsuppressed + 
-             beta4 * cascadeData$suppressed)
-  }
+}
+
+IncFuncTV <- function(cascadeData, beta1start, beta1end, 
+                      beta2start, beta2end,
+                      beta3start, beta3end,
+                      beta4start, beta4end) {
+  # Function for can easily calculating the incidence values
+  # for each sample of the beta values
+  
+  numYears <- nrow(cascadeData)
+  beta1 <- seq(beta1start, beta1end, length = numYears)
+  beta2 <- seq(beta2start, beta2end, length = numYears)
+  beta3 <- seq(beta3start, beta3end, length = numYears)
+  beta4 <- seq(beta4start, beta4end, length = numYears)
+  
+  return(beta1 * cascadeData$undiagnosed  + 
+           beta2 * cascadeData$diagnosed  + 
+           beta3 * cascadeData$unsuppressed  + 
+           beta4 * cascadeData$suppressed)
 }
 
 WeightError <- function(dataValues, estimatedValues, dataError) {
