@@ -81,6 +81,14 @@ errorRange <- hivCascade %>%
   summarise(errlower = mean(lower/value),
             errupper = mean(upper/value))
 
+# Percentage range in new infections for weighting
+incUpper <- (newInfects$upper - newInfects$infections) / 
+  newInfects$infections
+incLower <- (newInfects$infections - newInfects$lower) / 
+  newInfects$infections
+
+incError <- 100 * pmax(incUpper, incLower) # calculate error range
+
 ```
 
 ## Bayesian melding approach
@@ -92,7 +100,7 @@ errorRange <- hivCascade %>%
 
 # Chunk Options ----------------------------------------------------------
 
-numBayesSamples <- 5e4 # number of prior samples
+numBayesSamples <- 5e5 # number of prior samples
 priorApproach <- "relative" # independent or relative
 
 useSaved <- FALSE  # use previous set of sampled priors
@@ -104,8 +112,8 @@ f4Prior <- SuppressedOption("option6")
 
 priorWeight <- TRUE
 priorWeightValues <- c(500, 1300, -1000) # c(400. 1100, 0)
-
-incidenceWeight <- seq(10, 10, length = numYears) 
+# incidenceWeight <- seq(10, 10, length = numYears) 
+incidenceWeight <- incError
 
 # Details of inputs if required ------------------------------------------
 if (useSaved) {
@@ -192,14 +200,13 @@ if (useSaved) {
       
     # Set up priors for multiplicative factors
     f1start <-PriorSample(numBayesSamples, "unif", 
-                     c(beta1Rel[1], beta1Rel[2]))* 
-      runif(numBayesSamples, errN1[1], errN1[2])
+                     c(beta1Rel[1] * errN1[1], beta1Rel[2] * errN1[2]))
     
     f2start <- runif(numBayesSamples, errN2[1], errN2[2]) # just the error
     
     f3start <-PriorSample(numBayesSamples, "unif",
-                     c(beta3Rel[1], beta3Rel[2])) * 
-      runif(numBayesSamples, errN3[1], errN3[2])
+                     c(beta3Rel[1] * errN3[1], 
+                       beta3Rel[2] * errN3[2])) 
     
     # Calculate corresponding beta values
     beta1start <- f1start * betastart
@@ -212,14 +219,12 @@ if (useSaved) {
       
     # Set up priors for multiplicative factors
     f1end <-PriorSample(numBayesSamples, "unif", 
-                     c(beta1Rel[1], beta1Rel[2]))* 
-      runif(numBayesSamples, errN1[1], errN1[2])
+                     c(beta1Rel[1] * errN1[1], beta1Rel[2] * errN1[2]))
     
     f2end <- runif(numBayesSamples, errN2[1], errN2[2]) # just the error
     
     f3end <-PriorSample(numBayesSamples, "unif",
-                     c(beta3Rel[1], beta3Rel[2])) * 
-      runif(numBayesSamples, errN3[1], errN3[2])
+                     c(beta3Rel[1] * errN3[1], beta3Rel[2] * errN3[2]))
     
     # Calculate corresponding beta values
     beta1end <- f1end * betaend
@@ -409,10 +414,13 @@ incMed <- IncFuncTV(cascadeBest,
 plot(years, incidenceMatrix[bestFit, ], type = "l", ylim = c(0,1500))
 lines(years, incMed, col = "red")
 points(years, cascadeBest$diagnoses, col = "black")
+points(years, cascadeBest$infections, col = "blue")
 lines(years, apply(incidenceMatrix[resampleIndices, ], 2, median), 
       col = "blue")
+lines(years, newInfects$upper, col = "green")
+lines(years, newInfects$lower, col = "green")
 
-# Proportion infections for each stage for betaBest
+# Proportion infections for each stage for betaBest ---------------------
 cascadeData <- select(cascadeBest, undiagnosed, diagnosed, unsuppressed,
                       suppressed)
 
@@ -425,12 +433,12 @@ propInfectsMed <- PropInfectionsTV(cascadeData, BetaMedstart, BetaMedend)
 # General exploration ----------------------------------------------------
 graphics.off()
 
-hist(f3start, breaks = 100) # prior
-hist(f3start[resampleIndices], breaks = 100) # posterior 
-hist(f3end[resampleIndices], breaks = 100) # posterior 
+hist(f1start, breaks = 100) # prior
+hist(f1start[resampleIndices], breaks = 100) # posterior 
+hist(f1end[resampleIndices], breaks = 100) # posterior 
 
-hist(beta2start, breaks = 100) # prior
-hist(beta2start[resampleIndices], breaks = 100) # posterior
+hist(beta1start, breaks = 100) # prior
+hist(beta1start[resampleIndices], breaks = 100) # posterior
 hist(beta2end[resampleIndices], breaks = 100) # posterior
 
 hist(log(beta4start), breaks = 100) # prior
