@@ -102,7 +102,7 @@ fileTag <- "ecdc"
 # Specify f4 prior 
 f4Prior <- SuppressedOption("option6")
 
-priorWeight <- TRUE
+priorWeight <- FALSE
 priorWeightValues <- c(500, 1300, -1000) # c(400. 1100, 0)
 # cascadeError <- TRUE
 
@@ -328,20 +328,45 @@ betaBest <- c(beta1[bestFit], beta2[bestFit], beta3[bestFit],
               beta4[bestFit])
 betaBestRel <- betaBest / betaBest[2]   
 
+incidenceMatrix[bestFit, ]
+
+# Look at medians instead of bestfit
+medBeta1 <- median(beta1[resampleIndices])
+medBeta2 <- median(beta2[resampleIndices])
+medBeta3 <- median(beta3[resampleIndices])
+medBeta4 <- median(beta4[resampleIndices])
+
+BetaMed <- c(medBeta1, medBeta2, medBeta3, medBeta4)
+BetaRelMed <- BetaMed / BetaMed[2]
+
+# How good is the fit ----------------------------------------------------
+
+incMed <- IncFunc(cascadeBest, medBeta1, medBeta2, medBeta3, medBeta4)
+
+plot(years, incidenceMatrix[bestFit, ], type = "l", ylim = c(0,1500))
+lines(years, incMed, col = "red")
+points(years, cascadeBest$diagnoses, col = "black")
+lines(years, apply(incidenceMatrix[resampleIndices, ], 2, median), 
+      col = "blue")
+
 # General exploration ----------------------------------------------------
 
-hist(beta3[resampleIndices], breaks = 100) # posterior
-hist(beta4, breaks = 100) # prior
+hist(f3[resampleIndices], breaks = 100) # posterior
+hist(f3, breaks = 100) # prior
 
-hist(f4[resampleIndices], breaks = 100) # posterior
-hist(f4, breaks = 100) # prior
+hist(beta4[resampleIndices], breaks = 100) # posterior
+hist(beta1, breaks = 100) # prior
+
+hist(log(beta4[resampleIndices]), breaks = 100) # posterior
+hist(log(beta4), breaks = 100) # prior
+
+hist(log(f4[resampleIndices]), breaks = 100, xlim =c(-10,2)) # posterior
+hist(log(f4), breaks = 100, xlim =c(-10,2)) # prior
 
 # Proportion infections for each stage for betaBest
 
-cascadeData <- select(cascadeBest, undiagnosed, diagnosed,
-                      unsuppressed, suppressed)
-
 PropInfections(cascadeData, betaBest)
+propInfectsMed <- PropInfections(cascadeData, BetaMed)
 
 ```
 
