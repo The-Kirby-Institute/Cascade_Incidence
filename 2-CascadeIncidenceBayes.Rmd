@@ -104,7 +104,7 @@ numBayesSamples <- 5e5 # number of prior samples
 priorApproach <- "relative" # independent or relative
 
 useSaved <- FALSE  # use previous set of sampled priors
-saveSims <- FALSE   # save sample priors and weights
+saveSims <- TRUE   # save sample priors and weights
 fileTag <- "ecdc"
 
 # Specify f4 prior 
@@ -112,8 +112,8 @@ f4Prior <- SuppressedOption("option6")
 
 priorWeight <- TRUE
 priorWeightValues <- c(500, 1300, -1000) # c(400. 1100, 0)
-# incidenceWeight <- seq(10, 10, length = numYears) 
-incidenceWeight <- incError
+incidenceWeight <- seq(10, 25, length = numYears) 
+# incidenceWeight <- incError
 
 # Details of inputs if required ------------------------------------------
 if (useSaved) {
@@ -299,8 +299,11 @@ if (useSaved) {
   if (saveSims){
     # Save the output
     save(numBayesSamples, priorApproach, f4Prior,
-         beta, beta1, beta2, beta3, beta4, 
-         f1, f2, f3, f4, incidenceMatrix, weights,
+         betastart, beta1start, beta2start, beta3start, beta4start, 
+         betaend, beta1end, beta2end, beta3end, beta4end,
+         f1start, f2start, f3start,  
+         f1end, f2end, f3end,  
+         f4, incidenceMatrix, weights,
          file = file.path(outputFolder, paste(currTime, 
           "_Cascade_Bayes_Sims_", fileTag,".rda", sep = "")))
   }
@@ -312,7 +315,7 @@ if (useSaved) {
 # Using the results from runsims resample with replacement to create 
 # psoteriors
 
-resamples <- 4000
+resamples <- 40000
 useSaved <- FALSE
 saveOutputs <- FALSE
 
@@ -344,8 +347,11 @@ if (useSaved) {
     # Save the output
     cascadeBestBayes <- cascadeBest
     save(cascadeBestBayes, numBayesSamples, priorApproach, f4Prior,
-         beta, beta1, beta2, beta3, beta4, f1, f2, f3, f4,
-         incidenceMatrix, weights, resamples, resampleIndices, 
+         betastart, beta1start, beta2start, beta3start, beta4start, 
+         betaend, beta1end, beta2end, beta3end, beta4end,
+         f1start, f2start, f3start,  
+         f1end, f2end, f3end, 
+         f4, incidenceMatrix, weights, resamples, resampleIndices, 
          file = file.path(outputFolder, paste(currTime, 
          "_Cascade_Bayes_Results_", fileTag, ".rda", sep = "")))
   }
@@ -439,7 +445,7 @@ hist(f1end[resampleIndices], breaks = 100) # posterior
 
 hist(beta1start, breaks = 100) # prior
 hist(beta1start[resampleIndices], breaks = 100) # posterior
-hist(beta2end[resampleIndices], breaks = 100) # posterior
+hist(beta1end[resampleIndices], breaks = 100) # posterior
 
 hist(log(beta4start), breaks = 100) # prior
 hist(log(beta4start[resampleIndices]), breaks = 100) # posterior
