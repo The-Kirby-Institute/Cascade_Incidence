@@ -57,20 +57,20 @@ cascadeBest <- hivCascade[, 1:3] %>%
   spread(stage, value) %>% 
   select(year, undiagnosed, diagnosed, unsuppressed, suppressed)
 
-cascadeBest$diagnoses <- newInfects$diagnoses
-cascadeBest$infections <- newInfects$diagnoses_exclude_os # infections
+cascadeBest$diagnoses <- newInfects$diagnoses # diagnoses_exclude_os
+cascadeBest$infections <- newInfects$infections
 
-cascadeBest$infections <- c(641.393064,
-644.110739,
-644.888006,
-646.980217,
-653.488845,
-665.822685,
-683.697852,
-706.676585,
-734.32112,
-766.193694,
-801.856544)
+# cascadeBest$infections <- c(641.393064,
+# 644.110739,
+# 644.888006,
+# 646.980217,
+# 653.488845,
+# 665.822685,
+# 683.697852,
+# 706.676585,
+# 734.32112,
+# 766.193694,
+# 801.856544)
 
 # Estimate error bounds - store information in a data frame for 
 # ease of extraction when creating priors
@@ -102,10 +102,8 @@ fileTag <- "ecdc"
 # Specify f4 prior 
 f4Prior <- SuppressedOption("option6")
 
-priorWeight <- FALSE
+priorWeight <- TRUE
 priorWeightValues <- c(500, 1300, -1000) # c(400. 1100, 0)
-# cascadeError <- TRUE
-
 
 incidenceWeight <- seq(10, 10, length = numYears) 
 
@@ -156,43 +154,78 @@ if (useSaved) {
   
   if (priorApproach == "independent") {
     # Specify uniform priors between min and max
-    beta1 <- runif(numBayesSamples, 
+    beta1start <- runif(numBayesSamples, 
                    beta1Rel[1] * betaRange[1] * errN1[1], 
                    beta1Rel[2] * betaRange[2] * errN1[2]) 
-    beta2 <- runif(numBayesSamples, 
+    beta2start <- runif(numBayesSamples, 
                    betaRange[1] * errN2[1], 
                    betaRange[2] * errN2[2]) 
-    beta3 <- runif(numBayesSamples, 
+    beta3start <- runif(numBayesSamples, 
                    beta3Rel[1] * betaRange[1] * errN3[1], 
                    beta3Rel[2] * betaRange[2] * errN3[2])   
     
     # Calculate multiplicative factor (f) values
-    beta <- beta2
-    f1 <- beta1 / beta2
-    f2 <- beta2 / beta2
-    f3 <- beta3 / beta2
+    betastart <- beta2start
+    f1start <- beta1start / beta2start
+    f2start <- beta2start / beta2start
+    f3start <- beta3start / beta2start
+    
+    # Use same prior for end value
+    beta1end <- runif(numBayesSamples, 
+                   beta1Rel[1] * betaRange[1] * errN1[1], 
+                   beta1Rel[2] * betaRange[2] * errN1[2])
+    beta2end <- runif(numBayesSamples, 
+                   betaRange[1] * errN2[1], 
+                   betaRange[2] * errN2[2])
+    beta3end <- runif(numBayesSamples, 
+                   beta3Rel[1] * betaRange[1] * errN3[1], 
+                   beta3Rel[2] * betaRange[2] * errN3[2])
+    betaend <- beta2end
+    f1end <- beta1end / beta2end
+    f2end <- beta2end / beta2end
+    f3end <- beta3end / beta3end
     
   } else if(priorApproach == "relative") {
     # Set up beta prior
-    beta <- PriorSample(numBayesSamples, "unif", 
+    betastart <- PriorSample(numBayesSamples, "unif", 
                         c(betaRange[1], betaRange[2])) 
       
     # Set up priors for multiplicative factors
-    f1 <-PriorSample(numBayesSamples, "unif", 
+    f1start <-PriorSample(numBayesSamples, "unif", 
                      c(beta1Rel[1], beta1Rel[2]))* 
       runif(numBayesSamples, errN1[1], errN1[2])
     
-    f2 <- runif(numBayesSamples, errN2[1], errN2[2]) # just the error
+    f2start <- runif(numBayesSamples, errN2[1], errN2[2]) # just the error
     
-    f3 <-PriorSample(numBayesSamples, "unif",
+    f3start <-PriorSample(numBayesSamples, "unif",
                      c(beta3Rel[1], beta3Rel[2])) * 
       runif(numBayesSamples, errN3[1], errN3[2])
     
     # Calculate corresponding beta values
-    beta1 <- f1 * beta
-    beta2 <- f2 * beta
-    beta3 <- f3 * beta
-  
+    beta1start <- f1start * betastart
+    beta2start <- f2start * betastart
+    beta3start <- f3start * betastart
+    
+    # End values
+    betaend <- PriorSample(numBayesSamples, "unif", 
+                        c(betaRange[1], betaRange[2])) 
+      
+    # Set up priors for multiplicative factors
+    f1end <-PriorSample(numBayesSamples, "unif", 
+                     c(beta1Rel[1], beta1Rel[2]))* 
+      runif(numBayesSamples, errN1[1], errN1[2])
+    
+    f2end <- runif(numBayesSamples, errN2[1], errN2[2]) # just the error
+    
+    f3end <-PriorSample(numBayesSamples, "unif",
+                     c(beta3Rel[1], beta3Rel[2])) * 
+      runif(numBayesSamples, errN3[1], errN3[2])
+    
+    # Calculate corresponding beta values
+    beta1end <- f1end * betaend
+    beta2end <- f2end * betaend
+    beta3end <- f3end * betaend
+    
   } else {
     stop("Unspecified approach to generating priors")
   }
@@ -202,7 +235,8 @@ if (useSaved) {
     runif(numBayesSamples, errN4[1], errN4[2])
   
   # Calculate corresponding beta 4 values
-  beta4 <- beta * f4
+  beta4start <- betastart * f4
+  beta4end <- betaend * f4
   
   # Run simulations ------------------------------------------------------
   
@@ -224,9 +258,12 @@ if (useSaved) {
       print(bayesSample)
     }
     
-    incidenceSample <- IncFunc(cascadeBest,
-                               beta1[bayesSample], beta2[bayesSample],
-                               beta3[bayesSample], beta4[bayesSample])
+    incidenceSample <- IncFuncTV(cascadeBest,
+                               beta1start[bayesSample], beta1end[bayesSample],
+                               beta2start[bayesSample], beta2end[bayesSample],
+                               beta3start[bayesSample], beta3end[bayesSample],
+                               beta4start[bayesSample], beta4end[bayesSample])
+    
     incidenceMatrix[bayesSample, ] <- incidenceSample
     
     # For each sample calculate the weights using the likelihood function
@@ -324,24 +361,50 @@ bestFit <- GetMode(resampleIndices)
 
 # What the best fit looks like
 # betaBestRel <- c(f1[bestFit], 1, f3[bestFit], f4[bestFit])
-betaBest <- c(beta1[bestFit], beta2[bestFit], beta3[bestFit],
-              beta4[bestFit])
-betaBestRel <- betaBest / betaBest[2]   
+betaBest <- c(beta1start[bestFit], beta1end[bestFit],
+              beta2start[bestFit], beta2end[bestFit],
+              beta3start[bestFit], beta3end[bestFit],
+              beta4start[bestFit], beta4end[bestFit])
+
+betaBestStart <- c(beta1start[bestFit], beta2start[bestFit],
+              beta3start[bestFit], beta4start[bestFit])
+betaBestEnd <- c(beta1end[bestFit], beta2end[bestFit],
+              beta3end[bestFit], beta4end[bestFit])
+
+betaBestRelstart <- betaBestStart / betaBestStart[2]   
+betaBestRelend <- betaBestEnd / betaBestEnd[2] 
 
 incidenceMatrix[bestFit, ]
 
 # Look at medians instead of bestfit
-medBeta1 <- median(beta1[resampleIndices])
-medBeta2 <- median(beta2[resampleIndices])
-medBeta3 <- median(beta3[resampleIndices])
-medBeta4 <- median(beta4[resampleIndices])
+medBeta1start <- median(beta1start[resampleIndices])
+medBeta2start <- median(beta2start[resampleIndices])
+medBeta3start <- median(beta3start[resampleIndices])
+medBeta4start <- median(beta4start[resampleIndices])
 
-BetaMed <- c(medBeta1, medBeta2, medBeta3, medBeta4)
-BetaRelMed <- BetaMed / BetaMed[2]
+BetaMedstart <- c(medBeta1start, medBeta2start, medBeta3start, medBeta4start)
+BetaRelMedstart <- BetaMedstart / BetaMedstart[2]
+
+medBeta1end <- median(beta1end[resampleIndices])
+medBeta2end <- median(beta2end[resampleIndices])
+medBeta3end <- median(beta3end[resampleIndices])
+medBeta4end <- median(beta4end[resampleIndices])
+
+BetaMedend <- c(medBeta1end, medBeta2end, medBeta3end, medBeta4end)
+BetaRelMedend <- BetaMedend / BetaMedend[2]
+
+BetaMed <- c(medBeta1start, medBeta1end, 
+             medBeta2start, medBeta2end,
+             medBeta3start, medBeta3end,
+             medBeta4start, medBeta4end)
 
 # How good is the fit ----------------------------------------------------
 
-incMed <- IncFunc(cascadeBest, medBeta1, medBeta2, medBeta3, medBeta4)
+incMed <- IncFuncTV(cascadeBest, 
+                    medBeta1start, medBeta1end,
+                    medBeta2start, medBeta2end,
+                    medBeta3start, medBeta3end,
+                    medBeta4start, medBeta4end)
 
 plot(years, incidenceMatrix[bestFit, ], type = "l", ylim = c(0,1500))
 lines(years, incMed, col = "red")
@@ -349,24 +412,33 @@ points(years, cascadeBest$diagnoses, col = "black")
 lines(years, apply(incidenceMatrix[resampleIndices, ], 2, median), 
       col = "blue")
 
-# General exploration ----------------------------------------------------
-
-hist(f3[resampleIndices], breaks = 100) # posterior
-hist(f3, breaks = 100) # prior
-
-hist(beta4[resampleIndices], breaks = 100) # posterior
-hist(beta1, breaks = 100) # prior
-
-hist(log(beta4[resampleIndices]), breaks = 100) # posterior
-hist(log(beta4), breaks = 100) # prior
-
-hist(log(f4[resampleIndices]), breaks = 100, xlim =c(-10,2)) # posterior
-hist(log(f4), breaks = 100, xlim =c(-10,2)) # prior
-
 # Proportion infections for each stage for betaBest
+cascadeData <- select(cascadeBest, undiagnosed, diagnosed, unsuppressed,
+                      suppressed)
 
-PropInfections(cascadeData, betaBest)
-propInfectsMed <- PropInfections(cascadeData, BetaMed)
+PropInfectionsTV(cascadeData, betaBestStart, betaBestEnd)
+propInfectsMed <- PropInfectionsTV(cascadeData, BetaMedstart, BetaMedend)
+
+```
+
+```{r distributions}
+# General exploration ----------------------------------------------------
+graphics.off()
+
+hist(f3start, breaks = 100) # prior
+hist(f3start[resampleIndices], breaks = 100) # posterior 
+hist(f3end[resampleIndices], breaks = 100) # posterior 
+
+hist(beta2start, breaks = 100) # prior
+hist(beta2start[resampleIndices], breaks = 100) # posterior
+hist(beta2end[resampleIndices], breaks = 100) # posterior
+
+hist(log(beta4start), breaks = 100) # prior
+hist(log(beta4start[resampleIndices]), breaks = 100) # posterior
+hist(log(beta4end[resampleIndices]), breaks = 100) # posterior
+
+hist(log(f4), breaks = 100, xlim =c(-10,2)) # prior
+hist(log(f4[resampleIndices]), breaks = 100, xlim =c(-10,2)) # posterior
 
 ```
 

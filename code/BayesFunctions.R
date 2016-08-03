@@ -175,6 +175,35 @@ PropInfections <- function(cascadeData, betaValues) {
   return(propResults)
 }
 
+PropInfectionsTV <- function(cascadeData, betaValuesStart, betaValuesEnd) {
+  # This function calculates the proportion of new infections due to each 
+  # stage of the cascade for a given set of beta Values.
+  
+  # Apply proportion calculation to each year
+  # propResults <- t(apply(cascadeData, 1, 
+  #                        function(x) x * betaValues / 
+  #                           sum(x * betaValues)))
+  
+  numYears <- nrow(cascadeData)
+  betaValuesDf <- data.frame(beta1 = seq(betaValuesStart[1], 
+                              betaValuesEnd[1], length = numYears),
+                             beta2 = seq(betaValuesStart[2], 
+                              betaValuesEnd[2], length = numYears),
+                             beta3 = seq(betaValuesStart[3], 
+                              betaValuesEnd[3], length = numYears),
+                             beta4 = seq(betaValuesStart[4], 
+                              betaValuesEnd[4], length = numYears)) 
+  
+  temp <- cascadeData * betaValuesDf
+  propResults <- t(apply(temp, 1, function(x) x / sum(x)))
+  
+  # Convert to data frame and return
+  propResults <- as.data.frame(cbind(cascadeBest$year, propResults))
+  colnames(propResults)[1] <- "year"
+  
+  return(propResults)
+}
+
 NumInfections <- function(cascadeData, betaValues) {
   # This function calculates the number of new infections due to each 
   # stage of the cascade for a given set of beta Values.
