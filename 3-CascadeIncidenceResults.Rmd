@@ -277,7 +277,8 @@ incPlotPropBest <- incPlotBaseBest + geom_bar(stat="identity",
   ylab("Proportion new infections")
 
 # Incidence bar charts - Median value
-incPlotBaseMed <- ggplot(data = incNumbersMed, aes(x = year, y = infections,
+incPlotBaseMed <- ggplot(data = incNumbersMed, 
+                         aes(x = year, y = infections,
                                                    fill = stage)) + 
   xlab("Year") +
   scale_fill_manual(values = plotCols, name = "", labels = legendLabels, 

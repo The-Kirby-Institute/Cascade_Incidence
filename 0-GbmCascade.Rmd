@@ -39,6 +39,7 @@ nYears <- length(years)
 # described in the Annual Surveillance Report applied to gay and bisexual 
 # men.
 pldhivFile <- file.path(dataFolder, "pldhiv_estimates_gbm.csv")
+undiagFile <- file.path(dataFolder, "undiagnosed_estimates_gbm.csv")
 
 # File containing new diagnosis and estimated new infections for GBM
 # newInfectionsFile <- file.path(dataFolder, "new_infections_gbm.csv")
@@ -46,6 +47,7 @@ pldhivFile <- file.path(dataFolder, "pldhiv_estimates_gbm.csv")
 # Save and plot
 saveCascade <- TRUE
 plotCascade <- TRUE
+plotUndiagnosed <- TRUE
 savePlots <- TRUE
 
 # Option for undiagnosed proportion ---------------------------------------
@@ -54,25 +56,8 @@ savePlots <- TRUE
 # undiagnosed. This can either be the same as COUNT in 2014 (~8.9% see 
 # below) or a linear change from a specified value in 2004 to the COUNT 
 # estimate. 
-undiagnosedOption <- "ecdc"; # "count" or "linear" or "ecdc"
+undiagnosedOption <- "ecdc" # "count" or "ecdc"
 
-if (undiagnosedOption == "linear") {
-  startYearProp <- c(0.2,0.13, 0.30) # c(best, lower, upper)
-  # c(0.2,0.13, 0.30), c(0.3,0.2, 0.4), c(0.1, 0.06, 0.14)
-  # Bestfit from Bayes, Medianfit from Bayes
-  fileTag <- "Middle" # Add to file when saving results 
-} else if (undiagnosedOption == "ecdc"){
-  # Use results from the ECDC HIV Modelling Tool
-  ecdcEstimates <- c(14.63, 14.04, 13.38, 12.63, 11.89, 11.17, 10.60, 10.11,
-                     9.70, 9.37, 9.13) / 100
-  
-  ecdcEstimatesLower <- c(13.79, 13.20, 12.49, 11.81, 11.19, 10.61, 9.99,
-                          9.42, 9.04, 8.70, 8.06) / 100
-  
-  ecdcEstimatesUpper <- c(15.30, 14.71, 14.17, 13.41, 12.59, 11.89, 11.36,
-                          10.95, 10.60, 10.40, 10.48) / 100
-    
-}  
 ```
 
 ```{r data}
@@ -92,8 +77,20 @@ if (undiagnosedOption == "count") {
   # Convert count data into a matrix
   undiagnosedMatrix <- matrix(rep(undiagnosedCount, 11), ncol = 11)
 } else if (undiagnosedOption == "ecdc") {  
-  # Use ECDC estimate for proportion undiagnosed and uncertainty from 
-  # count
+  # Use results from the ECDC HIV Modelling Tool
+  propUndiag <- read.csv(undiagFile)
+  
+  # Take the mean of the estimates including all diagnoses and when
+  # previously diagnosed overseas are excluded (convert to proportion)
+  ecdcEstimates <- (propUndiag$percentage + propUndiag$percentage_npd) / 
+    2 / 100
+  
+  # Take lowerest estimate (when excluding previously diagnosed overseas)
+  ecdcEstimatesLower <-  propUndiag$lower_npd/ 100
+  
+  # Take highest estimate (includes all diagnoses)
+  ecdcEstimatesUpper <-propUndiag$upper / 100
+  
   undiagnosedMatrix <- matrix(0, nrow = 3, ncol = 11)
   undiagnosedMatrix[1, ] <- ecdcEstimates
   undiagnosedMatrix[2, ] <- ecdcEstimatesLower
@@ -140,6 +137,61 @@ try(if(length(propTreat) != nYears)
 try(if((length(propSuppressedMin) != nYears) || 
        (length(propSuppressedMin) != nYears)) 
   stop("Incorrect number of data points for proportion suppressed"))
+```
+
+```{r plot undiagnosed}
+if (plotUndiagnosed) {
+  # Load default plot options
+  source(file.path(Rcode, "PlotOptions.R"), echo = TRUE)
+  
+  # Tidy up indiagnosed matrix
+  undiagProp <- tbl_df(as.data.frame(t(undiagnosedMatrix)))
+  colnames(undiagProp) <- c("estimate", "lower", "upper")
+  undiagProp$year <- propUndiag$year
+  
+  countDF <- data_frame(year = 2014,
+                        estimate = undiagnosedCount[1],
+                        lower = undiagnosedCount[2],
+                        upper = undiagnosedCount[3])
+  
+  # Create plot
+  undiagPlot <- ggplot(data = undiagProp, aes(x = year)) +
+    geom_ribbon(aes(ymin = 100 * lower, ymax = 100 * upper), 
+                    fill = asrcols[2], 
+                alpha = 0.4) +
+    geom_line(aes(y = 100 * estimate, colour = "ecdc")) +
+    geom_errorbar(data = countDF, 
+                  aes(x = year, ymin = 100 * lower, ymax = 100 * upper,
+                  colour = "count")) +
+    geom_point(data = countDF, 
+                  aes(x = year, y = 100 * estimate, colour = "count")) +
+    scale_colour_manual(name = "", 
+                        labels = c("ECDC estimates", "COUNT estimate"),
+                        values = c(asrcols[2], "black"),
+                        limits = c("ecdc", "count")) +
+    scale_x_continuous(breaks = seq(startYear,                        
+                                      analysisYear, by = 3)) +
+    coord_cartesian(ylim = c(0, 15)) +
+    ylab("Percentage undiagnosed (%)") + xlab("Year") +
+    plotOpts
+  
+  if (savePlots) {
+    # Plot specs
+    plotWidth <- 12
+    plotHeight <- 10
+    plotUnits <- "cm"
+    
+    # Create figure folder
+    dir.create(figFolder, showWarnings = FALSE)
+    
+    # Do the plots
+    ggsave(file.path(figFolder, paste0("undiagnosedPercent-",
+                                      toString(analysisYear), ".png")),
+      plot = undiagPlot, width = plotWidth, height = plotHeight, 
+      units = plotUnits)
+  }
+}
+  
 ```
 
 ```{r createstimates}
