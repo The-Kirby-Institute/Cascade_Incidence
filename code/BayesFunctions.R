@@ -227,6 +227,33 @@ NumInfections <- function(cascadeData, betaValues) {
   return(numResults)
 }
 
+NumInfectionsTV <- function(cascadeData, betaValuesStart, betaValuesEnd) {
+  # This function calculates the number of new infections due to each 
+  # stage of the cascade for a given set of beta Values.
+  
+  # Apply proportion calculation to each year
+  # numResults <- t(apply(cascadeData, 1, 
+  #                       function(x) x * betaValues))
+  
+  numYears <- nrow(cascadeData)
+  betaValuesDf <- data.frame(beta1 = seq(betaValuesStart[1], 
+                              betaValuesEnd[1], length = numYears),
+                             beta2 = seq(betaValuesStart[2], 
+                              betaValuesEnd[2], length = numYears),
+                             beta3 = seq(betaValuesStart[3], 
+                              betaValuesEnd[3], length = numYears),
+                             beta4 = seq(betaValuesStart[4], 
+                              betaValuesEnd[4], length = numYears)) 
+  
+  numResults <- cascadeData * betaValuesDf
+  
+  # Convert to data frame and return
+  numResults <- as.data.frame(cbind(cascadeBest$year, numResults))
+  colnames(numResults)[1] <- "year"
+  
+  return(numResults)
+}
+
 # Plotting Functions -----------------------------------------------------
 
 # PlotOptions.R needs to be sourced for these functions to work
@@ -271,8 +298,8 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
               "startundiag" = "Undiagnosed proportion")
   yLabel <- labels[parameter]
   
-  priorDist <- priorFrame[, parameter]
-  postDist <- posteriorFrame[, parameter]
+  priorDist <- priorsSamples[, parameter]
+  postDist <- posteriorSamples[, parameter]
   
   if (singleplot) {
     plotRange <- range(postDist)
@@ -300,14 +327,14 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
   }
   
   # Start plot
-  postPlot <- ggplot(data = posteriorFrame, aes_string(x = parameter)) +
+  postPlot <- ggplot(data = posteriorSamples, aes_string(x = parameter)) +
     geom_density(colour = "red", fill = "red", 
               alpha = 0.1)
   
   # Add prior if necessary
   if (!singleplot) {
     postPlot <- postPlot + 
-      geom_density(data = priorFrame, fill = "black", 
+      geom_density(data = priorsSamples, fill = "black", 
                  alpha = 0.2)
   }
   
@@ -317,7 +344,7 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
     yLabel <- paste(yLabel, ", log10 scale") 
   }
   
-  # Get the amximum desnity value for setting 7 axes
+  # Get the maximum desnity value for setting 7 axes
   if (singleplot) {
     ymax <- max(ggplot_build(postPlot)$data[[1]]$density)
     yLimit <- ymax * 1.2
