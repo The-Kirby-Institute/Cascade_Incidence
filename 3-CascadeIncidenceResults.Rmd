@@ -45,9 +45,8 @@ cat(fmStr)
 # Specify the results production times/string for selecting the correct 
 # folder
 # regAnalysisTime <- "2016-05-17(16-32)" 
-bayesAnalysisTime <- "2016-08-04(00-26)" 
+bayesAnalysisTime <- "2016-08-04(02-50)" 
 fileTag <- "ecdc"
-
 # Load regression results 
 # load(file.path(resultsFolder, 
 #   paste("Cascade_Analysis_", regAnalysisTime, sep = ""),
@@ -65,7 +64,9 @@ cascadeBest <- cascadeBestBayes
 years <- cascadeBest$year
 numyears <- length(years)
 
-# Bayesian best fit and median fit info ------------------------------------
+# Bayesian best fit and median fit info -----------------------------------
+bestFit <- GetMode(resampleIndices)
+
 betaBest <- c(beta1start[bestFit], beta1end[bestFit],
               beta2start[bestFit], beta2end[bestFit],
               beta3start[bestFit], beta3end[bestFit],
@@ -87,7 +88,7 @@ medBeta4start <- median(beta4start[resampleIndices])
 
 betaMedStart <- c(medBeta1start, medBeta2start, medBeta3start,
                   medBeta4start)
-betaRelMedStart <- BetaMedstart / BetaMedstart[2]
+betaRelMedStart <- betaMedStart / betaMedStart[2]
 
 medBeta1end <- median(beta1end[resampleIndices])
 medBeta2end <- median(beta2end[resampleIndices])
@@ -95,7 +96,7 @@ medBeta3end <- median(beta3end[resampleIndices])
 medBeta4end <- median(beta4end[resampleIndices])
 
 betaMedEnd <- c(medBeta1end, medBeta2end, medBeta3end, medBeta4end)
-betaRelMedEnd <- BetaMedend / BetaMedend[2]
+betaRelMedEnd <- betaMedEnd / betaMedEnd[2]
 
 betaMed <- c(medBeta1start, medBeta1end, 
              medBeta2start, medBeta2end,
@@ -106,7 +107,7 @@ betaMed <- c(medBeta1start, medBeta1end,
 
 ```{r Script options}
 # Setup script options
-savePlots <- FALSE # save plots as separate files
+savePlots <- TRUE # save plots as separate files
 saveTables <- FALSE
 
 if (savePlots) {
@@ -213,7 +214,7 @@ simsPlot <- ggplot(data = incidenceDF,
                fun.y = rangeUpper, linetype = lines["range"]) + 
   stat_summary(aes(group = 1), geom = "line", colour = "black",
                fun.y = rangeLower, linetype = lines["range"]) +
-  geom_line(data = cascadeBest, aes(y = bayesInc, colour = "mode",
+  geom_line(data = cascadeBest, aes(y = bayesIncBest, colour = "mode",
                                     group = 1), size = 1.2) + 
   coord_cartesian(ylim = c(0, 1500)) + 
   scale_colour_manual(name = "", values = cols[aesLabels],
@@ -296,8 +297,8 @@ incPlotPropMed <- incPlotBaseMed + geom_bar(stat="identity",
 
 if (savePlots) {
   # Print figures to separate files
-  SaveFigure(outputFolder, "New_infections_stage_Best", incPlotNum)
-  SaveFigure(outputFolder, "Prop_infections_stage_Best", incPlotProp)
+  SaveFigure(outputFolder, "New_infections_stage_Best", incPlotNumBest)
+  SaveFigure(outputFolder, "Prop_infections_stage_Best", incPlotPropBest)
   
   SaveFigure(outputFolder, "New_infections_stage_Median", incPlotNumMed)
   SaveFigure(outputFolder, "Prop_infections_stage_Median", incPlotPropMed)

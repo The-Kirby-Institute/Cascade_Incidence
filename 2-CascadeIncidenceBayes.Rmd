@@ -101,7 +101,7 @@ saveSims <- TRUE   # save sample priors and weights
 fileTag <- "ecdc"
 
 # Specify f4 prior 
-f4Prior <- SuppressedOption("option6")
+f4Prior <- SuppressedOption("option8")
 
 priorWeight <- TRUE
 priorWeightValues <- c(500, 1300, -1000) # c(400. 1100, 0)
@@ -308,9 +308,9 @@ if (useSaved) {
 # Using the results from runsims resample with replacement to create 
 # psoteriors
 
-resamples <- 40000
-useSaved <- TRUE
-saveOutputs <- FALSE
+resamples <- 50000
+useSaved <- FALSE
+saveOutputs <- TRUE
 
 if (useSaved) {
   # Specify details of saved file
@@ -417,7 +417,7 @@ points(years, cascadeBest$infections, col = "black")
 lines(years, apply(incidenceMatrix[resampleIndices, ], 2, median), 
       col = "blue")
 lines(years, newInfects$upper, col = "green")
-lines(years, newInfects$lower, col = "green")
+lines(years, newInfects$lower_npd, col = "green")
 
 # Proportion infections for each stage for betaBest ---------------------
 cascadeData <- select(cascadeBest, undiagnosed, diagnosed, unsuppressed,
@@ -432,9 +432,9 @@ propInfectsMed <- PropInfectionsTV(cascadeData, BetaMedstart, BetaMedend)
 # General exploration ----------------------------------------------------
 graphics.off()
 
-hist(f3start, breaks = 100) # prior
-hist(f3start[resampleIndices], breaks = 100) # posterior 
-hist(f3end[resampleIndices], breaks = 100) # posterior 
+hist(f2start, breaks = 100) # prior
+hist(f2start[resampleIndices], breaks = 100) # posterior 
+hist(f2end[resampleIndices], breaks = 100) # posterior 
 
 hist(betastart, breaks = 100) # prior
 hist(betastart[resampleIndices], breaks = 100) # posterior
