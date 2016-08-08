@@ -53,6 +53,11 @@ fileTag <- "ecdc"
 #   paste(regAnalysisTime, "_Cascade_Regression_Results_", fileTag,
 #         ".rda", sep = "")))
 
+# Load new infections data 
+dataFolder <- file.path(basePath, "data")
+newInfectionsFile <- file.path(dataFolder, "new_infections_gbm.csv")
+newInfects <- read.csv(newInfectionsFile)
+
 # Load Bayesian results 
 bayesResultsFolder <- file.path(resultsFolder, 
   paste("Cascade_Bayes_", bayesAnalysisTime, sep = ""))
@@ -102,6 +107,14 @@ betaMed <- c(medBeta1start, medBeta1end,
              medBeta2start, medBeta2end,
              medBeta3start, medBeta3end,
              medBeta4start, medBeta4end)
+
+# Proportion infections for each stage for betaBest ---------------------
+cascadeData <- select(cascadeBest, undiagnosed, diagnosed, unsuppressed,
+                      suppressed)
+
+propInfectsBest <- PropInfectionsTV(cascadeData, betaBestStart,
+                                    betaBestEnd)
+propInfectsMed <- PropInfectionsTV(cascadeData, betaMedStart, betaMedEnd)
 
 ```
 
@@ -160,6 +173,8 @@ comparePlot <- ggplot(data = cascadeBest, aes(x = year, y = infections)) +
   # geom_line(aes(y = lmInc, colour = "regression")) +
   geom_line(aes(y = bayesIncBest, colour = "bayes")) + 
   geom_line(aes(y = bayesIncMed, colour = "bayesMed")) +
+  geom_line(aes(y = newInfects$upper), colour = "black") +
+  geom_line(aes(y = newInfects$lower_npd), colour = "black") +
   coord_cartesian(ylim = c(0, 1500)) + 
   scale_colour_manual(name = "",
     limits = c("data", "bayes", "bayesMed"), 
@@ -538,19 +553,30 @@ percentFrame <- data.frame(sample = NULL,
                         unsuppressed = NULL,
                         suppressed = NULL)
 
-# Filter posterior frame to extract beta values
-betaFrame <- posteriorFrame %>%
+# Filter posterior frames to extract beta values
+betaFrameStart <- posteriorFrameStart %>%
   select(beta1, beta2, beta3, beta4)
 
-for (yearprop in years) {
+betaFrameEnd <- posteriorFrameStart %>%
+  select(beta1, beta2, beta3, beta4)
+
+nyears <- length(years)
+
+for (year in 1:nyears) {
+  
+  yearprop <- years[year]
   # Get the year data
   yearCascade <- cascadeBest %>%
     filter(year == yearprop) %>%
     select(-year, -infections) %>%
     as.numeric()
   
+  # Create betaFrame for this year
+  betaFrameYear <- betaFrameStart + (year - 1) * 
+    (betaFrameEnd - betaFrameStart) / (nyears - 1)
+  
   # Create data frame of percentages 
-  loopFrame <- as.data.frame(t(apply(betaFrame, 1, 
+  loopFrame <- as.data.frame(t(apply(betaFrameYear, 1, 
     function(x) 100 * (x * yearCascade / sum(x * yearCascade)))))
   
   colnames(loopFrame) <- c("undiagnosed", "diagnosed", "unsuppressed", 
@@ -600,14 +626,14 @@ suppressPercent <- PercentInc("suppressed", percentFrame,
                               savefolder = saveFolder)
 
 # Plot change in proportion acquired for 2014
-undiagPercent <- PercentInc("undiagnosed", percentFrame, years = 2014,
+undiagPercent2014 <- PercentInc("undiagnosed", percentFrame, years = 2014,
                             savefolder = saveFolder)
-diagPercent <- PercentInc("diagnosed", percentFrame, years = 2014,
+diagPercent2014 <- PercentInc("diagnosed", percentFrame, years = 2014,
                           savefolder = saveFolder)
-unsuppressPercent <- PercentInc("unsuppressed", percentFrame, 
+unsuppressPercent2014 <- PercentInc("unsuppressed", percentFrame, 
                                 years = 2014, savefolder = saveFolder)
-suppressPercent <- PercentInc("suppressed", percentFrame, years = 2014, 
-                              xlimits = c(0, 5), savefolder = saveFolder)
+suppressPercent2014 <- PercentInc("suppressed", percentFrame, years = 2014,
+                                xlimits = c(0, 5), savefolder = saveFolder)
 
 ```
 
@@ -625,8 +651,9 @@ if (priorApproach == "independent") {
     select(beta1, beta2, beta3, f4) 
 } else {
   # relative approach
-  bivariateData <- posteriorFrame %>%
-    select(beta, f1, f2, f3, f4) 
+  bivariateData <- posteriorFrameStrart %>%
+    select(beta, f1, f2, f3) %>%
+    rename(betastart = beta, f1start = f1, f2start = f2, f3start = f3) 
 }
 
 # Create a wrapper function for the lower plots

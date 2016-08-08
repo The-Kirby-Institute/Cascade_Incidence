@@ -60,8 +60,9 @@ cascadeBest <- hivCascade[, 1:3] %>%
 # cascadeBest$diagnoses <- newInfects$diagnoses 
 
 # Create infections estimates
-cascadeBest$infections <- (newInfects$infections + 
+cascadeBest$infections <- (newInfects$infections +
                              newInfects$infections_npd) / 2
+# cascadeBest$infections <- newInfects$infections_npd
 
 # Estimate error bounds - store information in a data frame for 
 # ease of extraction when creating priors
@@ -96,12 +97,12 @@ incError <- ceil(100 * pmax(incUpper, incLower)) # calculate error range
 numBayesSamples <- 1e6 # number of prior samples
 priorApproach <- "relative" # independent or relative
 
-useSaved <- FALSE  # use previous set of sampled priors
-saveSims <- TRUE   # save sample priors and weights
+useSaved <- TRUE  # use previous set of sampled priors
+saveSims <- FALSE   # save sample priors and weights
 fileTag <- "ecdc"
 
 # Specify f4 prior 
-f4Prior <- SuppressedOption("option8")
+f4Prior <- SuppressedOption("option6")
 
 priorWeight <- TRUE
 priorWeightValues <- c(500, 1300, -1000) # c(400. 1100, 0)
@@ -111,7 +112,7 @@ incidenceWeight <- incError
 # Details of inputs if required ------------------------------------------
 if (useSaved) {
   # Specify details of saved file
-  currTime <- "2016-04-14(13-32)" # in %Y-%m-%d(%H-%M) format 
+  currTime <- "2016-08-04(02-50)" # in %Y-%m-%d(%H-%M) format 
                                    # or some other name
   folder <- paste("Cascade_Bayes_", currTime, sep = "")
   outputFolder <- file.path(resultsFolder, folder)
@@ -316,7 +317,7 @@ if (useSaved) {
   # Specify details of saved file
   fileTag <- "ecdc"
   
-  simTime <- "2016-08-04(00-26)" # in %Y-%m-%d(%H-%M) format 
+  simTime <- "2016-08-04(02-50)" # in %Y-%m-%d(%H-%M) format 
                                   # or some other name
   folder <- paste("Cascade_Bayes_", simTime, sep = "")
   inputFolder <- file.path(resultsFolder, folder)
@@ -432,9 +433,9 @@ propInfectsMed <- PropInfectionsTV(cascadeData, BetaMedstart, BetaMedend)
 # General exploration ----------------------------------------------------
 graphics.off()
 
-hist(f2start, breaks = 100) # prior
-hist(f2start[resampleIndices], breaks = 100) # posterior 
-hist(f2end[resampleIndices], breaks = 100) # posterior 
+hist(f1start, breaks = 100) # prior
+hist(f1start[resampleIndices], breaks = 100) # posterior 
+hist(f1end[resampleIndices], breaks = 100) # posterior 
 
 hist(betastart, breaks = 100) # prior
 hist(betastart[resampleIndices], breaks = 100) # posterior
