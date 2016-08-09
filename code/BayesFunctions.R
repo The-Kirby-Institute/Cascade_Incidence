@@ -260,10 +260,13 @@ NumInfectionsTV <- function(cascadeData, betaValuesStart, betaValuesEnd) {
 
 ParameterPlot <- function(parameter, priorsSamples, posteriorSamples, 
                           savefolder = NULL, logCoords = FALSE, 
-                          singleplot = FALSE) {
+                          singleplot = FALSE, stats = FALSE,
+                          distLabels = NULL) {
   # This function generates a plot of the prior and posterior for each
   # parameter. Specifically set up for this project. Parameters and inputs 
-  # must correspond to the incidence model.
+  # must correspond to the incidence model. Note can use this to compare
+  # distributions by setting priorSamples and psoteriorSamples and labels
+  # appropriately. Doesn't neccessarily have to be a prior and posterior. 
   #
   # Args:
   #   parameter: Model input paramter to plot. 
@@ -275,6 +278,10 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
   #   savefolder: (Optional) Set to a folder to save the plot
   #   logCoords: (Optional) Set to TRUE tse log coordinates on x-axis 
   #   singleplot: (Optional) If TRUE only plots the posterior
+  #   stats: (Optional) If true plots median lines for both plots and adds
+  #     95% credible intervals for single plot
+  #   distLabels: (Optional) By default is NUll and set to 
+  #     c("Prior", "Posterior") but can be changed.
   # Returns:
   #   Plot handle corresponding to the created plot
   #
@@ -285,18 +292,30 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
     stop("Unknown parameter entered")
   }
   
+  # Set defualts
+  if (is.null(distLabels)) {
+    sampleLabels <- c("Prior", "Posterior")
+  } else {
+    sampleLabels <- distLabels
+  }
+  
   # Specify parameter labels
-  labels <- c("beta" = "Overall beta",
-              "beta1" = "Undiagnosed Beta",
-              "beta2" = "Diagnosed Beta",
-              "beta3" = "Unsuppressed Beta",
-              "beta4" = "Suppressed Beta",
+  labels <- c("beta" = "Overall incidence rate per 1000 PLHIV",
+              "beta1" = "Incidence rate per 1000 undiagnosed PLHIV",
+              "beta2" = "Incidence rate per 1000 diagnosed PLHIV",
+              "beta3" = "Incidence rate per 1000 unsuppressed PLHIV",
+              "beta4" = "Incidence rate per 1000 suppressed PLHIV",
               "f1" = "Undiagnosed factor",
               "f2" = "Diagnosed factor",
               "f3" = "Unsuppressed factor",
               "f4" = "Suppressed factor",
               "startundiag" = "Undiagnosed proportion")
   yLabel <- labels[parameter]
+  
+  if (parameter %in% c("beta", "beta1", "beta2", "beta3", "beta4")) {
+    priorsSamples[, parameter] <- priorsSamples[, parameter] * 1000
+    posteriorSamples[, parameter] <- posteriorSamples[, parameter] * 1000
+  }
   
   priorDist <- priorsSamples[, parameter]
   postDist <- posteriorSamples[, parameter]
@@ -312,30 +331,51 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
                        sep = "")
   } else {
     plotRange <- range(priorDist)
-    plotStats <- paste("Mean, median, mode:   \n", 
-                     "prior = ", 
+    plotStats <- paste0("Mean, median:   \n", 
+                     paste0(sampleLabels[1], " = "), 
                      toString(signif(mean(priorDist), digits = 2)), ", ",
-                     toString(signif(median(priorDist), digits = 2)), ", ",
-                     toString(signif(GetMode(priorDist), digits = 2)), 
+                     toString(signif(median(priorDist), digits = 2)),
+                     # toString(signif(GetMode(priorDist), digits = 2)), 
                      "   \n", 
-                     "posterior = ", 
+                     paste0(sampleLabels[2], " = "), 
                      toString(signif(mean(postDist), digits = 2)), ", ",
-                     toString(signif(median(postDist), digits = 2)), ", ",
-                     toString(signif(GetMode(postDist), digits = 2)), 
-                     "   \t\n", 
-                     sep = "")
+                     toString(signif(median(postDist), digits = 2)),
+                     # toString(signif(GetMode(postDist), digits = 2)), 
+                     "   \t\n")
   }
   
   # Start plot
   postPlot <- ggplot(data = posteriorSamples, aes_string(x = parameter)) +
-    geom_density(colour = "red", fill = "red", 
-              alpha = 0.1)
+    # geom_density(colour = "red", fill = "red", 
+    #           alpha = 0.1)
+    geom_line(colour = "blue", size = 1.2, stat = "density")
   
   # Add prior if necessary
   if (!singleplot) {
     postPlot <- postPlot + 
-      geom_density(data = priorsSamples, fill = "black", 
-                 alpha = 0.2)
+      # geom_density(data = priorsSamples, fill = "black", 
+      #            alpha = 0.2)
+      geom_line(data = priorsSamples, colour = "red3", size = 1.2, 
+                stat = "density")
+  }
+  
+  if (stats) {
+    
+    if (!singleplot) {
+      postPlot <- postPlot + 
+        geom_vline(aes(xintercept = median(postDist)), size = 1.1, 
+                   colour = "blue", linetype = "dashed") + 
+        geom_vline(aes(xintercept = median(priorDist)), size = 1.1, 
+                   colour = "red3", linetype = "dashed")
+    } else {
+      postPlot <- postPlot + 
+        geom_vline(aes(xintercept = median(postDist)), size = 1.1, 
+                   colour = "black", linetype = "solid") + 
+        geom_vline(aes(xintercept = quantile(postDist, 0.025)), size = 1.1, 
+                   colour = "black", linetype = "dashed") + 
+        geom_vline(aes(xintercept = quantile(postDist, 0.975)), size = 1.1, 
+                   colour = "black", linetype = "dashed")
+    }  
   }
   
   # Transform coordinates if required
@@ -344,7 +384,7 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
     yLabel <- paste(yLabel, ", log10 scale") 
   }
   
-  # Get the maximum desnity value for setting 7 axes
+  # Get the maximum density value for setting axes
   if (singleplot) {
     ymax <- max(ggplot_build(postPlot)$data[[1]]$density)
     yLimit <- ymax * 1.2
@@ -429,8 +469,14 @@ PercentInc <- function(cascadeStage, percentFrame, years = NULL,
   } else {
     # Only a single year plotted so remove legend and fix colour
     distPlot <- ggplot(data = percentData, aes(x = percentage)) + 
-      geom_density(size = 1.2, colour = "blue", 
-                   fill = "blue", alpha = 0.2) +
+      # geom_density(size = 1.2, colour = "blue", 
+      #              fill = "blue", alpha = 0.2) +
+      geom_line(size = 1.2, stat = "density", colour = "blue") +
+      geom_vline(aes(xintercept = median(percentage)), size = 1.1) + 
+      geom_vline(aes(xintercept = quantile(percentage, 0.025)), 
+                 linetype = "dashed", size = 1.1) +
+      geom_vline(aes(xintercept = quantile(percentage, 0.975)),
+                 linetype = "dashed", size = 1.1) +
       ylab("Density") + 
       xlab(paste("Percentage acquired from", cascadeStage
                  , "in", toString(years))) +

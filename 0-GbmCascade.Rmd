@@ -41,6 +41,7 @@ nYears <- length(years)
 pldhivFile <- file.path(dataFolder, "pldhiv_estimates_gbm.csv")
 undiagFile <- file.path(dataFolder, "undiagnosed_estimates_gbm.csv")
 
+
 # File containing new diagnosis and estimated new infections for GBM
 # newInfectionsFile <- file.path(dataFolder, "new_infections_gbm.csv")
 
@@ -65,7 +66,6 @@ undiagnosedOption <- "ecdc" # "count" or "ecdc"
 # Assumed to start from 2004
 
 pldhiv <- read.csv(pldhivFile)
-# newInfects <- read.csv(newInfectionsFile)
 
 # Hard coded data values --------------------------------------------------
 
@@ -382,7 +382,7 @@ if (plotCascade) {
       units = plotUnits)
   }
   
-  # Do time varying plots --------------------------------------------------
+  # Do time varying plots -------------------------------------------------
   
   plotStages <- c("undiagnosed", "diagnosed", "unsuppressed", "suppressed")
 
@@ -426,3 +426,51 @@ if (plotCascade) {
 }
 ```
 
+```{r Plot ECDC new infections}
+
+if (plotCascade) {
+  # Load default plot options
+  source(file.path(Rcode, "PlotOptions.R"), echo = TRUE)
+  
+  # Load data
+  newInfectionsFile <- file.path(dataFolder, "new_infections_gbm.csv")
+  newInfects <- read.csv(newInfectionsFile)
+  
+  # Create plot
+  plotInfects <- ggplot(data = newInfects, aes(x = year)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), 
+                    fill = "blue", alpha = 0.3) + 
+    geom_point(aes(y = diagnoses), colour = "blue") + 
+    geom_line(aes(y = infections, colour = "ipd")) +
+    geom_ribbon(aes(ymin = lower_npd, ymax = upper_npd), 
+                fill = "red", alpha = 0.3) + 
+    geom_point(aes(y = diagnoses_npd), colour = "red") + 
+    geom_line(aes(y = infections_npd, colour = "npd")) +
+    geom_line(aes(y = (infections + infections_npd)/2, colour = "best")) +
+    scale_x_continuous(breaks = seq(startYear,                        
+                                      analysisYear, by = 3)) +
+    scale_colour_manual(name = "",
+                        limits = c("ipd", "npd", "best"),
+                        labels = c("Including diagnosed overseas", 
+                                   "Excluding diagnosed overseas",
+                                   "Estimated new infections"), 
+                        values = c("blue", "red", "black"),
+                        guide = guide_legend(nrow = 3)) + 
+    expand_limits(y = 0) +
+    ylab("Number") + xlab("Year") + 
+    plotOpts + 
+  
+  if (savePlots) {
+      # Plot specs
+      plotWidth <- 12
+      plotHeight <- 10
+      plotUnits <- "cm"
+      
+      ggsave(file.path(figFolder, paste0("ECDC_new_infections-",
+                                      toString(analysisYear), ".png")),
+      plot = plotInfects, width = plotWidth, height = plotHeight, 
+      units = plotUnits)
+    }
+
+}
+```

@@ -171,17 +171,18 @@ bayesIncMed <- IncFuncTV(cascadeBest,
 comparePlot <- ggplot(data = cascadeBest, aes(x = year, y = infections)) +
   geom_point(aes(colour = "data")) + 
   # geom_line(aes(y = lmInc, colour = "regression")) +
-  geom_line(aes(y = bayesIncBest, colour = "bayes")) + 
-  geom_line(aes(y = bayesIncMed, colour = "bayesMed")) +
+  # geom_line(aes(y = bayesIncBest, colour = "bayes")) + 
+  geom_line(aes(y = apply(incidenceMatrix[resampleIndices, ], 2, mean),
+                colour = "bayesMean")) +
+  # geom_line(aes(y = bayesIncMed, colour = "bayesMed")) +
   geom_line(aes(y = newInfects$upper), colour = "black") +
   geom_line(aes(y = newInfects$lower_npd), colour = "black") +
   coord_cartesian(ylim = c(0, 1500)) + 
   scale_colour_manual(name = "",
-    limits = c("data", "bayes", "bayesMed"), 
+    limits = c("data", "bayesMean"), 
     labels = c("Estimated new infections",  
-               "Best Bayesian fit",
-               "Median Bayesian fit"), 
-    values = c("black", "red", "blue")) +
+               "Posterior mean"), 
+    values = c("black", "red")) +
   ylab("New infections") + xlab("Year") +
   plotOpts + theme(legend.position = "right")
 
@@ -199,45 +200,47 @@ rangeLower <- function(x) {
 incidenceDF <- TidyLongitudinal(incidenceMatrix[resampleIndices, ], 2004)
 
 # Set up complicated legend
-aesLabels <- c("data", "sims", "mode", "median", "range" ) # legend order 
+aesLabels <- c("data", "sims", "mean", "range" ) # legend order 
 
-cols <- c("data" = "black", "sims" = "grey", "median" = "black", 
-          "range" = "black", "mode" = "red")
+cols <- c("data" = "black", "sims" = "grey", "mean" = "red", 
+          "range" = "black")
 
 labels <- c("data" = "Estimated new infections",
             "sims" = "Posterior simulations",
-            "median" = "Median value",
-            "range" = "95% credible interval",
-            "mode" = "Best fitting simulation")
+            "mean" = "Posterior mean",
+            "range" = "95% credible interval")
 
-lines <- c("data" = "blank", "sims" = "solid", "median" = "solid", 
-          "range" = "dotted", "mode" = "solid")
+lines <- c("data" = "blank", "sims" = "solid", "mean" = "solid", 
+          "range" = "dotted")
 
-shapes <- c("data" = 16, "sims" = NA, "median" = NA, 
-          "range" = NA, "mode" = NA)
+shapes <- c("data" = 16, "sims" = NA, "mean" = NA, 
+          "range" = NA)
 
 
 # Create the plot
 simsPlot <- ggplot(data = incidenceDF, 
                    aes(x = year, y = value, group = sim)) +
   geom_line(aes(colour = "sims")) +
-  geom_point(data = cascadeBest, aes(y = infections, group = 1,
+  geom_pointrange(data = newInfects, 
+                  aes(y = (infections + infections_npd) / 2, 
+                                         ymin = lower_npd,
+                                         ymax = upper, group = 1,
              colour = "data")) + 
-  stat_summary(aes(group = 1, colour = "median"), geom = "line", 
-               fun.y = median) +
+  stat_summary(aes(group = 1, colour = "mean"), geom = "line", 
+               fun.y = mean) +
   stat_summary(aes(group = 1, colour = "range"), geom = "line", 
                fun.y = rangeUpper, linetype = lines["range"]) + 
   stat_summary(aes(group = 1), geom = "line", colour = "black",
                fun.y = rangeLower, linetype = lines["range"]) +
-  geom_line(data = cascadeBest, aes(y = bayesIncBest, colour = "mode",
-                                    group = 1), size = 1.2) + 
+  # geom_line(data = cascadeBest, aes(y = bayesIncBest, colour = "mode",
+  #                                   group = 1), size = 1.2) + 
   coord_cartesian(ylim = c(0, 1500)) + 
   scale_colour_manual(name = "", values = cols[aesLabels],
                       labels = labels[aesLabels],
                       breaks = aesLabels,
                       guide = guide_legend(override.aes = list(
-                         linetype = lines[aesLabels],
-                         shape = shapes[aesLabels]))) +
+                         linetype = lines[aesLabels]))) + #,
+                         # shape = shapes[aesLabels]))) +
   ylab("New infections") + xlab("Year") + 
   plotOpts + theme(legend.position = "right")
 
@@ -382,9 +385,9 @@ f4PlotStart <- ParameterPlot("f4", priorFrameStart, posteriorFrameStart,
                         logCoords = TRUE)
 
 betaPlotEnd <- ParameterPlot("beta", priorFrameEnd,
-                               posteriorFrameEnd)
+                               posteriorFrameEnd, stats = TRUE)
 beta1PlotEnd <- ParameterPlot("beta1", priorFrameEnd,
-                                posteriorFrameEnd)
+                                posteriorFrameEnd, stats = TRUE)
 beta2PlotEnd <- ParameterPlot("beta2", priorFrameEnd,
                                 posteriorFrameEnd)
 beta3PlotEnd <- ParameterPlot("beta3", priorFrameEnd,
@@ -409,7 +412,8 @@ beta4PlotPostStart <- ParameterPlot("beta4", priorFrameStart,
                            logCoords = TRUE, singleplot = TRUE)
 
 beta1PlotPostEnd <- ParameterPlot("beta1", priorFrameEnd,
-                                    posteriorFrameEnd, singleplot = TRUE)
+                                    posteriorFrameEnd, singleplot = TRUE,
+                                   stats = TRUE)
 beta2PlotPostEnd <- ParameterPlot("beta2", priorFrameEnd,
                                     posteriorFrameEnd, singleplot = TRUE)
 beta3PlotPostEnd <- ParameterPlot("beta3", priorFrameStart, 
@@ -469,7 +473,8 @@ combinePostEnd <- ggplot(data = posteriorFrameEnd) +
 
 # Compare start and end posteriors
 betaPlotSE <- ParameterPlot("beta", posteriorFrameStart,
-                               posteriorFrameEnd)
+                               posteriorFrameEnd, stats = TRUE,
+                            distLabels = c("2004", "2014"))
 beta1PlotSE <- ParameterPlot("beta1", posteriorFrameStart,
                                 posteriorFrameEnd) +
   coord_cartesian(xlim= c(0, max(posteriorFrameEnd$beta1)))
@@ -604,7 +609,8 @@ if (savePlots) {
 # interval for each year 
 incPercentFrame <- percentFrame %>%
   group_by(year, stage) %>%
-  summarise(mean = mean(percentage),
+  summarise(median = median(percentage),
+            mean = mean(percentage),
             lower05 = quantile(percentage, 0.05),
             upper95 = quantile(percentage, 0.95))
 
@@ -633,7 +639,8 @@ diagPercent2014 <- PercentInc("diagnosed", percentFrame, years = 2014,
 unsuppressPercent2014 <- PercentInc("unsuppressed", percentFrame, 
                                 years = 2014, savefolder = saveFolder)
 suppressPercent2014 <- PercentInc("suppressed", percentFrame, years = 2014,
-                                xlimits = c(0, 5), savefolder = saveFolder)
+                                xlimits = c(0, 20), 
+                                savefolder = saveFolder)
 
 ```
 

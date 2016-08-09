@@ -57,12 +57,9 @@ cascadeBest <- hivCascade[, 1:3] %>%
   spread(stage, value) %>% 
   select(year, undiagnosed, diagnosed, unsuppressed, suppressed)
 
-# cascadeBest$diagnoses <- newInfects$diagnoses 
-
 # Create infections estimates
 cascadeBest$infections <- (newInfects$infections +
                              newInfects$infections_npd) / 2
-# cascadeBest$infections <- newInfects$infections_npd
 
 # Estimate error bounds - store information in a data frame for 
 # ease of extraction when creating priors
@@ -310,8 +307,8 @@ if (useSaved) {
 # psoteriors
 
 resamples <- 50000
-useSaved <- FALSE
-saveOutputs <- TRUE
+useSaved <- TRUE
+saveOutputs <- FALSE
 
 if (useSaved) {
   # Specify details of saved file
@@ -360,6 +357,8 @@ The main results and plots are generate in the
 ```{r quickresults}
 
 # Generate some quick stats ----------------------------------------------
+
+cascadeBest <- cascadeBestBayes
 
 # Best fitting parameter sets
 bestFit <- GetMode(resampleIndices)
@@ -415,7 +414,7 @@ plot(years, incidenceMatrix[bestFit, ], type = "l", ylim = c(0,1500))
 lines(years, incMed, col = "red")
 # points(years, cascadeBest$diagnoses, col = "black")
 points(years, cascadeBest$infections, col = "black")
-lines(years, apply(incidenceMatrix[resampleIndices, ], 2, median), 
+lines(years, apply(incidenceMatrix[resampleIndices, ], 2, mean), 
       col = "blue")
 lines(years, newInfects$upper, col = "green")
 lines(years, newInfects$lower_npd, col = "green")
