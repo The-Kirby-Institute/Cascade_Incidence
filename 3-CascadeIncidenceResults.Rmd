@@ -225,7 +225,7 @@ simsPlot <- ggplot(data = incidenceDF,
                   aes(y = (infections + infections_npd) / 2, 
                                          ymin = lower_npd,
                                          ymax = upper, group = 1,
-             colour = "data")) + 
+             shape = "data")) + 
   stat_summary(aes(group = 1, colour = "mean"), geom = "line", 
                fun.y = mean) +
   stat_summary(aes(group = 1, colour = "range"), geom = "line", 
@@ -235,12 +235,15 @@ simsPlot <- ggplot(data = incidenceDF,
   # geom_line(data = cascadeBest, aes(y = bayesIncBest, colour = "mode",
   #                                   group = 1), size = 1.2) + 
   coord_cartesian(ylim = c(0, 1500)) + 
-  scale_colour_manual(name = "", values = cols[aesLabels],
-                      labels = labels[aesLabels],
-                      breaks = aesLabels,
+  scale_shape_manual(name = "Estimate and range", 
+                     values = shapes[1],
+                     labels = "ECDC model estimates") +
+  scale_colour_manual(name = "New infections posterior ", 
+                      values = cols[aesLabels[2:4]],
+                      labels = labels[aesLabels[2:4]],
+                      breaks = aesLabels[2:4],
                       guide = guide_legend(override.aes = list(
-                         linetype = lines[aesLabels]))) + #,
-                         # shape = shapes[aesLabels]))) +
+                         linetype = lines[aesLabels[2:4]]))) +
   ylab("New infections") + xlab("Year") + 
   plotOpts + theme(legend.position = "right")
 
