@@ -157,35 +157,6 @@ bayesIncBest <- IncFuncTV(cascadeBest,
                       betaBestStart[3], betaBestEnd[3],
                       betaBestStart[4], betaBestEnd[4])
 
-bayesIncMed <- IncFuncTV(cascadeBest, 
-                      betaMedStart[1], betaMedEnd[1],
-                      betaMedStart[2], betaMedEnd[2],
-                      betaMedStart[3], betaMedEnd[3],
-                      betaMedStart[4], betaMedEnd[4])
-
-# Regression best fit
-# lmBeta <- as.numeric(undetectAdjustAnalysis)
-# lmInc <- apply(cascadeBest[ ,2:5], 1, 
-#                function(x) sum(x *  lmBeta))
-
-comparePlot <- ggplot(data = cascadeBest, aes(x = year, y = infections)) +
-  geom_point(aes(colour = "data")) + 
-  # geom_line(aes(y = lmInc, colour = "regression")) +
-  # geom_line(aes(y = bayesIncBest, colour = "bayes")) + 
-  geom_line(aes(y = apply(incidenceMatrix[resampleIndices, ], 2, mean),
-                colour = "bayesMean")) +
-  # geom_line(aes(y = bayesIncMed, colour = "bayesMed")) +
-  geom_line(aes(y = newInfects$upper), colour = "black") +
-  geom_line(aes(y = newInfects$lower_npd), colour = "black") +
-  coord_cartesian(ylim = c(0, 1500)) + 
-  scale_colour_manual(name = "",
-    limits = c("data", "bayesMean"), 
-    labels = c("Estimated new infections",  
-               "Posterior mean"), 
-    values = c("black", "red")) +
-  ylab("New infections") + xlab("Year") +
-  plotOpts + theme(legend.position = "right")
-
 # Functions for plotting range in simulation outputs
 rangeUpper <- function(x) {
   quantile(x, c(0.975))
