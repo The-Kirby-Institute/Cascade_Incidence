@@ -33,7 +33,7 @@ source(file.path(Rcode, "TidyLongitudinal.R"))
 ```{r Front matter}
 mainPackages <- c("dplyr", "tidyr", "ggplot2", "markdown")
 source(file.path(Rcode, "FrontMatter.R"), echo = TRUE)
-fmStr <- FrontMatter(mainPackages, rstudio = "0.99.891")
+fmStr <- FrontMatter(mainPackages, rstudio = "0.99.903")
 cat(fmStr)
 ```
 
@@ -86,27 +86,27 @@ betaBestRelStart <- betaBestStart / betaBestStart[2]
 betaBestRelEnd <- betaBestEnd / betaBestEnd[2] 
 
 # Median values of posteriors
-medBeta1start <- median(beta1start[resampleIndices])
-medBeta2start <- median(beta2start[resampleIndices])
-medBeta3start <- median(beta3start[resampleIndices])
-medBeta4start <- median(beta4start[resampleIndices])
-
-betaMedStart <- c(medBeta1start, medBeta2start, medBeta3start,
-                  medBeta4start)
-betaRelMedStart <- betaMedStart / betaMedStart[2]
-
-medBeta1end <- median(beta1end[resampleIndices])
-medBeta2end <- median(beta2end[resampleIndices])
-medBeta3end <- median(beta3end[resampleIndices])
-medBeta4end <- median(beta4end[resampleIndices])
-
-betaMedEnd <- c(medBeta1end, medBeta2end, medBeta3end, medBeta4end)
-betaRelMedEnd <- betaMedEnd / betaMedEnd[2]
-
-betaMed <- c(medBeta1start, medBeta1end, 
-             medBeta2start, medBeta2end,
-             medBeta3start, medBeta3end,
-             medBeta4start, medBeta4end)
+# medBeta1start <- median(beta1start[resampleIndices])
+# medBeta2start <- median(beta2start[resampleIndices])
+# medBeta3start <- median(beta3start[resampleIndices])
+# medBeta4start <- median(beta4start[resampleIndices])
+# 
+# betaMedStart <- c(medBeta1start, medBeta2start, medBeta3start,
+#                   medBeta4start)
+# betaRelMedStart <- betaMedStart / betaMedStart[2]
+# 
+# medBeta1end <- median(beta1end[resampleIndices])
+# medBeta2end <- median(beta2end[resampleIndices])
+# medBeta3end <- median(beta3end[resampleIndices])
+# medBeta4end <- median(beta4end[resampleIndices])
+# 
+# betaMedEnd <- c(medBeta1end, medBeta2end, medBeta3end, medBeta4end)
+# betaRelMedEnd <- betaMedEnd / betaMedEnd[2]
+# 
+# betaMed <- c(medBeta1start, medBeta1end, 
+#              medBeta2start, medBeta2end,
+#              medBeta3start, medBeta3end,
+#              medBeta4start, medBeta4end)
 
 # Proportion infections for each stage for betaBest ---------------------
 cascadeData <- select(cascadeBest, undiagnosed, diagnosed, unsuppressed,
@@ -114,13 +114,13 @@ cascadeData <- select(cascadeBest, undiagnosed, diagnosed, unsuppressed,
 
 propInfectsBest <- PropInfectionsTV(cascadeData, betaBestStart,
                                     betaBestEnd)
-propInfectsMed <- PropInfectionsTV(cascadeData, betaMedStart, betaMedEnd)
+# propInfectsMed <- PropInfectionsTV(cascadeData, betaMedStart, betaMedEnd)
 
 ```
 
 ```{r Script options}
 # Setup script options
-savePlots <- TRUE # save plots as separate files
+savePlots <- FALSE # save plots as separate files
 saveTables <- FALSE
 
 if (savePlots) {
@@ -149,14 +149,6 @@ if (savePlots) {
 # Results
 
 ```{r Incidence results}
-
-# Best fit results -------------------------------------------------------
-bayesIncBest <- IncFuncTV(cascadeBest, 
-                      betaBestStart[1], betaBestEnd[1],
-                      betaBestStart[2], betaBestEnd[2],
-                      betaBestStart[3], betaBestEnd[3],
-                      betaBestStart[4], betaBestEnd[4])
-
 # Functions for plotting range in simulation outputs
 rangeUpper <- function(x) {
   quantile(x, c(0.975))
@@ -166,15 +158,14 @@ rangeLower <- function(x) {
   quantile(x, c(0.025))
 }
 
-# Incidence results plot --------------------------------------------------
 # Convert incidence Matrix into a long data frame
 incidenceDF <- TidyLongitudinal(incidenceMatrix[resampleIndices, ], 2004)
 
 # Set up complicated legend
 aesLabels <- c("data", "sims", "mean", "range" ) # legend order 
 
-cols <- c("data" = "black", "sims" = "grey", "mean" = "red", 
-          "range" = "black")
+cols <- c("data" = "black", "sims" = "blue", "mean" = "red3", 
+          "range" = "red3")
 
 labels <- c("data" = "Estimated new infections",
             "sims" = "Posterior simulations",
@@ -191,7 +182,7 @@ shapes <- c("data" = 16, "sims" = NA, "mean" = NA,
 # Create the plot
 simsPlot <- ggplot(data = incidenceDF, 
                    aes(x = year, y = value, group = sim)) +
-  geom_line(aes(colour = "sims")) +
+  geom_line(aes(colour = "sims"), alpha = 0.4) +
   geom_pointrange(data = newInfects, 
                   aes(y = (infections + infections_npd) / 2, 
                                          ymin = lower_npd,
@@ -201,10 +192,8 @@ simsPlot <- ggplot(data = incidenceDF,
                fun.y = mean) +
   stat_summary(aes(group = 1, colour = "range"), geom = "line", 
                fun.y = rangeUpper, linetype = lines["range"]) + 
-  stat_summary(aes(group = 1), geom = "line", colour = "black",
+  stat_summary(aes(group = 1), geom = "line", colour = cols[4],
                fun.y = rangeLower, linetype = lines["range"]) +
-  # geom_line(data = cascadeBest, aes(y = bayesIncBest, colour = "mode",
-  #                                   group = 1), size = 1.2) + 
   coord_cartesian(ylim = c(0, 1500)) + 
   scale_shape_manual(name = "Estimate and range", 
                      values = shapes[1],
@@ -221,80 +210,6 @@ simsPlot <- ggplot(data = incidenceDF,
 if (savePlots) {
   SaveFigure(outputFolder, "Best_fit_comparison", comparePlot, width = 18)
   SaveFigure(outputFolder, "Incidence_fit", simsPlot, width = 18)
-}
-
-```
-
-```{r Infections bar}
-# Create a pretty plot to show proportion of infections due to each stage 
-# of the cascade for best fitting parameters
-
-# New infections for each stage for betaBest
-cascadeData <- select(cascadeBest, undiagnosed, diagnosed,
-                      unsuppressed, suppressed)
-
-incNumbersBest <- NumInfectionsTV(cascadeData, betaBestStart, 
-                                  betaBestEnd) %>%
-  gather("stage", "infections", 2:5) %>%
-  tbl_df()
-
-incNumbersMed <- NumInfectionsTV(cascadeData, betaMedStart, 
-                                  betaMedEnd) %>%
-  gather("stage", "infections", 2:5) %>%
-  tbl_df()
-
-
-# Set up plots 
-legendLabels <- c("Undiagnosed", "Diagnosed untreated", 
-                  "On ART: VL > 400 last test", 
-                  "On ART: VL < 400 last test")
-plotCols <- asrcols[c(1:2, 4:5)]
-xValues <- seq(2004,2014, by = 5)
-
-# Incidence bar charts - best fit
-incPlotBaseBest <- ggplot(data = incNumbersBest, aes(x = year, 
-                                                     y = infections, 
-                                                     fill = stage)) + 
-  xlab("Year") +
-  scale_fill_manual(values = plotCols, name = "", labels = legendLabels, 
-                    limits = c("undiagnosed", "diagnosed", 
-                               "unsuppressed", "suppressed"), 
-                    guide = guide_legend(nrow = 2)) +  
-  scale_x_continuous(breaks = xValues) + plotOpts 
-
-
-incPlotNumBest <- incPlotBaseBest + geom_bar(stat="identity") + 
-  ylab("New infections") 
-incPlotPropBest <- incPlotBaseBest + geom_bar(stat="identity", 
-                                          position= "fill") +
-  ylab("Proportion new infections")
-
-# Incidence bar charts - Median value
-incPlotBaseMed <- ggplot(data = incNumbersMed, 
-                         aes(x = year, y = infections,
-                                                   fill = stage)) + 
-  xlab("Year") +
-  scale_fill_manual(values = plotCols, name = "", labels = legendLabels, 
-                    limits = c("undiagnosed", "diagnosed", 
-                               "unsuppressed", "suppressed"), 
-                    guide = guide_legend(nrow = 2)) +  
-  scale_x_continuous(breaks = xValues) + plotOpts 
-
-
-incPlotNumMed <- incPlotBaseMed + geom_bar(stat="identity") + 
-  ylab("New infections") 
-incPlotPropMed <- incPlotBaseMed + geom_bar(stat="identity", 
-                                          position= "fill") +
-  ylab("Proportion new infections")
-
-if (savePlots) {
-  # Print figures to separate files
-  SaveFigure(outputFolder, "New_infections_stage_Best", incPlotNumBest)
-  SaveFigure(outputFolder, "Prop_infections_stage_Best", incPlotPropBest)
-  
-  SaveFigure(outputFolder, "New_infections_stage_Median", incPlotNumMed)
-  SaveFigure(outputFolder, "Prop_infections_stage_Median", incPlotPropMed)
-  
 }
 
 ```
@@ -532,11 +447,13 @@ percentFrame <- data.frame(sample = NULL,
                         unsuppressed = NULL,
                         suppressed = NULL)
 
+transFrame <- percentFrame
+
 # Filter posterior frames to extract beta values
 betaFrameStart <- posteriorFrameStart %>%
   select(beta1, beta2, beta3, beta4)
 
-betaFrameEnd <- posteriorFrameStart %>%
+betaFrameEnd <- posteriorFrameEnd %>%
   select(beta1, beta2, beta3, beta4)
 
 nyears <- length(years)
@@ -554,24 +471,37 @@ for (year in 1:nyears) {
   betaFrameYear <- betaFrameStart + (year - 1) * 
     (betaFrameEnd - betaFrameStart) / (nyears - 1)
   
-  # Create data frame of percentages 
-  loopFrame <- as.data.frame(t(apply(betaFrameYear, 1, 
+  # Create data frame of percentages and numbers
+  propFrame <- as.data.frame(t(apply(betaFrameYear, 1, 
     function(x) 100 * (x * yearCascade / sum(x * yearCascade)))))
+  numFrame <- as.data.frame(t(apply(betaFrameYear, 1, 
+    function(x) x * yearCascade)))
   
-  colnames(loopFrame) <- c("undiagnosed", "diagnosed", "unsuppressed", 
+  colnames(propFrame) <- c("undiagnosed", "diagnosed", "unsuppressed", 
+                           "suppressed")
+  colnames(numFrame) <- c("undiagnosed", "diagnosed", "unsuppressed", 
                            "suppressed")
   
-  loopFrame$year <- yearprop
-  loopFrame$sample <- 1:resamples
+  
+  propFrame$year <- yearprop
+  propFrame$sample <- 1:resamples
+  
+  numFrame$year <- yearprop
+  numFrame$sample <- 1:resamples
   
   # Add to final results frame
-  percentFrame <- bind_rows(percentFrame, loopFrame)
+  percentFrame <- bind_rows(percentFrame, propFrame)
+  transFrame <- bind_rows(transFrame, numFrame)
 }
 
 # Gather propFrame into long format
 percentFrame <- percentFrame %>%
   select(sample, year, everything()) %>%
   gather("stage", "percentage", 3:6)
+
+transFrame <- transFrame %>%
+  select(sample, year, everything()) %>%
+  gather("stage", "infections", 3:6)
 
 if (savePlots) {
   saveFolder <- outputFolder
@@ -581,12 +511,26 @@ if (savePlots) {
 
 # Calculate proportion attributable to each stage -- mean and 95% credible 
 # interval for each year 
-incPercentFrame <- percentFrame %>%
+transPercentFrame <- percentFrame %>%
   group_by(year, stage) %>%
   summarise(median = median(percentage),
             mean = mean(percentage),
             lower05 = quantile(percentage, 0.05),
-            upper95 = quantile(percentage, 0.95))
+            upper95 = quantile(percentage, 0.95)) %>%
+  ungroup()
+
+incPercentFrame <- transPercentFrame %>%
+  select(year, stage, mean) %>%
+  spread(stage, mean) %>%
+  select(year, undiagnosed, diagnosed, unsuppressed, suppressed)
+
+transNumberFrame <- transFrame %>%
+  group_by(year, stage) %>%
+  summarise(median = median(infections),
+            mean = mean(infections),
+            lower05 = quantile(infections, 0.05),
+            upper95 = quantile(infections, 0.95)) %>%
+  ungroup()
 
 if (saveTables) {
   # Incidence Percent Frame to a csv file
@@ -618,6 +562,67 @@ suppressPercent2014 <- PercentInc("suppressed", percentFrame, years = 2014,
 
 ```
 
+```{r Infections bar}
+# Create a pretty plot to show proportion of infections due to each stage 
+# of the cascade for best fitting parameters
+
+# New infections for each stage for betaBest
+# cascadeData <- select(cascadeBest, undiagnosed, diagnosed,
+#                       unsuppressed, suppressed)
+
+# incNumbersBest <- NumInfectionsTV(cascadeData, betaBestStart, 
+#                                   betaBestEnd) %>%
+#   gather("stage", "infections", 2:5) %>%
+#   tbl_df()
+# 
+# incNumbersMed <- NumInfectionsTV(cascadeData, betaMedStart, 
+#                                   betaMedEnd) %>%
+#   gather("stage", "infections", 2:5) %>%
+#   tbl_df()
+
+transStage <- transNumberFrame %>% 
+  select(year, stage, mean) %>%
+  rename(infections = mean)
+# percentStage<- transPercentFrame %>% 
+#   select(year, stage, mean) %>%
+#   rename(infections = mean)
+  
+# Set up plots 
+legendLabels <- c("Undiagnosed", "Diagnosed untreated", 
+                  "On ART: VL > 400 last test", 
+                  "On ART: VL < 400 last test")
+plotCols <- asrcols[c(1:2, 4:5)]
+xValues <- seq(2004,2014, by = 5)
+
+# Incidence bar charts - best fit
+incPlotBaseBest <- ggplot(data = transStage, aes(x = year, 
+                                                     y = infections, 
+                                                     fill = stage)) + 
+  xlab("Year") +
+  scale_fill_manual(values = plotCols, name = "", labels = legendLabels, 
+                    limits = c("undiagnosed", "diagnosed", 
+                               "unsuppressed", "suppressed"), 
+                    guide = guide_legend(nrow = 2)) +  
+  scale_x_continuous(breaks = xValues) + plotOpts 
+
+
+incPlotNumBest <- incPlotBaseBest + geom_bar(stat="identity") + 
+  ylab("New infections") 
+incPlotPropBest <- incPlotBaseBest + geom_bar(stat="identity", 
+                                          position= "fill") +
+  ylab("Percentage of transmissions")
+
+if (savePlots) {
+  # Print figures to separate files
+  SaveFigure(outputFolder, "New_infections_stage_Best", incPlotNumBest)
+  SaveFigure(outputFolder, "Prop_infections_stage_Best", incPlotPropBest)
+  
+  SaveFigure(outputFolder, "New_infections_stage_Median", incPlotNumMed)
+  SaveFigure(outputFolder, "Prop_infections_stage_Median", incPlotPropMed)
+  
+}
+
+```
 
 ## Supplementary plots
 

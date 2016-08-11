@@ -21,11 +21,12 @@ Rcode <- file.path(basePath, "code")
 # Load standard libraries, key functions and options
 source(file.path(Rcode, "LoadLibrary.R"), echo = TRUE)
 source(file.path(Rcode, "DataLibraries.R"), echo = TRUE)
+source(file.path(Rcode, "GetLegend.R"), echo = TRUE)
 ```
 
 ```{r scriptdetails}
 #Script parameters
-startYear <- 2005 # minimum for plotting; miumum assumed to be 2004 in 
+startYear <- 2004 # minimum for plotting; miumum assumed to be 2004 in 
                   # analysis
 try(if (startYear < 2004) stop("Start year before 2004"))
 analysisYear <- 2014
@@ -173,11 +174,11 @@ if (plotUndiagnosed) {
                                       analysisYear, by = 3)) +
     coord_cartesian(ylim = c(0, 15)) +
     ylab("Percentage undiagnosed (%)") + xlab("Year") +
-    plotOpts
+    plotOpts + theme(legend.justification=c(0,0), legend.position=c(0,0))
   
   if (savePlots) {
     # Plot specs
-    plotWidth <- 12
+    plotWidth <- 10
     plotHeight <- 10
     plotUnits <- "cm"
     
@@ -325,8 +326,6 @@ if (plotCascade) {
   # Load default plot options
   source(file.path(Rcode, "PlotOptions.R"), echo = TRUE)
   
-  # Create
-  
   # Tidy up data for plotting
   plotData <- hivCascade %>%
     filter(year >= startYear, year <= analysisYear) %>%
@@ -344,16 +343,21 @@ if (plotCascade) {
   xValues <- seq(startYear, analysisYear, by = 3)
   
   # PLDHIV overall and by proportion 
-  plhivPlotBase <- ggplot(data = plotData, aes(x = year, y = value, 
-    fill = stage)) + xlab("Year") + # labs(fill = "Cascade stage") +
+  plhivPlotNum <- ggplot(data = plotData, aes(x = year, y = value, 
+    fill = stage)) + geom_area(stat="identity") + 
+    ylab("Number of PLHIV") + xlab("Year") +
     scale_fill_manual(values = plotCols, name = "", labels = plotLabels, 
       guide = guide_legend(reverse=TRUE, nrow = 2)) +  
     scale_x_continuous(breaks = xValues) + plotOpts 
 
-  plhivPlotNum <- plhivPlotBase + geom_bar(stat="identity") + 
-    ylab("Number of PLHIV") 
-  plhivPlotProp <- plhivPlotBase + geom_bar(stat="identity", 
-    position= "fill") + ylab("Proportion of PLHIV")
+  plhivPlotProp <- ggplot(data = plotData, aes(x = year, y = 100 * value, 
+    fill = stage)) + 
+    geom_area(stat="identity", position= "fill") +
+    ylab("Percentage of PLHIV")  + xlab("Year") +
+    scale_fill_manual(values = plotCols, name = "", labels = plotLabels, 
+      guide = guide_legend(reverse=TRUE, nrow = 2)) +  
+    scale_x_continuous(breaks = xValues) + plotOpts 
+  
   
   # Display plots
   print(plhivPlotNum)
@@ -361,7 +365,7 @@ if (plotCascade) {
   
   if (savePlots) {
     # Plot specs
-    plotWidth <- 12
+    plotWidth <- 10
     plotHeight <- 10
     plotUnits <- "cm"
     
@@ -382,23 +386,25 @@ if (plotCascade) {
       units = plotUnits)
   }
   
-  # Do time varying plots -------------------------------------------------
+  # Do time varying plots ------------------------------------------------
   
-  plotStages <- c("undiagnosed", "diagnosed", "unsuppressed", "suppressed")
+  plotStages <- c("undiagnosed", "diagnosed", "unsuppressed",
+                  "suppressed")
 
-  
   yLabels <- c("undiagnosed" = "Number undiagnosed",
                "diagnosed" = "Number diagnosed untreated",
                "unsuppressed" = "Number on ART VL > 400",
                "suppressed" = "Number with VL < 400")
   
   # Loop across stages and save plots 
+  plotCurrent <- list()
   for (ii in plotStages) {
     #Select data we want
     tempData <- filter(plotData, stage == ii)
     
     # Plot the stage over time
-    plotCurrent <- ggplot(data = tempData, aes(x = year, y = value)) + 
+    plotCurrent[[ii]] <- ggplot(data = tempData, 
+                              aes(x = year, y = value)) + 
       geom_ribbon(aes(ymin = lower, ymax = upper), 
                   fill = asrcols[2], alpha = 0.4) +
       geom_line(color = asrcols[2]) + 
@@ -411,14 +417,14 @@ if (plotCascade) {
     # Save the current plot
     if (savePlots) {
       # Plot specs
-      plotWidth <- 12
+      plotWidth <- 10
       plotHeight <- 10
       plotUnits <- "cm"
       
       ggsave(file.path(figFolder, paste("GBMstage-", ii, "_", 
         toString(startYear), "-", toString(analysisYear),
         "_", undiagString,
-        ".png", sep = "")), plot = plotCurrent, width = plotWidth, 
+        ".png", sep = "")), plot = plotCurrent[[ii]], width = plotWidth, 
         height = plotHeight, units = plotUnits) 
     }
   }
@@ -427,7 +433,6 @@ if (plotCascade) {
 ```
 
 ```{r Plot ECDC new infections}
-
 if (plotCascade) {
   # Load default plot options
   source(file.path(Rcode, "PlotOptions.R"), echo = TRUE)
@@ -451,18 +456,18 @@ if (plotCascade) {
                                       analysisYear, by = 3)) +
     scale_colour_manual(name = "",
                         limits = c("ipd", "npd", "best"),
-                        labels = c("Including diagnosed overseas", 
-                                   "Excluding diagnosed overseas",
+          labels = c("Including diagnosed overseas", 
+                     "Excluding diagnosed overseas",
                                    "Estimated new infections"), 
                         values = c("blue", "red", "black"),
                         guide = guide_legend(nrow = 3)) + 
     expand_limits(y = 0) +
     ylab("Number") + xlab("Year") + 
-    plotOpts + 
+    plotOpts + theme(legend.justification=c(0,0), legend.position=c(0,0))
   
   if (savePlots) {
       # Plot specs
-      plotWidth <- 12
+      plotWidth <- 10
       plotHeight <- 10
       plotUnits <- "cm"
       
@@ -473,4 +478,67 @@ if (plotCascade) {
     }
 
 }
+```
+
+```{r Combination plots}
+# Create some combined plots for publications
+LoadLibrary(cowplot)
+LoadLibrary(gridExtra)
+
+# Create a combined cascade plot - extract legend so we only use it one
+# 
+legend <- GetLegend(plhivPlotNum)
+plhivPlotNum2 <- plhivPlotNum + theme(legend.position="none")
+plhivPlotProp2 <- plhivPlotProp + theme(legend.position="none")
+
+plhivCombined <- grid.arrange(legend, plhivPlotNum2, plhivPlotProp2,
+                              ncol=2, nrow = 2, 
+                              layout_matrix = rbind(c(1,1), c(2,3)),
+                              widths = c(4, 4), heights = c(0.6, 3.4))
+
+# Create a cascade main plot
+cascadeFig1 <- ggdraw() + 
+  draw_plot(undiagPlot, 0, 0.5, 0.5, 0.5) +
+  draw_plot(plotInfects, 0.5, 0.5, 0.5, 0.5) +
+  draw_plot(plhivCombined, 0, 0, 1, 0.5) +
+  draw_plot_label(c("A", "B", "C"), c(0, 0.5, 0), c(1, 1, 0.5), 
+                  size = 12)
+
+# Create individual stage plots - need to add titles
+cascadeStagePlots <- plotCurrent
+cascadeStagePlots$undiagnosed <- plotCurrent$undiagnosed +
+  ggtitle(yLabels["undiagnosed"])
+cascadeStagePlots$diagnosed <- plotCurrent$diagnosed +
+  ggtitle(yLabels["diagnosed"])
+cascadeStagePlots$unsuppressed <- plotCurrent$diagnosed +
+  ggtitle(yLabels["unsuppressed"])
+cascadeStagePlots$suppressed <- plotCurrent$diagnosed +
+  ggtitle(yLabels["suppressed"])
+
+cascadeFig2 <- plot_grid(cascadeStagePlots$undiagnosed,
+  cascadeStagePlots$diagnosed,
+  cascadeStagePlots$unsuppressed, cascadeStagePlots$suppressed, 
+          labels = c("A", "B", "C", "D"))
+
+if (savePlots) {
+  # Save cascade combined figure
+  ggsave(file.path(figFolder, paste0("Cascades-",
+                                     toString(analysisYear), ".png")),
+         plot = plhivCombined, width = 20, height = 10, 
+         units = "cm")
+  
+  # Save first cascade figure
+  ggsave(file.path(figFolder, paste0("Cascade_Combined-",
+                                     toString(analysisYear), ".png")),
+         plot = cascadeFig1, width = 20, height = 20, 
+         units = "cm")
+  
+  # Save second cascade figure
+  ggsave(file.path(figFolder, paste0("Cascade_Stages-",
+                                     toString(analysisYear), ".png")),
+         plot = cascadeFig2, width = 20, height = 20, 
+         units = "cm")
+}
+
+
 ```

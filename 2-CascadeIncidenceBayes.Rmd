@@ -255,10 +255,14 @@ if (useSaved) {
     }
     
     incidenceSample <- IncFuncTV(cascadeBest,
-                               beta1start[bayesSample], beta1end[bayesSample],
-                               beta2start[bayesSample], beta2end[bayesSample],
-                               beta3start[bayesSample], beta3end[bayesSample],
-                               beta4start[bayesSample], beta4end[bayesSample])
+                               beta1start[bayesSample],
+                               beta1end[bayesSample],
+                               beta2start[bayesSample],
+                               beta2end[bayesSample],
+                               beta3start[bayesSample],
+                               beta3end[bayesSample],
+                               beta4start[bayesSample],
+                               beta4end[bayesSample])
     
     incidenceMatrix[bayesSample, ] <- incidenceSample
     
