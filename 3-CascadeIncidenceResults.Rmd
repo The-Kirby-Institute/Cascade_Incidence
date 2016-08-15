@@ -27,6 +27,9 @@ source(file.path(Rcode, "DataLibraries.R"), echo = TRUE)
 source(file.path(Rcode, "BayesFunctions.R"), echo = TRUE)
 source(file.path(Rcode, "PlotOptions.R"))
 source(file.path(Rcode, "TidyLongitudinal.R"))
+source(file.path(Rcode, "GetLegend.R"))
+LoadLibrary(cowplot)
+LoadLibrary(gridExtra)
 
 ```
 
@@ -160,11 +163,11 @@ rangeLower <- function(x) {
 
 # Convert incidence Matrix into a long data frame
 incidenceDF <- TidyLongitudinal(incidenceMatrix[resampleIndices, ], 2004)
-
+# incidenceDF <- TidyLongitudinal(incidenceMatrix[resampleIndices[1:10], ], 2004)
 # Set up complicated legend
 aesLabels <- c("data", "sims", "mean", "range" ) # legend order 
 
-cols <- c("data" = "black", "sims" = "blue", "mean" = "red3", 
+cols <- c("data" = "black", "sims" = "grey", "mean" = "red3", 
           "range" = "red3")
 
 labels <- c("data" = "Estimated new infections",
@@ -179,15 +182,16 @@ shapes <- c("data" = 16, "sims" = NA, "mean" = NA,
           "range" = NA)
 
 
-# Create the plot
-simsPlot <- ggplot(data = incidenceDF, 
+# Create the plot - annoylingly hard to get the legend split and in the 
+# right place! Have to do the plot three times essentially.
+simsPlotColour <- ggplot(data = incidenceDF, 
                    aes(x = year, y = value, group = sim)) +
   geom_line(aes(colour = "sims"), alpha = 0.4) +
   geom_pointrange(data = newInfects, 
                   aes(y = (infections + infections_npd) / 2, 
                                          ymin = lower_npd,
-                                         ymax = upper, group = 1,
-             shape = "data")) + 
+                                         ymax = upper, group = 1), 
+                  shape = shapes["data"]) + 
   stat_summary(aes(group = 1, colour = "mean"), geom = "line", 
                fun.y = mean) +
   stat_summary(aes(group = 1, colour = "range"), geom = "line", 
@@ -195,9 +199,6 @@ simsPlot <- ggplot(data = incidenceDF,
   stat_summary(aes(group = 1), geom = "line", colour = cols[4],
                fun.y = rangeLower, linetype = lines["range"]) +
   coord_cartesian(ylim = c(0, 1500)) + 
-  scale_shape_manual(name = "Estimate and range", 
-                     values = shapes[1],
-                     labels = "ECDC model estimates") +
   scale_colour_manual(name = "New infections posterior ", 
                       values = cols[aesLabels[2:4]],
                       labels = labels[aesLabels[2:4]],
@@ -206,9 +207,64 @@ simsPlot <- ggplot(data = incidenceDF,
                          linetype = lines[aesLabels[2:4]]))) +
   ylab("New infections") + xlab("Year") + 
   plotOpts + theme(legend.position = "right")
+legendColour <- GetLegend(simsPlotColour)
+
+simsPlotShape <- ggplot(data = incidenceDF, 
+                   aes(x = year, y = value, group = sim)) +
+  geom_line(colour = cols["sims"], alpha = 0.4) +
+  geom_pointrange(data = newInfects, 
+                  aes(y = (infections + infections_npd) / 2, 
+                                         ymin = lower_npd,
+                                         ymax = upper, group = 1,
+             shape = "data")) + 
+  stat_summary(aes(group = 1), colour = cols["mean"], geom = "line", 
+               fun.y = mean) +
+  stat_summary(aes(group = 1), colour = cols["range"], geom = "line", 
+               fun.y = rangeUpper, linetype = lines["range"]) + 
+  stat_summary(aes(group = 1), geom = "line", colour = cols["range"],
+               fun.y = rangeLower, linetype = lines["range"]) +
+  coord_cartesian(ylim = c(0, 1500)) + 
+  scale_shape_manual(name = "Estimate and range", 
+                     values = shapes[1],
+                     labels = "ECDC model estimates") +
+  ylab("New infections") + xlab("Year") + 
+  plotOpts + theme(legend.position = "right")
+legendShape <- GetLegend(simsPlotShape)
+
+simsPlotNone <- ggplot(data = incidenceDF, 
+                   aes(x = year, y = value, group = sim)) +
+  geom_line(aes(colour = "sims"), alpha = 0.4) +
+  geom_pointrange(data = newInfects, 
+                  aes(y = (infections + infections_npd) / 2, 
+                                         ymin = lower_npd,
+                                         ymax = upper, group = 1, 
+                  shape = "data")) + 
+  stat_summary(aes(group = 1, colour = "mean"), geom = "line", 
+               fun.y = mean) +
+  stat_summary(aes(group = 1, colour = "range"), geom = "line", 
+               fun.y = rangeUpper, linetype = lines["range"]) + 
+  stat_summary(aes(group = 1), geom = "line", colour = cols[4],
+               fun.y = rangeLower, linetype = lines["range"]) +
+  coord_cartesian(ylim = c(0, 1500)) + 
+  scale_colour_manual(name = "New infections posterior ", 
+                      values = cols[aesLabels[2:4]],
+                      labels = labels[aesLabels[2:4]],
+                      breaks = aesLabels[2:4],
+                      guide = guide_legend(override.aes = list(
+                         linetype = lines[aesLabels[2:4]]))) +
+  scale_shape_manual(name = "Estimate and range", 
+                     values = shapes[1],
+                     labels = "ECDC model estimates") +
+  ylab("New infections") + xlab("Year") + 
+  plotOpts + theme(legend.position = "none")
+
+simsPlot <- ggdraw() +
+  draw_plot(simsPlotNone, 0, 0, 1, 1) +
+  draw_plot(legendColour, 0.5, 0.25, 0.5, 0.1) +
+  draw_plot(legendShape, 0, 0.8, 0.5, 0.1)
+
 
 if (savePlots) {
-  SaveFigure(outputFolder, "Best_fit_comparison", comparePlot, width = 18)
   SaveFigure(outputFolder, "Incidence_fit", simsPlot, width = 18)
 }
 
