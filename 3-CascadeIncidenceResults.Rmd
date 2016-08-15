@@ -28,8 +28,6 @@ source(file.path(Rcode, "BayesFunctions.R"), echo = TRUE)
 source(file.path(Rcode, "PlotOptions.R"))
 source(file.path(Rcode, "TidyLongitudinal.R"))
 source(file.path(Rcode, "GetLegend.R"))
-LoadLibrary(cowplot)
-LoadLibrary(gridExtra)
 
 ```
 
@@ -125,6 +123,7 @@ propInfectsBest <- PropInfectionsTV(cascadeData, betaBestStart,
 # Setup script options
 savePlots <- FALSE # save plots as separate files
 saveTables <- FALSE
+publicationPlots <- TRUE
 
 if (savePlots) {
   # Create folder for the plots using the current time
@@ -139,7 +138,7 @@ if (savePlots) {
   # Wrapper function so we don't have to keep entering everything in
   # ggsave. Plot defaults are put iteh figure defaults
   SaveFigure <- function(folder, filename, figure, 
-                         format = ".png", width = 12, 
+                         format = ".png", width = 10, 
                          height = 10, units = "cm", ...) {
     ggsave(file.path(folder, paste(filename, format, sep = "")), 
            plot = figure, 
@@ -265,7 +264,7 @@ simsPlot <- ggdraw() +
 
 
 if (savePlots) {
-  SaveFigure(outputFolder, "Incidence_fit", simsPlot, width = 18)
+  SaveFigure(outputFolder, "Incidence_fit", simsPlot, width = 20)
 }
 
 ```
@@ -347,25 +346,32 @@ f4PlotEnd <- ParameterPlot("f4", priorFrameEnd, posteriorFrameEnd,
 
 # Plot beta posteriors separately
 beta1PlotPostStart <- ParameterPlot("beta1", priorFrameStart,
-                                    posteriorFrameStart, singleplot = TRUE)
+                                    posteriorFrameStart, 
+                                    singleplot = TRUE, stats = TRUE)
 beta2PlotPostStart <- ParameterPlot("beta2", priorFrameStart,
-                                    posteriorFrameStart, singleplot = TRUE)
+                                    posteriorFrameStart, 
+                                    singleplot = TRUE, stats = TRUE)
 beta3PlotPostStart <- ParameterPlot("beta3", priorFrameStart, 
-                                    posteriorFrameStart, singleplot = TRUE)
+                                    posteriorFrameStart, 
+                                    singleplot = TRUE, stats = TRUE)
 beta4PlotPostStart <- ParameterPlot("beta4", priorFrameStart,
                                     posteriorFrameStart, 
-                           logCoords = TRUE, singleplot = TRUE)
+                           logCoords = TRUE, singleplot = TRUE, 
+                           stats = TRUE)
 
 beta1PlotPostEnd <- ParameterPlot("beta1", priorFrameEnd,
                                     posteriorFrameEnd, singleplot = TRUE,
                                    stats = TRUE)
 beta2PlotPostEnd <- ParameterPlot("beta2", priorFrameEnd,
-                                    posteriorFrameEnd, singleplot = TRUE)
+                                    posteriorFrameEnd, singleplot = TRUE,
+                                    stats = TRUE)
 beta3PlotPostEnd <- ParameterPlot("beta3", priorFrameStart, 
-                                    posteriorFrameEnd, singleplot = TRUE)
+                                    posteriorFrameEnd, 
+                                  singleplot = TRUE, stats = TRUE)
 beta4PlotPostEnd <- ParameterPlot("beta4", priorFrameEnd,
                                     posteriorFrameEnd, 
-                           logCoords = TRUE, singleplot = TRUE)
+                           logCoords = TRUE, singleplot = TRUE, 
+                           stats = TRUE)
 
 # Plot beta posteriors on one plot
 combinePostStart <- ggplot(data = posteriorFrameStart) +
@@ -418,22 +424,33 @@ combinePostEnd <- ggplot(data = posteriorFrameEnd) +
 
 # Compare start and end posteriors
 betaPlotSE <- ParameterPlot("beta", posteriorFrameStart,
-                               posteriorFrameEnd, stats = TRUE,
-                            distLabels = c("2004", "2014"))
+  posteriorFrameEnd, stats = TRUE,
+  distLabels = c("2004 posterior (blue)", "2014 posterior (red)"))
 beta1PlotSE <- ParameterPlot("beta1", posteriorFrameStart,
-                                posteriorFrameEnd) +
-  coord_cartesian(xlim= c(0, max(posteriorFrameEnd$beta1)))
+  posteriorFrameEnd, stats = TRUE,
+  distLabels =  c("2004 posterior (blue)", "2014 posterior (red)")) +
+  coord_cartesian(xlim= c(0, 1000 * max(posteriorFrameEnd$beta1)))
 beta2PlotSE<- ParameterPlot("beta2", posteriorFrameStart,
-                                posteriorFrameEnd)
+  posteriorFrameEnd, stats = TRUE,
+  distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
 beta3PlotSE <- ParameterPlot("beta3", posteriorFrameStart,
-                                posteriorFrameEnd)
+  posteriorFrameEnd, stats = TRUE,
+  distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
 beta4PlotSE <- ParameterPlot("beta4", posteriorFrameStart,
-                                posteriorFrameEnd, logCoords = TRUE)
-f1PlotSE <- ParameterPlot("f1", posteriorFrameStart, posteriorFrameEnd)
-f2PlotSE <- ParameterPlot("f2", posteriorFrameStart, posteriorFrameEnd)
-f3PlotSE <- ParameterPlot("f3", posteriorFrameStart, posteriorFrameEnd)
+  posteriorFrameEnd, logCoords = TRUE, stats = TRUE,
+  distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
+f1PlotSE <- ParameterPlot("f1", posteriorFrameStart, posteriorFrameEnd,
+  stats = TRUE, 
+  distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
+f2PlotSE <- ParameterPlot("f2", posteriorFrameStart, posteriorFrameEnd,
+  stats = TRUE, 
+  distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
+f3PlotSE <- ParameterPlot("f3", posteriorFrameStart, posteriorFrameEnd,
+  stats = TRUE, 
+  distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
 f4PlotSE <- ParameterPlot("f4", posteriorFrameStart, posteriorFrameEnd,
-                        logCoords = TRUE)
+  logCoords = TRUE, stats = TRUE,
+  distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
 
 if (savePlots) {
   # Print figures to separate files
@@ -486,6 +503,103 @@ if (savePlots) {
   SaveFigure(outputFolder, "f3_distributions_se", f3PlotSE)
   SaveFigure(outputFolder, "f4_distributions_se", f4PlotSE)
   SaveFigure(outputFolder, "Beta_distributions_se", betaPlotSE)
+}
+
+```
+
+# Change in beta posteriors over time
+
+```{r Beta change}
+
+aesLabels <- c("sims", "median", "iqr", "range" ) # legend order 
+
+cols <- c("sims" = "grey", "median" = "red3", "iqr" = "red3",
+          "range" = "red3")
+
+labels <- c("sims" = "Posterior simulations",
+            "mean" = "Posterior median",
+            "iqr"  = "Interquartile range",
+            "range" = "95% credible interval")
+
+lines <- c("sims" = "solid", "median" = "solid", "iqr" = "dashed",
+          "range" = "dotted")
+
+# Additional functions for iqr plotting
+iqrUpper <- function(x) {
+  quantile(x, c(0.75))
+}
+
+iqrLower <- function(x) {
+  quantile(x, c(0.25))
+}
+
+# Organize the data
+startValues <- posteriorFrameStart %>%
+  mutate(sim = 1:nrow(posteriorFrameStart),
+         year = 2004)
+
+allValues <- posteriorFrameEnd %>%
+  mutate(sim = 1:nrow(posteriorFrameEnd),
+         year = 2014) %>%
+         bind_rows(startValues, .) %>%
+  select(year, everything()) %>%
+  tbl_df()
+
+allValues[, 2:ncol(allValues)]  <- 1000 * allValues[, 2:ncol(allValues)] 
+
+# Create a function for plotting purposes
+betaTime <- function(betaName, title) {
+  betaPlot <- ggplot(data = allValues, 
+               aes_string(x = "year", y = betaName, group = "sim")) +
+  geom_line(aes(colour = "sims")) +
+  stat_summary(aes(group = 1, colour = "median"), 
+               geom = "line", 
+               fun.y = median, size = 1.1) +
+  stat_summary(aes(group = 1, colour = "iqr"), 
+               geom = "line", 
+               fun.y = iqrLower, 
+               size = 1.1, linetype = lines["iqr"]) +
+  stat_summary(aes(group = 1), colour = cols["iqr"], 
+               geom = "line", 
+               fun.y = iqrUpper, 
+               size = 1.1, linetype = lines["iqr"]) +
+  stat_summary(aes(group = 1, colour = "range"), 
+               geom = "line", 
+               fun.y = rangeLower,
+               size = 1.1, linetype = lines["range"]) +
+  stat_summary(aes(group = 1), geom = "line", colour = cols["range"],
+               fun.y = rangeUpper, linetype = lines["range"],
+               size = 1.1) +
+  scale_colour_manual(name = "", 
+                      values = cols[aesLabels],
+                      labels = labels[aesLabels],
+                      breaks = aesLabels,
+                      guide = guide_legend(nrow = 2, 
+                        override.aes = list(
+                         linetype = lines[aesLabels]))) +
+  ylab("Transmissions per 1000 PLHIV") + xlab("Year") +
+  plotOpts + ggtitle(title) +
+  theme(legend.justification=c(0,0), legend.position=c(0,0.75),
+        legend.title = element_blank())
+  
+  return(betaPlot)
+}
+
+# Generate the plots
+plotBeta1time <- betaTime("beta1", "Undiagnosed")
+plotBeta2time <- betaTime("beta2", "Diagnosed")
+plotBeta3time <- betaTime("beta3", "Unsuppressed")
+plotBeta4time <- betaTime("beta4", "Suppressed") +
+  ylab("Transmissions per 1000 PLHIV \n(log10 scale)") +
+  scale_y_log10(limits = c(0.01, 100), breaks = c(0.01, 0.1, 1, 10, 100),
+                labels = c("0.01", "0.1", "1", "10", "100"))
+
+if (savePlots) {
+  # Print figures to separate files
+  SaveFigure(outputFolder, "Beta1_time", plotBeta1time)
+  SaveFigure(outputFolder, "Beta2_time", plotBeta2time)
+  SaveFigure(outputFolder, "Beta3_time", plotBeta3time)
+  SaveFigure(outputFolder, "Beta4_time", plotBeta4time)
 }
 
 ```
@@ -575,7 +689,7 @@ transPercentFrame <- percentFrame %>%
             upper95 = quantile(percentage, 0.95)) %>%
   ungroup()
 
-incPercentFrame <- transPercentFrame %>%
+meanPercentFrame <- transPercentFrame %>%
   select(year, stage, mean) %>%
   spread(stage, mean) %>%
   select(year, undiagnosed, diagnosed, unsuppressed, suppressed)
@@ -622,26 +736,13 @@ suppressPercent2014 <- PercentInc("suppressed", percentFrame, years = 2014,
 # Create a pretty plot to show proportion of infections due to each stage 
 # of the cascade for best fitting parameters
 
-# New infections for each stage for betaBest
-# cascadeData <- select(cascadeBest, undiagnosed, diagnosed,
-#                       unsuppressed, suppressed)
-
-# incNumbersBest <- NumInfectionsTV(cascadeData, betaBestStart, 
-#                                   betaBestEnd) %>%
-#   gather("stage", "infections", 2:5) %>%
-#   tbl_df()
-# 
-# incNumbersMed <- NumInfectionsTV(cascadeData, betaMedStart, 
-#                                   betaMedEnd) %>%
-#   gather("stage", "infections", 2:5) %>%
-#   tbl_df()
-
 transStage <- transNumberFrame %>% 
   select(year, stage, mean) %>%
-  rename(infections = mean)
-# percentStage<- transPercentFrame %>% 
-#   select(year, stage, mean) %>%
-#   rename(infections = mean)
+  rename(infections = mean) %>%
+  mutate(stage = factor(stage, levels = c("undiagnosed", "diagnosed", 
+                               "unsuppressed", "suppressed"))) %>%
+  arrange(stage)
+
   
 # Set up plots 
 legendLabels <- c("Undiagnosed", "Diagnosed untreated", 
@@ -651,22 +752,24 @@ plotCols <- asrcols[c(1:2, 4:5)]
 xValues <- seq(2004,2014, by = 5)
 
 # Incidence bar charts - best fit
-incPlotBaseBest <- ggplot(data = transStage, aes(x = year, 
-                                                     y = infections, 
-                                                     fill = stage)) + 
-  xlab("Year") +
+incPlotNum <- ggplot(data = transStage, 
+                     aes(x = year, y = infections, fill = stage)) + 
+  geom_area(stat="identity") + 
+  ylab("New infections") + xlab("Year") +
   scale_fill_manual(values = plotCols, name = "", labels = legendLabels, 
-                    limits = c("undiagnosed", "diagnosed", 
-                               "unsuppressed", "suppressed"), 
-                    guide = guide_legend(nrow = 2)) +  
+                    guide = guide_legend(reverse = TRUE, nrow = 2)) +  
   scale_x_continuous(breaks = xValues) + plotOpts 
 
+incPlotProp <- ggplot(data = transStage, 
+                     aes(x = year, y = infections, fill = stage)) + 
+  geom_area(stat="identity", position= "fill") + 
+  ylab("Percentage of new infections") + xlab("Year") +
+  scale_fill_manual(values = plotCols, name = "", labels = legendLabels, 
+                    guide = guide_legend(reverse = TRUE, nrow = 2)) +  
+  scale_x_continuous(breaks = xValues) + 
+  scale_y_continuous(labels = percent) + 
+  plotOpts
 
-incPlotNumBest <- incPlotBaseBest + geom_bar(stat="identity") + 
-  ylab("New infections") 
-incPlotPropBest <- incPlotBaseBest + geom_bar(stat="identity", 
-                                          position= "fill") +
-  ylab("Percentage of transmissions")
 
 if (savePlots) {
   # Print figures to separate files
@@ -675,6 +778,94 @@ if (savePlots) {
   
   SaveFigure(outputFolder, "New_infections_stage_Median", incPlotNumMed)
   SaveFigure(outputFolder, "Prop_infections_stage_Median", incPlotPropMed)
+  
+}
+
+```
+
+
+```{r Combination plots}
+if (publicationPlots) {
+  # Create some combined plots for publications
+  LoadLibrary(cowplot)
+  LoadLibrary(gridExtra)
+  
+  # Create a combined transmision plot - extract legend so we only use 
+  # it once
+  legend <- GetLegend(incPlotNum)
+  transPlotNum2 <- incPlotNum + theme(legend.position="none")
+  transPlotProp2 <- incPlotProp + theme(legend.position="none")
+  
+  transCombined <- grid.arrange(legend, transPlotNum2, transPlotProp2,
+                                ncol=2, nrow = 2, 
+                                layout_matrix = rbind(c(1,1), c(2,3)),
+                                widths = c(4, 4), heights = c(0.6, 3.4))
+  
+  # Create a transmission main plot
+  transFig2 <- ggdraw() + 
+    draw_plot(simsPlot, 0, 0.5, 1, 0.5) +
+    draw_plot(transCombined, 0, 0, 1, 0.5) +
+    draw_plot_label(c("A", "B"), c(0, 0), c(1, 0.5), 
+                    size = 12)
+
+  # Create a combined beta time plot
+  tempPlot <- plotBeta1time + theme(legend.position = "top") +
+    ggtitle("")
+  legend <- GetLegend(tempPlot)
+  plotBeta1 <- plotBeta1time + theme(legend.position = "none")
+  plotBeta2 <- plotBeta2time + theme(legend.position = "none") + 
+    expand_limits(y = 0)
+  plotBeta3 <- plotBeta3time + theme(legend.position = "none")
+  plotBeta4 <- plotBeta4time + theme(legend.position = "none")
+  
+  betaTimeCombined <- grid.arrange(legend, plotBeta1, plotBeta2,
+                            plotBeta3, plotBeta4,
+                            ncol = 2, nrow = 3, 
+                            layout_matrix = rbind(c(1, 1), 
+                                                  c(2, 3), 
+                                                  c(4, 5)),
+                            widths = c(4, 4), heights = c(0.8, 3.1, 3.1))
+  
+  transFig3 <- ggdraw() +
+    draw_plot(betaTimeCombined, 0, 0, 1, 1) +
+    draw_plot_label(c("A", "B", "C", "D"), c(0, 0.5, 0, 0.5), 
+                   c(0.9, 0.9, 0.45, 0.45), size = 12)
+  
+  # Create a proportion new infections over time plot
+  legend <- GetLegend(undiagPercent)
+  plotUndiag <- undiagPercent + theme(legend.position = "none")
+  plotDiag <- diagPercent + theme(legend.position = "none")
+  plotUnsuppress <- unsuppressPercent + theme(legend.position = "none")
+  plotSuppress <- suppressPercent + theme(legend.position = "none")
+  
+  propInfectionsCombined <- grid.arrange(plotUndiag, plotDiag, legend, 
+                            plotUnsuppress, plotSuppress,
+                            ncol = 3, nrow = 2, 
+                            layout_matrix = rbind(c(1, 2, 3), 
+                                                  c(4, 5, 3)),
+                            widths = c(3.2, 3.2, 0.6), heights = c(4, 4))
+  
+  transFig4 <- ggdraw() +
+    draw_plot(propInfectionsCombined, 0, 0, 1, 1) +
+    draw_plot_label(c("A", "B", "C", "D"), c(0, 0.45, 0, 0.45), 
+                   c(1, 1, 0.5, 0.5), size = 12)
+  
+  
+  # Save the combined plots
+  SaveFigure(outputFolder, "Combined_transmission", 
+             transCombined, width = 20, height = 10)
+  
+  SaveFigure(outputFolder, "Combined_new_infections", transFig2, 
+             width = 20, height = 20, 
+             units = "cm")
+  
+  SaveFigure(outputFolder, "Combined_beta_times", transFig3, 
+             width = 20, height = 20, 
+             units = "cm")
+  
+  SaveFigure(outputFolder, "Combined_prop_infections", transFig4, 
+             width = 20, height = 20, 
+             units = "cm")
   
 }
 
@@ -720,8 +911,6 @@ if (savePlots) {
                 width = 20, height = 15, units = "cm", res = 300)
   print(cornerPlot)
   dev.off()
-
 }
-
 ```
 

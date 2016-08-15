@@ -294,17 +294,17 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
   
   # Set defualts
   if (is.null(distLabels)) {
-    sampleLabels <- c("Prior", "Posterior")
+    sampleLabels <- c("Prior (blue)", "Posterior (red)")
   } else {
     sampleLabels <- distLabels
   }
   
   # Specify parameter labels
-  labels <- c("beta" = "Overall incidence rate per 1000 PLHIV",
-              "beta1" = "Incidence rate per 1000 undiagnosed PLHIV",
-              "beta2" = "Incidence rate per 1000 diagnosed PLHIV",
-              "beta3" = "Incidence rate per 1000 unsuppressed PLHIV",
-              "beta4" = "Incidence rate per 1000 suppressed PLHIV",
+  labels <- c("beta" = "Weighted transmission rate per 1000 PLHIV",
+              "beta1" = "Transmission rate per 1000 undiagnosed PLHIV",
+              "beta2" = "Transmission rate per 1000 diagnosed PLHIV",
+              "beta3" = "Transmission rate per 1000 unsuppressed PLHIV",
+              "beta4" = "Transmission rate per 1000 suppressed PLHIV",
               "f1" = "Undiagnosed factor",
               "f2" = "Diagnosed factor",
               "f3" = "Unsuppressed factor",
@@ -348,14 +348,14 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
   postPlot <- ggplot(data = posteriorSamples, aes_string(x = parameter)) +
     # geom_density(colour = "red", fill = "red", 
     #           alpha = 0.1)
-    geom_line(colour = "blue", size = 1.2, stat = "density")
+    geom_line(colour = "red3", size = 1.2, stat = "density")
   
   # Add prior if necessary
   if (!singleplot) {
     postPlot <- postPlot + 
       # geom_density(data = priorsSamples, fill = "black", 
       #            alpha = 0.2)
-      geom_line(data = priorsSamples, colour = "red3", size = 1.2, 
+      geom_line(data = priorsSamples, colour = "blue", size = 1.2, 
                 stat = "density")
   }
   
@@ -364,9 +364,9 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
     if (!singleplot) {
       postPlot <- postPlot + 
         geom_vline(aes(xintercept = median(postDist)), size = 1.1, 
-                   colour = "blue", linetype = "dashed") + 
+                   colour = "red3", linetype = "dashed") + 
         geom_vline(aes(xintercept = median(priorDist)), size = 1.1, 
-                   colour = "red3", linetype = "dashed")
+                   colour = "blue", linetype = "dashed")
     } else {
       postPlot <- postPlot + 
         geom_vline(aes(xintercept = median(postDist)), size = 1.1, 

@@ -22,6 +22,7 @@ Rcode <- file.path(basePath, "code")
 source(file.path(Rcode, "LoadLibrary.R"), echo = TRUE)
 source(file.path(Rcode, "DataLibraries.R"), echo = TRUE)
 source(file.path(Rcode, "GetLegend.R"), echo = TRUE)
+LoadLibrary(scales)
 ```
 
 ```{r scriptdetails}
@@ -356,7 +357,9 @@ if (plotCascade) {
     ylab("Percentage of PLHIV")  + xlab("Year") +
     scale_fill_manual(values = plotCols, name = "", labels = plotLabels, 
       guide = guide_legend(reverse=TRUE, nrow = 2)) +  
-    scale_x_continuous(breaks = xValues) + plotOpts 
+    scale_x_continuous(breaks = xValues) + 
+    scale_y_continuous(labels = percent) +
+    plotOpts 
   
   
   # Display plots
