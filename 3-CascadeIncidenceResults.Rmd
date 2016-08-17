@@ -45,14 +45,8 @@ cat(fmStr)
 
 # Specify the results production times/string for selecting the correct 
 # folder
-# regAnalysisTime <- "2016-05-17(16-32)" 
 bayesAnalysisTime <- "2016-08-04(02-50)" 
 fileTag <- "ecdc"
-# Load regression results 
-# load(file.path(resultsFolder, 
-#   paste("Cascade_Analysis_", regAnalysisTime, sep = ""),
-#   paste(regAnalysisTime, "_Cascade_Regression_Results_", fileTag,
-#         ".rda", sep = "")))
 
 # Load new infections data 
 dataFolder <- file.path(basePath, "data")
@@ -545,6 +539,7 @@ allValues <- posteriorFrameEnd %>%
   select(year, everything()) %>%
   tbl_df()
 
+# Convert rates to per 1000 PLHIV
 allValues[, 2:ncol(allValues)]  <- 1000 * allValues[, 2:ncol(allValues)] 
 
 # Create a function for plotting purposes
@@ -703,8 +698,26 @@ transNumberFrame <- transFrame %>%
   ungroup()
 
 if (saveTables) {
+  
+  # Organize results and format into a nice table
+  meanTable <- transPercentFrame %>%
+    select(year, stage, mean, lower05, upper95) %>%
+    mutate(stage = factor(stage, 
+                          levels = c("undiagnosed", "diagnosed",      
+                                     "unsuppressed", "suppressed")),
+           mean = round(mean, digits = 1),
+           lower05 = round(lower05, digits = 1),
+           upper95 = round(upper95, digits = 1)) %>%
+    arrange(stage) %>%
+    group_by(year, stage) %>%
+    mutate(string = paste0(toString(mean), "% (", toString(lower05), 
+                           "-", toString(upper95), "%)")) %>%
+    ungroup() %>%
+    select(year, stage, string) %>%
+    spread(stage, string)
+
   # Incidence Percent Frame to a csv file
-  write.csv(incPercentFrame, file.path(bayesResultsFolder,
+  write.csv(meanTable, file.path(bayesResultsFolder,
                                        "Source_Infections.csv"))
 }
 
