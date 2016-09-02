@@ -45,7 +45,8 @@ cat(fmStr)
 
 # Specify the results production times/string for selecting the correct 
 # folder
-bayesAnalysisTime <- "2016-08-04(02-50)" 
+# bayesAnalysisTime <- "2016-08-04(02-50)" 
+bayesAnalysisTime <- "2016-08-23(18-16)" 
 fileTag <- "ecdc"
 
 # Load new infections data 
@@ -81,42 +82,42 @@ betaBestRelStart <- betaBestStart / betaBestStart[2]
 betaBestRelEnd <- betaBestEnd / betaBestEnd[2] 
 
 # Median values of posteriors
-# medBeta1start <- median(beta1start[resampleIndices])
-# medBeta2start <- median(beta2start[resampleIndices])
-# medBeta3start <- median(beta3start[resampleIndices])
-# medBeta4start <- median(beta4start[resampleIndices])
-# 
-# betaMedStart <- c(medBeta1start, medBeta2start, medBeta3start,
-#                   medBeta4start)
-# betaRelMedStart <- betaMedStart / betaMedStart[2]
-# 
-# medBeta1end <- median(beta1end[resampleIndices])
-# medBeta2end <- median(beta2end[resampleIndices])
-# medBeta3end <- median(beta3end[resampleIndices])
-# medBeta4end <- median(beta4end[resampleIndices])
-# 
-# betaMedEnd <- c(medBeta1end, medBeta2end, medBeta3end, medBeta4end)
-# betaRelMedEnd <- betaMedEnd / betaMedEnd[2]
-# 
-# betaMed <- c(medBeta1start, medBeta1end, 
-#              medBeta2start, medBeta2end,
-#              medBeta3start, medBeta3end,
-#              medBeta4start, medBeta4end)
+medBeta1start <- median(beta1start[resampleIndices])
+medBeta2start <- median(beta2start[resampleIndices])
+medBeta3start <- median(beta3start[resampleIndices])
+medBeta4start <- median(beta4start[resampleIndices])
+
+betaMedStart <- c(medBeta1start, medBeta2start, medBeta3start,
+                  medBeta4start)
+betaRelMedStart <- betaMedStart / betaMedStart[2]
+
+medBeta1end <- median(beta1end[resampleIndices])
+medBeta2end <- median(beta2end[resampleIndices])
+medBeta3end <- median(beta3end[resampleIndices])
+medBeta4end <- median(beta4end[resampleIndices])
+
+betaMedEnd <- c(medBeta1end, medBeta2end, medBeta3end, medBeta4end)
+betaRelMedEnd <- betaMedEnd / betaMedEnd[2]
+
+betaMed <- c(medBeta1start, medBeta1end,
+             medBeta2start, medBeta2end,
+             medBeta3start, medBeta3end,
+             medBeta4start, medBeta4end)
 
 # Proportion infections for each stage for betaBest ---------------------
 cascadeData <- select(cascadeBest, undiagnosed, diagnosed, unsuppressed,
                       suppressed)
 
-propInfectsBest <- PropInfectionsTV(cascadeData, betaBestStart,
-                                    betaBestEnd)
-# propInfectsMed <- PropInfectionsTV(cascadeData, betaMedStart, betaMedEnd)
+# propInfectsBest <- PropInfectionsTV(cascadeData, betaBestStart,
+#                                     betaBestEnd)
+propInfectsMed <- PropInfectionsTV(cascadeData, betaMedStart, betaMedEnd)
 
 ```
 
 ```{r Script options}
 # Setup script options
-savePlots <- FALSE # save plots as separate files
-saveTables <- FALSE
+savePlots <- TRUE # save plots as separate files
+saveTables <- TRUE
 publicationPlots <- TRUE
 
 if (savePlots) {
@@ -132,7 +133,7 @@ if (savePlots) {
   # Wrapper function so we don't have to keep entering everything in
   # ggsave. Plot defaults are put iteh figure defaults
   SaveFigure <- function(folder, filename, figure, 
-                         format = ".png", width = 10, 
+                         format = ".png", width = 15, 
                          height = 10, units = "cm", ...) {
     ggsave(file.path(folder, paste(filename, format, sep = "")), 
            plot = figure, 
@@ -155,8 +156,9 @@ rangeLower <- function(x) {
 }
 
 # Convert incidence Matrix into a long data frame
-incidenceDF <- TidyLongitudinal(incidenceMatrix[resampleIndices, ], 2004)
-# incidenceDF <- TidyLongitudinal(incidenceMatrix[resampleIndices[1:10], ], 2004)
+incidenceDF <- TidyLongitudinal(incidenceMatrix[unique(resampleIndices),],
+                                2004) %>% tbl_df()
+
 # Set up complicated legend
 aesLabels <- c("data", "sims", "mean", "range" ) # legend order 
 
@@ -258,22 +260,28 @@ simsPlot <- ggdraw() +
 
 
 if (savePlots) {
-  SaveFigure(outputFolder, "Incidence_fit", simsPlot, width = 20)
+  SaveFigure(outputFolder, "Incidence_fit", simsPlot, width = 20, 
+             height = 10)
 }
 
 ```
 
 ```{r Prior posterior plots}
 # Parameter prior and posterior distributions -------------------------
-priorFrameStart <- data.frame(beta = betastart, 
-                         beta1 = beta1start,
-                         beta2 = beta2start,
-                         beta3 = beta3start,
-                         beta4 = beta4start,
-                         f1 = f1start,
-                         f2 = f2start,
-                         f3 = f3start,
-                         f4 = f4)
+# For priors take a random sample of the original 5e6 to make
+# plots and stats faster
+
+priorIndices <- sample(1:numBayesSamples, resamples, replace = TRUE)
+
+priorFrameStart <- data.frame(beta = betastart[priorIndices], 
+                         beta1 = beta1start[priorIndices],
+                         beta2 = beta2start[priorIndices],
+                         beta3 = beta3start[priorIndices],
+                         beta4 = beta4start[priorIndices],
+                         f1 = f1start[priorIndices],
+                         f2 = f2start[priorIndices],
+                         f3 = f3start[priorIndices],
+                         f4 = f4[priorIndices])
 
 posteriorFrameStart <- data.frame(beta = betastart[resampleIndices],
                              beta1 = beta1start[resampleIndices],
@@ -285,15 +293,17 @@ posteriorFrameStart <- data.frame(beta = betastart[resampleIndices],
                              f3 = f3start[resampleIndices],
                              f4 = f4[resampleIndices])
 
-priorFrameEnd <- data.frame(beta = betaend, 
-                         beta1 = beta1end,
-                         beta2 = beta2end,
-                         beta3 = beta3end,
-                         beta4 = beta4end,
-                         f1 = f1end,
-                         f2 = f2end,
-                         f3 = f3end,
-                         f4 = f4)
+priorIndices <- sample(1:numBayesSamples, resamples, replace = TRUE)
+
+priorFrameEnd <- data.frame(beta = betaend[priorIndices], 
+                         beta1 = beta1end[priorIndices],
+                         beta2 = beta2end[priorIndices],
+                         beta3 = beta3end[priorIndices],
+                         beta4 = beta4end[priorIndices],
+                         f1 = f1end[priorIndices],
+                         f2 = f2end[priorIndices],
+                         f3 = f3end[priorIndices],
+                         f4 = f4[priorIndices])
 
 posteriorFrameEnd<- data.frame(beta = betaend[resampleIndices],
                              beta1 = beta1end[resampleIndices],
@@ -306,37 +316,39 @@ posteriorFrameEnd<- data.frame(beta = betaend[resampleIndices],
                              f4 = f4[resampleIndices])
 
 
-betaPlotStart <- ParameterPlot("beta", priorFrameStart,
-                               posteriorFrameStart)
+# betaPlotStart <- ParameterPlot("beta", priorFrameStart,
+#                                posteriorFrameStart)
 beta1PlotStart <- ParameterPlot("beta1", priorFrameStart,
-                                posteriorFrameStart)
+                                posteriorFrameStart, stats = TRUE)
 beta2PlotStart <- ParameterPlot("beta2", priorFrameStart,
-                                posteriorFrameStart)
+                                posteriorFrameStart, stats = TRUE)
 beta3PlotStart <- ParameterPlot("beta3", priorFrameStart,
-                                posteriorFrameStart)
+                                posteriorFrameStart, stats = TRUE)
 beta4PlotStart <- ParameterPlot("beta4", priorFrameStart,
-                                posteriorFrameStart, logCoords = TRUE)
-f1PlotStart <- ParameterPlot("f1", priorFrameStart, posteriorFrameStart)
-f2PlotStart <- ParameterPlot("f2", priorFrameStart, posteriorFrameStart)
-f3PlotStart <- ParameterPlot("f3", priorFrameStart, posteriorFrameStart)
+                                posteriorFrameStart, logCoords = TRUE,
+                                stats = TRUE)
+# f1PlotStart <- ParameterPlot("f1", priorFrameStart, posteriorFrameStart)
+# f2PlotStart <- ParameterPlot("f2", priorFrameStart, posteriorFrameStart)
+# f3PlotStart <- ParameterPlot("f3", priorFrameStart, posteriorFrameStart)
 f4PlotStart <- ParameterPlot("f4", priorFrameStart, posteriorFrameStart,
-                        logCoords = TRUE)
+                        logCoords = TRUE, stats = TRUE)
 
-betaPlotEnd <- ParameterPlot("beta", priorFrameEnd,
-                               posteriorFrameEnd, stats = TRUE)
+# betaPlotEnd <- ParameterPlot("beta", priorFrameEnd,
+#                                posteriorFrameEnd, stats = TRUE)
 beta1PlotEnd <- ParameterPlot("beta1", priorFrameEnd,
                                 posteriorFrameEnd, stats = TRUE)
 beta2PlotEnd <- ParameterPlot("beta2", priorFrameEnd,
-                                posteriorFrameEnd)
+                                posteriorFrameEnd, stats = TRUE)
 beta3PlotEnd <- ParameterPlot("beta3", priorFrameEnd,
-                                posteriorFrameEnd)
+                                posteriorFrameEnd, stats = TRUE)
 beta4PlotEnd <- ParameterPlot("beta4", priorFrameEnd,
-                                posteriorFrameEnd, logCoords = TRUE)
-f1PlotEnd <- ParameterPlot("f1", priorFrameEnd, posteriorFrameEnd)
-f2PlotEnd <- ParameterPlot("f2", priorFrameEnd, posteriorFrameEnd)
-f3PlotEnd <- ParameterPlot("f3", priorFrameEnd, posteriorFrameEnd)
+                              posteriorFrameEnd, logCoords = TRUE,
+                              stats = TRUE)
+# f1PlotEnd <- ParameterPlot("f1", priorFrameEnd, posteriorFrameEnd)
+# f2PlotEnd <- ParameterPlot("f2", priorFrameEnd, posteriorFrameEnd)
+# f3PlotEnd <- ParameterPlot("f3", priorFrameEnd, posteriorFrameEnd)
 f4PlotEnd <- ParameterPlot("f4", priorFrameEnd, posteriorFrameEnd,
-                        logCoords = TRUE)
+                        logCoords = TRUE, stats = TRUE)
 
 # Plot beta posteriors separately
 beta1PlotPostStart <- ParameterPlot("beta1", priorFrameStart,
@@ -417,13 +429,12 @@ combinePostEnd <- ggplot(data = posteriorFrameEnd) +
   plotOpts
 
 # Compare start and end posteriors
-betaPlotSE <- ParameterPlot("beta", posteriorFrameStart,
-  posteriorFrameEnd, stats = TRUE,
-  distLabels = c("2004 posterior (blue)", "2014 posterior (red)"))
+# betaPlotSE <- ParameterPlot("beta", posteriorFrameStart,
+#   posteriorFrameEnd, stats = TRUE,
+#   distLabels = c("2004 posterior (blue)", "2014 posterior (red)"))
 beta1PlotSE <- ParameterPlot("beta1", posteriorFrameStart,
   posteriorFrameEnd, stats = TRUE,
-  distLabels =  c("2004 posterior (blue)", "2014 posterior (red)")) +
-  coord_cartesian(xlim= c(0, 1000 * max(posteriorFrameEnd$beta1)))
+  distLabels =  c("2004 posterior (blue)", "2014 posterior (red)")) 
 beta2PlotSE<- ParameterPlot("beta2", posteriorFrameStart,
   posteriorFrameEnd, stats = TRUE,
   distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
@@ -433,31 +444,30 @@ beta3PlotSE <- ParameterPlot("beta3", posteriorFrameStart,
 beta4PlotSE <- ParameterPlot("beta4", posteriorFrameStart,
   posteriorFrameEnd, logCoords = TRUE, stats = TRUE,
   distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
-f1PlotSE <- ParameterPlot("f1", posteriorFrameStart, posteriorFrameEnd,
-  stats = TRUE, 
-  distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
-f2PlotSE <- ParameterPlot("f2", posteriorFrameStart, posteriorFrameEnd,
-  stats = TRUE, 
-  distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
-f3PlotSE <- ParameterPlot("f3", posteriorFrameStart, posteriorFrameEnd,
-  stats = TRUE, 
-  distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
+# f1PlotSE <- ParameterPlot("f1", posteriorFrameStart, posteriorFrameEnd,
+#   stats = TRUE, 
+#   distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
+# f2PlotSE <- ParameterPlot("f2", posteriorFrameStart, posteriorFrameEnd,
+#   stats = TRUE, 
+#   distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
+# f3PlotSE <- ParameterPlot("f3", posteriorFrameStart, posteriorFrameEnd,
+#   stats = TRUE, 
+#   distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
 f4PlotSE <- ParameterPlot("f4", posteriorFrameStart, posteriorFrameEnd,
   logCoords = TRUE, stats = TRUE,
   distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
 
 if (savePlots) {
   # Print figures to separate files
-  SaveFigure(outputFolder, "Beta_distributions_start", betaPlotStart)
+  # SaveFigure(outputFolder, "Beta_distributions_start", betaPlotStart)
   SaveFigure(outputFolder, "Beta1_distributions_start", beta1PlotStart)
   SaveFigure(outputFolder, "Beta2_distributions_start", beta2PlotStart)
   SaveFigure(outputFolder, "Beta3_distributions_start", beta3PlotStart)
   SaveFigure(outputFolder, "Beta4_distributions_start", beta4PlotStart)
-  SaveFigure(outputFolder, "f1_distributions_start", f1PlotStart)
-  SaveFigure(outputFolder, "f2_distributions_start", f2PlotStart)
-  SaveFigure(outputFolder, "f3_distributions_start", f3PlotStart)
+  # SaveFigure(outputFolder, "f1_distributions_start", f1PlotStart)
+  # SaveFigure(outputFolder, "f2_distributions_start", f2PlotStart)
+  # SaveFigure(outputFolder, "f3_distributions_start", f3PlotStart)
   SaveFigure(outputFolder, "f4_distributions_start", f4PlotStart)
-  SaveFigure(outputFolder, "Beta_distributions_start", betaPlotStart)
   SaveFigure(outputFolder, "Beta1_post_distribution_start",
              beta1PlotPostStart)
   SaveFigure(outputFolder, "Beta2_post_distribution_start",
@@ -470,33 +480,35 @@ if (savePlots) {
              combinePostStart, 
              width = 20)
   
-  SaveFigure(outputFolder, "Beta_distributions_end", betaPlotEnd)
+  # SaveFigure(outputFolder, "Beta_distributions_end", betaPlotEnd)
   SaveFigure(outputFolder, "Beta1_distributions_end", beta1PlotEnd)
   SaveFigure(outputFolder, "Beta2_distributions_end", beta2PlotEnd)
   SaveFigure(outputFolder, "Beta3_distributions_end", beta3PlotEnd)
   SaveFigure(outputFolder, "Beta4_distributions_end", beta4PlotEnd)
-  SaveFigure(outputFolder, "f1_distributions_end", f1PlotEnd)
-  SaveFigure(outputFolder, "f2_distributions_end", f2PlotEnd)
-  SaveFigure(outputFolder, "f3_distributions_end", f3PlotEnd)
+  # SaveFigure(outputFolder, "f1_distributions_end", f1PlotEnd)
+  # SaveFigure(outputFolder, "f2_distributions_end", f2PlotEnd)
+  # SaveFigure(outputFolder, "f3_distributions_end", f3PlotEnd)
   SaveFigure(outputFolder, "f4_distributions_end", f4PlotEnd)
-  SaveFigure(outputFolder, "Beta_distributions_end", betaPlotEnd)
-  SaveFigure(outputFolder, "Beta1_post_distribution_end", beta1PlotPostEnd)
-  SaveFigure(outputFolder, "Beta2_post_distribution_end", beta2PlotPostEnd)
-  SaveFigure(outputFolder, "Beta3_post_distribution_end", beta3PlotPostEnd)
-  SaveFigure(outputFolder, "Beta4_post_distribution_end", beta4PlotPostEnd)
+  SaveFigure(outputFolder, "Beta1_post_distribution_end",
+             beta1PlotPostEnd)
+  SaveFigure(outputFolder, "Beta2_post_distribution_end",
+             beta2PlotPostEnd)
+  SaveFigure(outputFolder, "Beta3_post_distribution_end",
+             beta3PlotPostEnd)
+  SaveFigure(outputFolder, "Beta4_post_distribution_end",
+             beta4PlotPostEnd)
   SaveFigure(outputFolder, "Beta_post_distributions_end", combinePostEnd, 
              width = 20)
   
-  SaveFigure(outputFolder, "Beta_distributions_se", betaPlotSE)
+  # SaveFigure(outputFolder, "Beta_distributions_se", betaPlotSE)
   SaveFigure(outputFolder, "Beta1_distributions_se", beta1PlotSE)
   SaveFigure(outputFolder, "Beta2_distributions_se", beta2PlotSE)
   SaveFigure(outputFolder, "Beta3_distributions_se", beta3PlotSE)
   SaveFigure(outputFolder, "Beta4_distributions_se", beta4PlotSE)
-  SaveFigure(outputFolder, "f1_distributions_se", f1PlotSE)
-  SaveFigure(outputFolder, "f2_distributions_se", f2PlotSE)
-  SaveFigure(outputFolder, "f3_distributions_se", f3PlotSE)
+  # SaveFigure(outputFolder, "f1_distributions_se", f1PlotSE)
+  # SaveFigure(outputFolder, "f2_distributions_se", f2PlotSE)
+  # SaveFigure(outputFolder, "f3_distributions_se", f3PlotSE)
   SaveFigure(outputFolder, "f4_distributions_se", f4PlotSE)
-  SaveFigure(outputFolder, "Beta_distributions_se", betaPlotSE)
 }
 
 ```
@@ -528,15 +540,19 @@ iqrLower <- function(x) {
 }
 
 # Organize the data
-startValues <- posteriorFrameStart %>%
-  mutate(sim = 1:nrow(posteriorFrameStart),
-         year = 2004)
 
-allValues <- posteriorFrameEnd %>%
-  mutate(sim = 1:nrow(posteriorFrameEnd),
+startValues <- posteriorFrameStart %>% distinct()
+startValues <- startValues %>%
+  mutate(sim = 1:nrow(startValues),
+         year = 2004) 
+
+allValues <- posteriorFrameEnd %>% distinct()
+allValues <- allValues %>%
+  mutate(sim = 1:nrow(allValues),
          year = 2014) %>%
          bind_rows(startValues, .) %>%
   select(year, everything()) %>%
+  distinct() %>%
   tbl_df()
 
 # Convert rates to per 1000 PLHIV
@@ -739,9 +755,10 @@ diagPercent2014 <- PercentInc("diagnosed", percentFrame, years = 2014,
                           savefolder = saveFolder)
 unsuppressPercent2014 <- PercentInc("unsuppressed", percentFrame, 
                                 years = 2014, savefolder = saveFolder)
-suppressPercent2014 <- PercentInc("suppressed", percentFrame, years = 2014,
-                                xlimits = c(0, 20), 
-                                savefolder = saveFolder)
+suppressPercent2014 <- PercentInc("suppressed", percentFrame, 
+                                  years = 2014,
+                                  xlimits = c(0, 20), 
+                                  savefolder = saveFolder)
 
 ```
 
@@ -786,12 +803,10 @@ incPlotProp <- ggplot(data = transStage,
 
 if (savePlots) {
   # Print figures to separate files
-  SaveFigure(outputFolder, "New_infections_stage_Best", incPlotNumBest)
-  SaveFigure(outputFolder, "Prop_infections_stage_Best", incPlotPropBest)
-  
-  SaveFigure(outputFolder, "New_infections_stage_Median", incPlotNumMed)
-  SaveFigure(outputFolder, "Prop_infections_stage_Median", incPlotPropMed)
-  
+  SaveFigure(outputFolder, "New_infections_stage", incPlotNum, 
+             height = 10)
+  SaveFigure(outputFolder, "Prop_infections_stage", incPlotProp,
+             height = 10)
 }
 
 ```
@@ -877,7 +892,7 @@ if (publicationPlots) {
              units = "cm")
   
   SaveFigure(outputFolder, "Combined_prop_infections", transFig4, 
-             width = 20, height = 20, 
+             width = 25, height = 20, 
              units = "cm")
   
 }
@@ -886,6 +901,145 @@ if (publicationPlots) {
 
 ## Supplementary plots
 
+```{r combined prior posterior}
+if (publicationPlots) {
+  # Create some combined plots for publications
+  LoadLibrary(cowplot)
+  LoadLibrary(gridExtra)
+  
+  # Create a combined parameter prior and posterior plot
+  priorCombined <- grid.arrange(beta1PlotStart, beta1PlotEnd, 
+                                beta2PlotStart, beta2PlotEnd,
+                                beta3PlotStart, beta3PlotEnd,
+                                f4PlotStart, f4PlotEnd,
+                            ncol = 2, nrow = 4, 
+                            layout_matrix = rbind(c(1, 2), 
+                                                  c(3, 4), 
+                                                  c(5, 6),
+                                                  c(7, 8)),
+                            widths = c(4, 4), heights = c(4, 4, 4, 4))
+  
+  suppFig2 <- ggdraw() +
+    draw_plot(priorCombined, 0, 0, 1, 1) +
+    draw_plot_label(c("A", "B", "C", "D", "E", "F", "G", "H"), 
+                    c(0, 0.5, 0, 0.5, 0, 0.5, 0, 0.5), 
+                    c(1, 1, 0.75, 0.75, 0.5, 0.5, 0.25, 0.25), size = 12)
+  
+  SaveFigure(outputFolder, "Combined_priors", suppFig2, 
+             width = 24, height = 32, 
+             units = "cm")
+  
+  # Create a posterior start and end plot
+  posteriorCombined <- grid.arrange(beta1PlotSE, beta2PlotSE,
+                                beta3PlotSE, beta4PlotSE, 
+                            ncol = 2, nrow = 2, 
+                            layout_matrix = rbind(c(1, 2), 
+                                                  c(3, 4)),
+                            widths = c(4, 4), heights = c(4, 4))
+  
+  suppFig3 <- ggdraw() +
+    draw_plot(posteriorCombined, 0, 0, 1, 1) +
+    draw_plot_label(c("A", "B", "C", "D"), 
+                    c(0, 0.5, 0, 0.5), 
+                    c(1, 1, 0.5, 0.5), size = 12)
+  
+  SaveFigure(outputFolder, "Combined_posteriors", suppFig3, 
+             width = 30, height = 30, 
+             units = "cm")
+  
+}
+```
+
+```{r relative beta}
+# This chunk creates a relative beta table 
+
+# Organize posterior values
+suppBetaValues <- posteriorFrameStart %>%
+  select(beta1, beta2, beta3, beta4) %>%
+  rename(beta1start = beta1, beta2start = beta2, beta3start = beta3, 
+           beta4start = beta4) %>%
+  bind_cols(., posteriorFrameEnd) %>%
+  select(beta1start, beta2start, beta3start, beta4start,
+         beta1, beta2, beta3, beta4) %>%
+  rename(beta1end = beta1, beta2end = beta2, beta3end = beta3, 
+         beta4end = beta4) %>%
+  tbl_df()
+
+relBetaValues <- suppBetaValues %>%
+  transmute(beta1relstart = beta1start / beta2start,
+         beta2relstart = beta2start / beta2start,
+         beta3relstart = beta3start / beta2start,
+         beta4relstart = beta4start / beta2start,
+         beta1relend = beta1end / beta2end,
+         beta2relend = beta2end / beta2end,
+         beta3relend = beta3end / beta2end,
+         beta4relend = beta4end / beta2end) %>%
+  
+  tbl_df()
+
+# Create table - WARNING a lot of hardcoding here
+meanBetaTable <- suppBetaValues %>%
+  gather("beta", "value", 1:8) %>%
+  group_by(beta) %>%
+  # Calculate summary stats and round to 2 sig figs
+  summarise(mean = signif(1000 * mean(value), digits = 2),
+            lower = signif(1000 * quantile(value, 0.05), digits = 2),
+            upper = signif(1000 * quantile(value, 0.95), digits = 2)) %>%
+  ungroup() %>%
+  # Add stage and year
+  mutate(stage = rep(c("undiagnosed", "diagnosed",
+                       "unsuppressed", "suppressed"), each = 2),
+         year = rep(c(2014, 2004), 4)) %>%
+  group_by(year, stage) %>%
+  # Create summary string
+  mutate(string = paste0(toString(mean), " (", toString(lower), 
+                         "-", toString(upper), ")")) %>%
+  ungroup() %>%
+  select(year, stage, string) %>%
+  spread(year, string) %>%
+  mutate(stage = factor(stage, 
+                          levels = c("undiagnosed", "diagnosed",      
+                                     "unsuppressed", "suppressed"))) %>%
+  arrange(stage) %>%
+  tbl_df()
+
+relBetaTable <- relBetaValues %>%
+  gather("beta", "value", 1:8) %>%
+  group_by(beta) %>%
+  # Calculate summary stats and round to 2 sig figs
+  summarise(mean = signif(mean(value), digits = 2),
+            lower = signif(quantile(value, 0.05), digits = 2),
+            upper = signif(quantile(value, 0.95), digits = 2)) %>%
+  ungroup() %>%
+  # Add stage and year
+  mutate(stage = rep(c("undiagnosed", "diagnosed",
+                       "unsuppressed", "suppressed"), each = 2),
+         year = rep(c(2014, 2004), 4)) %>%
+  group_by(year, stage) %>%
+  # Create summary string
+  mutate(string = paste0(toString(mean), " (", toString(lower), 
+                         "-", toString(upper), ")")) %>%
+  ungroup() %>%
+  select(year, stage, string) %>%
+  spread(year, string) %>%
+  mutate(stage = factor(stage, 
+                          levels = c("undiagnosed", "diagnosed",      
+                                     "unsuppressed", "suppressed"))) %>%
+  arrange(stage) %>%
+  tbl_df() 
+
+
+if (saveTables) {
+  # Save beta summary stats
+  write.csv(meanBetaTable, file.path(bayesResultsFolder,
+                                       "Beta_summary.csv"))
+  write.csv(relBetaTable, file.path(bayesResultsFolder,
+                                       "Beta_relative_summary.csv"))
+}
+
+
+```
+
 ```{r corner plots}
 # Use GGally library
 LoadLibrary(GGally)
@@ -893,13 +1047,21 @@ LoadLibrary(GGally)
 # Produce bivariate correlation plots between posterior parameter 
 # estimates aka a corner plot. We have four priors so this means 6 plots
 if (priorApproach == "independent") {
-  bivariateData <- posteriorFrame %>%
-    select(beta1, beta2, beta3, f4) 
+  bivariateData <- posteriorFrameStart %>%
+    select(beta1, beta2, beta3, f4) %>%
+    rename(beta1start = beta1, beta2start = beta2, beta3start = beta3, 
+           f4start = f4) %>%
+    bind_cols(., posteriorFrameEnd) %>%
+    select(beta1start, beta2start, beta3start, f4start,
+           beta1, beta2, beta3, f4) %>%
+    rename(beta1end = beta1, beta2end = beta2, beta3end = beta3, 
+           f4end = f4) 
+    
 } else {
   # relative approach
-  bivariateData <- posteriorFrameStrart %>%
-    select(beta, f1, f2, f3) %>%
-    rename(betastart = beta, f1start = f1, f2start = f2, f3start = f3) 
+  # bivariateData <- posteriorFrameStart %>%
+  #   select(beta, f1, f2, f3) %>%
+  #   rename(betastart = beta, f1start = f1, f2start = f2, f3start = f3) 
 }
 
 # Create a wrapper function for the lower plots
@@ -920,10 +1082,10 @@ cornerPlot <- ggpairs(bivariateData,
 if (savePlots) {
   # Print figures to separate files -- can't use SaveFigure for ggpairs 
   # objects 
-  png(file.path(outputFolder, "Bivariate_correlations.png"),
-                width = 20, height = 15, units = "cm", res = 300)
-  print(cornerPlot)
-  dev.off()
+  SaveFigure(outputFolder, "Bivariate_correlations", cornerPlot, 
+             width = 20, height = 20, 
+             units = "cm")
+  
 }
 ```
 

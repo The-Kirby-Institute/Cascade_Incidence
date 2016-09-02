@@ -330,7 +330,7 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
                        "   \n",
                        sep = "")
   } else {
-    plotRange <- range(priorDist)
+    plotRange <- range(c(priorDist, postDist))
     plotStats <- paste0("Mean, median:   \n", 
                      paste0(sampleLabels[1], " = "), 
                      toString(signif(mean(priorDist), digits = 2)), ", ",
@@ -359,25 +359,6 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
                 stat = "density")
   }
   
-  if (stats) {
-    
-    if (!singleplot) {
-      postPlot <- postPlot + 
-        geom_vline(aes(xintercept = median(postDist)), size = 1.1, 
-                   colour = "red3", linetype = "dashed") + 
-        geom_vline(aes(xintercept = median(priorDist)), size = 1.1, 
-                   colour = "blue", linetype = "dashed")
-    } else {
-      postPlot <- postPlot + 
-        geom_vline(aes(xintercept = median(postDist)), size = 1.1, 
-                   colour = "black", linetype = "solid") + 
-        geom_vline(aes(xintercept = quantile(postDist, 0.025)), size = 1.1, 
-                   colour = "black", linetype = "dashed") + 
-        geom_vline(aes(xintercept = quantile(postDist, 0.975)), size = 1.1, 
-                   colour = "black", linetype = "dashed")
-    }  
-  }
-  
   # Transform coordinates if required
   if (logCoords) {
     postPlot <- postPlot + scale_x_log10()
@@ -391,17 +372,43 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
   } else {
     ymax <- max(max(ggplot_build(postPlot)$data[[1]]$density), 
                 max(ggplot_build(postPlot)$data[[2]]$density))
-    yLimit <- ymax * 1.4
+    yLimit <- ymax * 1.3
+  }
+  
+  if (stats) {
+    
+    if (!singleplot) {
+      postPlot <- postPlot + 
+        geom_segment(aes(xend = median(postDist), x = median(postDist),
+                         y = -Inf, yend = ymax), size = 1.1, 
+                         colour = "red3", linetype = "dashed") +
+        geom_segment(aes(xend = median(priorDist), x = median(priorDist),
+                         y = -Inf, yend = ymax), size = 1.1, 
+                     colour = "blue", linetype = "dashed")
+    } else {
+      postPlot <- postPlot + 
+        geom_segment(aes(xend = median(postDist), x = median(postDist),
+                         y = -Inf, yend = ymax), size = 1.1, 
+                     colour = "black", linetype = "solid") + 
+        geom_segment(aes(xend = quantile(postDist, 0.025), 
+                         x = quantile(postDist, 0.025),
+                         y = -Inf, yend = ymax), size = 1.1, 
+                     colour = "black", linetype = "dashed") +
+        geom_segment(aes(xend = quantile(postDist, 0.975), 
+                         x = quantile(postDist, 0.975),
+                         y = -Inf, yend = ymax), size = 1.1, 
+                     colour = "black", linetype = "dashed")
+    }  
   }
   
   # Finish the plot
   postPlot <- postPlot +
-    coord_cartesian(xlim = plotRange, ylim = c(0, yLimit)) +
+    coord_cartesian(xlim = plotRange, ylim = c(0, yLimit)) + 
     ylab("Density") + 
     xlab(yLabel) + plotOpts +
-    annotate("text", label = plotStats, 
-             x = Inf, y = Inf, hjust = 1, vjust = 1) 
-  
+    annotate("text", label = plotStats,
+              x = Inf, y = Inf, hjust = 1, vjust = 1, alpha = 1)
+
   # Save plot if required
   if (!is.null(savefolder)) {
     ggsave(file.path(resultsFolder, 

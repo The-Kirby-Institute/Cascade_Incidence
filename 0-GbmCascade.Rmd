@@ -245,7 +245,7 @@ treated <- pldhiv$value * propTreat
 treatedLower <- pldhiv$lower * propTreat
 treatedUpper <- pldhiv$upper * propTreat
 
-# Number diagnosed not on treatment - have to be careful the minimum value 
+# Number diagnosed not on treatment - have to be careful the minimum value
 # is not less than zero
 diagnosed <- pldhiv$value - treated
 diagnosedLower <- pmax(pldhiv$lower - treatedUpper, 0)
@@ -513,9 +513,9 @@ cascadeStagePlots$undiagnosed <- plotCurrent$undiagnosed +
   ggtitle(yLabels["undiagnosed"])
 cascadeStagePlots$diagnosed <- plotCurrent$diagnosed +
   ggtitle(yLabels["diagnosed"])
-cascadeStagePlots$unsuppressed <- plotCurrent$diagnosed +
+cascadeStagePlots$unsuppressed <- plotCurrent$unsuppressed +
   ggtitle(yLabels["unsuppressed"])
-cascadeStagePlots$suppressed <- plotCurrent$diagnosed +
+cascadeStagePlots$suppressed <- plotCurrent$suppressed +
   ggtitle(yLabels["suppressed"])
 
 cascadeFig2 <- plot_grid(cascadeStagePlots$undiagnosed,

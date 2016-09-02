@@ -91,8 +91,8 @@ incError <- ceil(100 * pmax(incUpper, incLower)) # calculate error range
 
 # Chunk Options ----------------------------------------------------------
 
-numBayesSamples <- 1e6 # number of prior samples
-priorApproach <- "relative" # independent or relative
+numBayesSamples <- 5e6 # number of prior samples
+priorApproach <- "independent" # independent or relative
 
 useSaved <- TRUE  # use previous set of sampled priors
 saveSims <- FALSE   # save sample priors and weights
@@ -109,7 +109,7 @@ incidenceWeight <- incError
 # Details of inputs if required ------------------------------------------
 if (useSaved) {
   # Specify details of saved file
-  currTime <- "2016-08-04(02-50)" # in %Y-%m-%d(%H-%M) format 
+  currTime <- "2016-08-23(18-16)" # in %Y-%m-%d(%H-%M) format 
                                    # or some other name
   folder <- paste("Cascade_Bayes_", currTime, sep = "")
   outputFolder <- file.path(resultsFolder, folder)
@@ -149,7 +149,7 @@ if (useSaved) {
   # Specify some common info for the beta values
   betaRange <- c(0.005, 0.06)
   beta1Rel <- c(0.9, 30)
-  beta3Rel <- c(0.05, 5)
+  beta3Rel <- c(0.05, 2)
   
   if (priorApproach == "independent") {
     # Specify uniform priors between min and max
@@ -182,7 +182,7 @@ if (useSaved) {
     betaend <- beta2end
     f1end <- beta1end / beta2end
     f2end <- beta2end / beta2end
-    f3end <- beta3end / beta3end
+    f3end <- beta3end / beta2end
     
   } else if(priorApproach == "relative") {
     # Set up beta prior
@@ -308,10 +308,10 @@ if (useSaved) {
 
 ```{r bayesposteriors}
 # Using the results from runsims resample with replacement to create 
-# psoteriors
+# posteriors
 
-resamples <- 50000
-useSaved <- TRUE
+resamples <- 100000
+useSaved <- FALSE
 saveOutputs <- FALSE
 
 if (useSaved) {
@@ -436,13 +436,13 @@ propInfectsMed <- PropInfectionsTV(cascadeData, BetaMedstart, BetaMedend)
 # General exploration ----------------------------------------------------
 graphics.off()
 
-hist(f1start, breaks = 100) # prior
-hist(f1start[resampleIndices], breaks = 100) # posterior 
-hist(f1end[resampleIndices], breaks = 100) # posterior 
+hist(f3start, breaks = 100) # prior
+hist(f3start[resampleIndices], breaks = 100) # posterior 
+hist(f3end[resampleIndices], breaks = 100) # posterior 
 
-hist(betastart, breaks = 100) # prior
-hist(betastart[resampleIndices], breaks = 100) # posterior
-hist(betaend[resampleIndices], breaks = 100) # posterior
+hist(beta1start, breaks = 100) # prior
+hist(beta1start[resampleIndices], breaks = 100) # posterior
+hist(beta3end[resampleIndices], breaks = 100) # posterior
 
 hist(log(beta4start), breaks = 100) # prior
 hist(log(beta4start[resampleIndices]), breaks = 100) # posterior
