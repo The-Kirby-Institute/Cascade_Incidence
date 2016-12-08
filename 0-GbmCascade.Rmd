@@ -141,61 +141,6 @@ try(if((length(propSuppressedMin) != nYears) ||
   stop("Incorrect number of data points for proportion suppressed"))
 ```
 
-```{r plot undiagnosed}
-if (plotUndiagnosed) {
-  # Load default plot options
-  source(file.path(Rcode, "PlotOptions.R"), echo = TRUE)
-  
-  # Tidy up indiagnosed matrix
-  undiagProp <- tbl_df(as.data.frame(t(undiagnosedMatrix)))
-  colnames(undiagProp) <- c("estimate", "lower", "upper")
-  undiagProp$year <- propUndiag$year
-  
-  countDF <- data_frame(year = 2014,
-                        estimate = undiagnosedCount[1],
-                        lower = undiagnosedCount[2],
-                        upper = undiagnosedCount[3])
-  
-  # Create plot
-  undiagPlot <- ggplot(data = undiagProp, aes(x = year)) +
-    geom_ribbon(aes(ymin = 100 * lower, ymax = 100 * upper), 
-                    fill = asrcols[2], 
-                alpha = 0.4) +
-    geom_line(aes(y = 100 * estimate, colour = "ecdc")) +
-    geom_errorbar(data = countDF, 
-                  aes(x = year, ymin = 100 * lower, ymax = 100 * upper,
-                  colour = "count")) +
-    geom_point(data = countDF, 
-                  aes(x = year, y = 100 * estimate, colour = "count")) +
-    scale_colour_manual(name = "", 
-                        labels = c("ECDC estimates", "COUNT estimate"),
-                        values = c(asrcols[2], "black"),
-                        limits = c("ecdc", "count")) +
-    scale_x_continuous(breaks = seq(startYear,                        
-                                      analysisYear, by = 3)) +
-    coord_cartesian(ylim = c(0, 15)) +
-    ylab("Percentage undiagnosed (%)") + xlab("Year") +
-    plotOpts + theme(legend.justification=c(0,0), legend.position=c(0,0))
-  
-  if (savePlots) {
-    # Plot specs
-    plotWidth <- 10
-    plotHeight <- 10
-    plotUnits <- "cm"
-    
-    # Create figure folder
-    dir.create(figFolder, showWarnings = FALSE)
-    
-    # Do the plots
-    ggsave(file.path(figFolder, paste0("undiagnosedPercent-",
-                                      toString(analysisYear), ".png")),
-      plot = undiagPlot, width = plotWidth, height = plotHeight, 
-      units = plotUnits)
-  }
-}
-  
-```
-
 ```{r createstimates}
 # Initialize data frame for storage
 hivCascade <- data.frame(year = integer(), 
@@ -319,6 +264,80 @@ if (saveCascade) {
   write.csv(hivCascade, file = paste(saveString, ".csv", sep =""), 
             row.names = FALSE)
 }
+```
+
+```{r plot undiagnosed}
+if (plotUndiagnosed) {
+  # Load default plot options
+  source(file.path(Rcode, "PlotOptions.R"), echo = TRUE)
+  
+  # Set up undiagnosed estimates 
+  
+  plotECDC <- FALSE
+  
+  # Tidy up indiagnosed matrix
+  undiagPropECDC <- tbl_df(as.data.frame(t(undiagnosedMatrix)))
+  colnames(undiagPropECDC) <- c("estimate", "lower", "upper")
+  undiagPropECDC$year <- propUndiag$year
+  
+  undiagPropCascade <- data_frame(estimate = undiagnosed / plhiv,
+                           lower = undiagnosedLower / plhivUpper,
+                           upper = undiagnosedUpper / plhivLower,
+                           year = propUndiag$year)
+  
+  # Use the specific estimate we want
+  if (plotECDC) {
+    undiagProp <- undiagPropECDC
+    undiagLabel <- "ECDC estimate"
+  } else {
+    undiagProp <- undiagPropCascade
+    undiagLabel <- "Cascade estimate"
+    
+  }
+  
+  countDF <- data_frame(year = 2014,
+                        estimate = undiagnosedCount[1],
+                        lower = undiagnosedCount[2],
+                        upper = undiagnosedCount[3])
+  
+  # Create plot
+  undiagPlot <- ggplot(data = undiagProp, aes(x = year)) +
+    geom_ribbon(aes(ymin = 100 * lower, ymax = 100 * upper), 
+                    fill = asrcols[2], 
+                alpha = 0.4) +
+    geom_line(aes(y = 100 * estimate, colour = "ecdc")) +
+    geom_errorbar(data = countDF, 
+                  aes(x = year, ymin = 100 * lower, ymax = 100 * upper,
+                  colour = "count")) +
+    geom_point(data = countDF, 
+                  aes(x = year, y = 100 * estimate, colour = "count")) +
+    scale_colour_manual(name = "", 
+                        labels = c(undiagLabel, "COUNT estimate"),
+                        values = c(asrcols[2], "black"),
+                        limits = c("ecdc", "count")) +
+    scale_x_continuous(breaks = seq(startYear,                        
+                                      analysisYear, by = 3)) +
+    coord_cartesian(ylim = c(0, 20)) +
+    ylab("Percentage undiagnosed (%)") + xlab("Year") +
+    plotOpts + theme(legend.justification=c(0,0), legend.position=c(0,0))
+  
+  if (savePlots) {
+    # Plot specs
+    plotWidth <- 10
+    plotHeight <- 10
+    plotUnits <- "cm"
+    
+    # Create figure folder
+    dir.create(figFolder, showWarnings = FALSE)
+    
+    # Do the plots
+    ggsave(file.path(figFolder, paste0("undiagnosedPercent-",
+                                      toString(analysisYear), ".png")),
+      plot = undiagPlot, width = plotWidth, height = plotHeight, 
+      units = plotUnits)
+  }
+}
+  
 ```
 
 ```{r plot results}

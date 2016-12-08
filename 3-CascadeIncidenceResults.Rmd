@@ -34,7 +34,7 @@ source(file.path(Rcode, "GetLegend.R"))
 ```{r Front matter}
 mainPackages <- c("dplyr", "tidyr", "ggplot2", "markdown")
 source(file.path(Rcode, "FrontMatter.R"), echo = TRUE)
-fmStr <- FrontMatter(mainPackages, rstudio = "0.99.903")
+fmStr <- FrontMatter(mainPackages, rstudio = "1.0.44")
 cat(fmStr)
 ```
 
@@ -45,8 +45,7 @@ cat(fmStr)
 
 # Specify the results production times/string for selecting the correct 
 # folder
-# bayesAnalysisTime <- "2016-08-04(02-50)" 
-bayesAnalysisTime <- "2016-08-23(18-16)" 
+bayesAnalysisTime <- "Final" #"2016-08-23(18-16)" 
 fileTag <- "ecdc"
 
 # Load new infections data 
