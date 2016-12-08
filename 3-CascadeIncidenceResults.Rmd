@@ -115,9 +115,9 @@ propInfectsMed <- PropInfectionsTV(cascadeData, betaMedStart, betaMedEnd)
 
 ```{r Script options}
 # Setup script options
-savePlots <- TRUE # save plots as separate files
-saveTables <- TRUE
-publicationPlots <- TRUE
+savePlots <- FALSE # save plots as separate files
+saveTables <- FALSE
+publicationPlots <- FALSE
 
 if (savePlots) {
   # Create folder for the plots using the current time
@@ -713,9 +713,26 @@ transNumberFrame <- transFrame %>%
   ungroup()
 
 if (saveTables) {
-  
   # Organize results and format into a nice table
-  meanTable <- transPercentFrame %>%
+  meanTableNumber <- transNumberFrame %>%
+    select(year, stage, mean, lower05, upper95) %>%
+    mutate(stage = factor(stage, 
+                          levels = c("undiagnosed", "diagnosed",      
+                                     "unsuppressed", "suppressed")),
+           mean = round(mean, digits = 1),
+           lower05 = round(lower05, digits = 1),
+           upper95 = round(upper95, digits = 1)) %>%
+    arrange(stage) %>%
+    group_by(year, stage) %>%
+    mutate(string = paste0(toString(mean), "(", toString(lower05), 
+                           "-", toString(upper95), ")")) %>%
+    ungroup() %>%
+    select(year, stage, string) %>%
+    spread(stage, string)
+  
+  
+  # Percenatges
+  meanTablePercent <- transPercentFrame %>%
     select(year, stage, mean, lower05, upper95) %>%
     mutate(stage = factor(stage, 
                           levels = c("undiagnosed", "diagnosed",      
@@ -731,9 +748,12 @@ if (saveTables) {
     select(year, stage, string) %>%
     spread(stage, string)
 
-  # Incidence Percent Frame to a csv file
-  write.csv(meanTable, file.path(bayesResultsFolder,
-                                       "Source_Infections.csv"))
+  # Save incidence results to csv files
+  write.csv(meanTableNumber, file.path(bayesResultsFolder,
+                                      "Source_Infections.csv"))
+  
+  write.csv(meanTablePercent, file.path(bayesResultsFolder,
+                                       "Source_Infections_Percent.csv"))
 }
 
 # Plot change in proportion acquired by stage over time

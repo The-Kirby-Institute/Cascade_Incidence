@@ -273,7 +273,7 @@ if (plotUndiagnosed) {
   
   # Set up undiagnosed estimates 
   
-  plotECDC <- FALSE
+  plotECDC <- TRUE
   
   # Tidy up indiagnosed matrix
   undiagPropECDC <- tbl_df(as.data.frame(t(undiagnosedMatrix)))
@@ -285,23 +285,18 @@ if (plotUndiagnosed) {
                            upper = undiagnosedUpper / plhivLower,
                            year = propUndiag$year)
   
-  # Use the specific estimate we want
-  if (plotECDC) {
-    undiagProp <- undiagPropECDC
-    undiagLabel <- "ECDC estimate"
-  } else {
-    undiagProp <- undiagPropCascade
-    undiagLabel <- "Cascade estimate"
-    
-  }
-  
   countDF <- data_frame(year = 2014,
                         estimate = undiagnosedCount[1],
                         lower = undiagnosedCount[2],
                         upper = undiagnosedCount[3])
   
   # Create plot
-  undiagPlot <- ggplot(data = undiagProp, aes(x = year)) +
+  undiagPlot <- ggplot(data = undiagPropECDC, aes(x = year)) +
+    geom_ribbon(data = undiagPropCascade, 
+                  aes(x = year, ymin = 100 * lower, ymax = 100 * upper),
+                  fill = asrcols[5],
+                alpha = 0.4) + 
+    geom_line(aes(y = 100 * estimate, colour = "cascade")) +
     geom_ribbon(aes(ymin = 100 * lower, ymax = 100 * upper), 
                     fill = asrcols[2], 
                 alpha = 0.4) +
@@ -312,14 +307,17 @@ if (plotUndiagnosed) {
     geom_point(data = countDF, 
                   aes(x = year, y = 100 * estimate, colour = "count")) +
     scale_colour_manual(name = "", 
-                        labels = c(undiagLabel, "COUNT estimate"),
-                        values = c(asrcols[2], "black"),
-                        limits = c("ecdc", "count")) +
+                        labels = c("ECDC Estimates", 
+                                   "Cascade Estimates",
+                                   "COUNT estimate"),
+                        values = c(asrcols[5], asrcols[2], "black"),
+                        limits = c("cascade", "ecdc", "count")) +
     scale_x_continuous(breaks = seq(startYear,                        
                                       analysisYear, by = 3)) +
     coord_cartesian(ylim = c(0, 20)) +
     ylab("Percentage undiagnosed (%)") + xlab("Year") +
-    plotOpts + theme(legend.justification=c(0,0), legend.position=c(0,0))
+    plotOpts + theme(legend.justification = c(0, 0),
+                     legend.position = c(0.05, 0))
   
   if (savePlots) {
     # Plot specs
