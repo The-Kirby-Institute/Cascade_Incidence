@@ -141,10 +141,10 @@ if (useSaved) {
   # the error range. 
   
   # Specify min and max for error ranges in cascade estimates
-  errN1 <- as.numeric(errorRange[1, 2:3])
-  errN2 <- as.numeric(errorRange[2, 2:3])
-  errN3 <- as.numeric(errorRange[3, 2:3])
-  errN4 <- as.numeric(errorRange[4, 2:3])
+  errN1 <- as.numeric(filter(errorRange, stage == "undiagnosed")[, 2:3])
+  errN2 <- as.numeric(filter(errorRange, stage == "diagnosed")[, 2:3])
+  errN3 <- as.numeric(filter(errorRange, stage == "suppressed")[, 2:3])
+  errN4 <- as.numeric(filter(errorRange, stage == "unsuppressed")[, 2:3])
   
   # Specify some common info for the beta values
   betaRange <- c(0.005, 0.06)
