@@ -94,7 +94,7 @@ incError <- ceil(100 * pmax(incUpper, incLower)) # calculate error range
 numBayesSamples <- 5e6 # number of prior samples
 priorApproach <- "independent" # independent or relative
 
-useSaved <- TRUE  # use previous set of sampled priors
+useSaved <- FALSE  # use previous set of sampled priors
 saveSims <- FALSE   # save sample priors and weights
 fileTag <- "ecdc"
 

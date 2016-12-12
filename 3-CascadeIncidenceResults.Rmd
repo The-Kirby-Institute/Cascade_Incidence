@@ -115,9 +115,9 @@ propInfectsMed <- PropInfectionsTV(cascadeData, betaMedStart, betaMedEnd)
 
 ```{r Script options}
 # Setup script options
-savePlots <- FALSE # save plots as separate files
-saveTables <- FALSE
-publicationPlots <- FALSE
+savePlots <- TRUE # save plots as separate files
+saveTables <- TRUE
+publicationPlots <- TRUE
 
 if (savePlots) {
   # Create folder for the plots using the current time
@@ -540,12 +540,12 @@ iqrLower <- function(x) {
 
 # Organize the data
 
-startValues <- posteriorFrameStart %>% distinct()
+startValues <- posteriorFrameStart # %>% distinct()
 startValues <- startValues %>%
   mutate(sim = 1:nrow(startValues),
          year = 2004) 
 
-allValues <- posteriorFrameEnd %>% distinct()
+allValues <- posteriorFrameEnd # %>% distinct()
 allValues <- allValues %>%
   mutate(sim = 1:nrow(allValues),
          year = 2014) %>%
@@ -695,8 +695,8 @@ transPercentFrame <- percentFrame %>%
   group_by(year, stage) %>%
   summarise(median = median(percentage),
             mean = mean(percentage),
-            lower05 = quantile(percentage, 0.05),
-            upper95 = quantile(percentage, 0.95)) %>%
+            lower05 = quantile(percentage, 0.025),
+            upper95 = quantile(percentage, 0.975)) %>%
   ungroup()
 
 meanPercentFrame <- transPercentFrame %>%
@@ -708,8 +708,8 @@ transNumberFrame <- transFrame %>%
   group_by(year, stage) %>%
   summarise(median = median(infections),
             mean = mean(infections),
-            lower05 = quantile(infections, 0.05),
-            upper95 = quantile(infections, 0.95)) %>%
+            lower05 = quantile(infections, 0.025),
+            upper95 = quantile(infections, 0.975)) %>%
   ungroup()
 
 if (saveTables) {
@@ -719,9 +719,9 @@ if (saveTables) {
     mutate(stage = factor(stage, 
                           levels = c("undiagnosed", "diagnosed",      
                                      "unsuppressed", "suppressed")),
-           mean = round(mean, digits = 1),
-           lower05 = round(lower05, digits = 1),
-           upper95 = round(upper95, digits = 1)) %>%
+           mean = round(mean),
+           lower05 = round(lower05),
+           upper95 = round(upper95)) %>%
     arrange(stage) %>%
     group_by(year, stage) %>%
     mutate(string = paste0(toString(mean), "(", toString(lower05), 
@@ -798,7 +798,7 @@ legendLabels <- c("Undiagnosed", "Diagnosed untreated",
                   "On ART: VL > 400 last test", 
                   "On ART: VL < 400 last test")
 plotCols <- asrcols[c(1:2, 4:5)]
-xValues <- seq(2004,2014, by = 5)
+xValues <- seq(2004, 2014, by = 5)
 
 # Incidence bar charts - best fit
 incPlotNum <- ggplot(data = transStage, 
@@ -806,7 +806,7 @@ incPlotNum <- ggplot(data = transStage,
   geom_area(stat="identity") + 
   ylab("New infections") + xlab("Year") +
   scale_fill_manual(values = plotCols, name = "", labels = legendLabels, 
-                    guide = guide_legend(reverse = TRUE, nrow = 2)) +  
+                    guide = guide_legend(reverse = FALSE, nrow = 2)) +  
   scale_x_continuous(breaks = xValues) + plotOpts 
 
 incPlotProp <- ggplot(data = transStage, 
@@ -814,7 +814,7 @@ incPlotProp <- ggplot(data = transStage,
   geom_area(stat="identity", position= "fill") + 
   ylab("Percentage of new infections") + xlab("Year") +
   scale_fill_manual(values = plotCols, name = "", labels = legendLabels, 
-                    guide = guide_legend(reverse = TRUE, nrow = 2)) +  
+                    guide = guide_legend(reverse = FALSE, nrow = 2)) +  
   scale_x_continuous(breaks = xValues) + 
   scale_y_continuous(labels = percent) + 
   plotOpts
@@ -977,7 +977,7 @@ suppBetaValues <- posteriorFrameStart %>%
   select(beta1, beta2, beta3, beta4) %>%
   rename(beta1start = beta1, beta2start = beta2, beta3start = beta3, 
            beta4start = beta4) %>%
-  bind_cols(., posteriorFrameEnd) %>%
+  bind_cols(., posteriorFrameEnd) %>% 
   select(beta1start, beta2start, beta3start, beta4start,
          beta1, beta2, beta3, beta4) %>%
   rename(beta1end = beta1, beta2end = beta2, beta3end = beta3, 
@@ -1002,8 +1002,8 @@ meanBetaTable <- suppBetaValues %>%
   group_by(beta) %>%
   # Calculate summary stats and round to 2 sig figs
   summarise(mean = signif(1000 * mean(value), digits = 2),
-            lower = signif(1000 * quantile(value, 0.05), digits = 2),
-            upper = signif(1000 * quantile(value, 0.95), digits = 2)) %>%
+            lower = signif(1000 * quantile(value, 0.025), digits = 2),
+            upper = signif(1000 * quantile(value, 0.975), digits = 2)) %>%
   ungroup() %>%
   # Add stage and year
   mutate(stage = rep(c("undiagnosed", "diagnosed",
@@ -1027,8 +1027,8 @@ relBetaTable <- relBetaValues %>%
   group_by(beta) %>%
   # Calculate summary stats and round to 2 sig figs
   summarise(mean = signif(mean(value), digits = 2),
-            lower = signif(quantile(value, 0.05), digits = 2),
-            upper = signif(quantile(value, 0.95), digits = 2)) %>%
+            lower = signif(quantile(value, 0.025), digits = 2),
+            upper = signif(quantile(value, 0.975), digits = 2)) %>%
   ungroup() %>%
   # Add stage and year
   mutate(stage = rep(c("undiagnosed", "diagnosed",
