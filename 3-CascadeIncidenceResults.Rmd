@@ -45,7 +45,7 @@ cat(fmStr)
 
 # Specify the results production times/string for selecting the correct 
 # folder
-bayesAnalysisTime <- "2016-12-12(17-28)" # "Final" #"2016-08-23(18-16)" 
+bayesAnalysisTime <- "Final"
 fileTag <- "ecdc"
 
 # Load new infections data 
