@@ -95,7 +95,7 @@ numBayesSamples <- 5e6 # number of prior samples
 priorApproach <- "independent" # independent or relative
 
 useSaved <- FALSE  # use previous set of sampled priors
-saveSims <- FALSE   # save sample priors and weights
+saveSims <- TRUE   # save sample priors and weights
 fileTag <- "ecdc"
 
 # Specify f4 prior 
@@ -312,13 +312,13 @@ if (useSaved) {
 
 resamples <- 100000
 useSaved <- FALSE
-saveOutputs <- FALSE
+saveOutputs <- TRUE
 
 if (useSaved) {
   # Specify details of saved file
   fileTag <- "ecdc"
   
-  simTime <- "2016-08-04(02-50)" # in %Y-%m-%d(%H-%M) format 
+  simTime <- "2016-12-12(17-28)" # in %Y-%m-%d(%H-%M) format 
                                   # or some other name
   folder <- paste("Cascade_Bayes_", simTime, sep = "")
   inputFolder <- file.path(resultsFolder, folder)
