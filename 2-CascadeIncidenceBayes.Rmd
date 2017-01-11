@@ -34,7 +34,7 @@ source(file.path(Rcode, "BayesFunctions.R"), echo = TRUE)
 
 ```{r loaddata}
 # Need to load previoulsy generated cascadeData
-analysisYear <- 2014
+analysisYear <- 2015
 
 # Input data 
 inputFileTag <- "ecdc"
@@ -92,18 +92,18 @@ incError <- ceil(100 * pmax(incUpper, incLower)) # calculate error range
 
 # Chunk Options ----------------------------------------------------------
 
-numBayesSamples <- 1e5 #5e6 # number of prior samples
+numBayesSamples <- 5e6 # number of prior samples
 priorApproach <- "independent" # independent or relative
 
 useSaved <- FALSE  # use previous set of sampled priors
 saveSims <- TRUE   # save sample priors and weights
 fileTag <- "ecdc"
 
-simsSeed <- NULL # 54321 #Set to an integer to reproduce results
+simsSeed <- 54321 #Set to an integer to reproduce results
 if (!is.null(simsSeed)) {
   set.seed(simsSeed)
 } else {
-  set.seed() # Clear current seed
+  set.seed(NULL) # Clear current seed
 }
 
 # Specify f4 prior 
@@ -246,10 +246,10 @@ if (useSaved) {
   # Create f4 prior -- always relative to beta2
   if (suppressOption == "option9") {
     f4Prior <- SuppressedOption(suppressOption) # really beta4 prior
-    beta4start <- PriorSample(numBayesSamples, f4prior$dist,
-                              f4prior$params)
-    beta4end <- PriorSample(numBayesSamples, f4prior$dist, 
-                            f4prior$params)
+    beta4start <- PriorSample(numBayesSamples, f4Prior$dist,
+                              f4Prior$params)
+    beta4end <- PriorSample(numBayesSamples, f4Prior$dist, 
+                            f4Prior$params)
     f4 <- betastart / betastart
   } else {
     f4Prior <- SuppressedOption(suppressOption)
@@ -337,11 +337,11 @@ if (useSaved) {
 # Using the results from runsims resample with replacement to create 
 # posteriors
 
-resamples <- 20000 # 100000
+resamples <- 1e5
 useSaved <- FALSE
 saveOutputs <- TRUE
 
-resampleSeed <- NULL #2357 Set to an integer to reproduce results
+resampleSeed <- 2357 # Set to an integer to reproduce results
 if (!is.null(resampleSeed)) {
   set.seed(resampleSeed)
 } else {
