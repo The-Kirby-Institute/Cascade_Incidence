@@ -91,11 +91,11 @@ incError <- ceil(100 * pmax(incUpper, incLower)) # calculate error range
 
 # Chunk Options ----------------------------------------------------------
 
-numBayesSamples <- 5e6 # number of prior samples
+numBayesSamples <- 1e5 #5e6 # number of prior samples
 priorApproach <- "independent" # independent or relative
 
 useSaved <- FALSE  # use previous set of sampled priors
-saveSims <- TRUE   # save sample priors and weights
+saveSims <- FALSE   # save sample priors and weights
 fileTag <- "ecdc"
 
 simsSeed <- NULL # 54321 #Set to an integer to reproduce results
@@ -106,7 +106,8 @@ if (!is.null(simsSeed)) {
 }
 
 # Specify f4 prior 
-f4Prior <- SuppressedOption("option9")
+suppressOption <- "option9"
+
 
 priorWeight <- TRUE
 priorWeightValues <- c(500, 1300, -1000) # c(400. 1100, 0)
@@ -143,7 +144,7 @@ if (useSaved) {
   if (!is.null(simsSeed)) {
     set.seed(simsSeed)
   } else {
-    set.seed() # Clear current seed
+    set.seed(NULL) # Clear current seed
   }
   
 } else {
@@ -242,13 +243,22 @@ if (useSaved) {
   }
   
   # Create f4 prior -- always relative to beta2
-  f4 <- PriorSample(numBayesSamples, f4Prior$dist, f4Prior$params) * 
-    runif(numBayesSamples, errN4[1], errN4[2])
-  
-  # Calculate corresponding beta 4 values
-  beta4start <- betastart * f4
-  beta4end <- betaend * f4
-  
+  if (suppressOption == "option9") {
+    beta4prior <- SuppressedOption(suppressOption)
+    beta4start <- PriorSample(numBayesSamples, beta4prior$dist,
+                              beta4prior$params)
+    beta4end <- PriorSample(numBayesSamples, beta4prior$dist, 
+                            beta4prior$params)
+    f4 <- betastart / betastart
+  } else {
+    f4Prior <- SuppressedOption(suppressOption)
+    f4 <- PriorSample(numBayesSamples, f4Prior$dist, f4Prior$params) * 
+      runif(numBayesSamples, errN4[1], errN4[2])
+    
+    # Calculate corresponding beta 4 values
+    beta4start <- betastart * f4
+    beta4end <- betaend * f4
+  }
   # Run simulations ------------------------------------------------------
   
   # Initialize outputs
@@ -325,15 +335,15 @@ if (useSaved) {
 # Using the results from runsims resample with replacement to create 
 # posteriors
 
-resamples <- 100000
+resamples <- 20000 # 100000
 useSaved <- FALSE
-saveOutputs <- TRUE
+saveOutputs <- FALSE
 
 resampleSeed <- NULL #2357 Set to an integer to reproduce results
 if (!is.null(resampleSeed)) {
   set.seed(resampleSeed)
 } else {
-  set.seed() # Clear current seed
+  set.seed(NULL) # Clear current seed
 }
 
 if (useSaved) {
@@ -474,12 +484,14 @@ hist(beta1start, breaks = 100) # prior
 hist(beta1start[resampleIndices], breaks = 100) # posterior
 hist(beta3end[resampleIndices], breaks = 100) # posterior
 
-hist(log(beta4start), breaks = 100) # prior
-hist(log(beta4start[resampleIndices]), breaks = 100) # posterior
-hist(log(beta4end[resampleIndices]), breaks = 100) # posterior
+hist(beta4start, breaks = 100, xlim = c(0, 0.02)) # prior
+hist(beta4start[resampleIndices], breaks = 100, 
+     xlim = c(0, 0.02)) # posterior
+hist(beta4end[resampleIndices], breaks = 100, 
+     xlim = c(0, 0.02)) # posterior
 
-hist(log(f4), breaks = 100, xlim =c(-10,2)) # prior
-hist(log(f4[resampleIndices]), breaks = 100, xlim =c(-10,2)) # posterior
+# hist(log(f4), breaks = 100, xlim =c(-10,2)) # prior
+# hist(log(f4[resampleIndices]), breaks = 100, xlim =c(-10,2)) # posterior
 
 ```
 
