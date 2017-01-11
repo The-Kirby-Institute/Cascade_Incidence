@@ -9,3 +9,5 @@ output/
 1-CascadeIncidence_new.Rmd
 2-CascadeIncidenceBayes_new.Rmd
 Old_value_comparison.png
+data/2015/HIVcascadeEstimates-2015.csv
+data/2015/ahod*.csv

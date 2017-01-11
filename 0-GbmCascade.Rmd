@@ -130,7 +130,7 @@ treatmentData <- read.csv(treatmentFile)
 propTreat <- treatmentData$prop_treat
 
 # Proportion of people on treatment with suppressed VL at last test
-# From Australian HIV Observational Database (AHOD).
+# From Australian HIV Observational Database (AHOD) for MSM.
 # Rather than a single estimate we use a range from minimum to maximum
 # proportion.
 # For 2014 range is given by % < 50 and % < 1000 at last test.
