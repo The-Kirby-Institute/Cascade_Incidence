@@ -383,7 +383,7 @@ if (plotCascade) {
     fill = stage)) + geom_area(stat="identity") + 
     ylab("Number of PLHIV") + xlab("Year") +
     scale_fill_manual(values = plotCols, name = "", labels = plotLabels, 
-      guide = guide_legend(reverse=TRUE, nrow = 2)) +  
+      guide = guide_legend(nrow = 2)) +  
     scale_x_continuous(breaks = xValues) + plotOpts 
 
   plhivPlotProp <- ggplot(data = plotData, aes(x = year, y = 100 * value, 
@@ -391,7 +391,7 @@ if (plotCascade) {
     geom_area(stat="identity", position= "fill") +
     ylab("Percentage of PLHIV")  + xlab("Year") +
     scale_fill_manual(values = plotCols, name = "", labels = plotLabels, 
-      guide = guide_legend(reverse=TRUE, nrow = 2)) +  
+      guide = guide_legend(nrow = 2)) +  
     scale_x_continuous(breaks = xValues) + 
     scale_y_continuous(labels = percent) +
     plotOpts 
