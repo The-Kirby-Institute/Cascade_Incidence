@@ -98,6 +98,13 @@ useSaved <- FALSE  # use previous set of sampled priors
 saveSims <- TRUE   # save sample priors and weights
 fileTag <- "ecdc"
 
+simsSeed <- NULL # 54321 #Set to an integer to reproduce results
+if (!is.null(simsSeed)) {
+  set.seed(ranSeed)
+} else {
+  set.seed() # Clear current seed
+}
+
 # Specify f4 prior 
 f4Prior <- SuppressedOption("option6")
 
@@ -293,7 +300,7 @@ if (useSaved) {
   # Save results and Bayes parameters
   if (saveSims){
     # Save the output
-    save(numBayesSamples, priorApproach, f4Prior,
+    save(numBayesSamples, priorApproach, simsSeed, f4Prior,
          betastart, beta1start, beta2start, beta3start, beta4start, 
          betaend, beta1end, beta2end, beta3end, beta4end,
          f1start, f2start, f3start,  
@@ -313,6 +320,13 @@ if (useSaved) {
 resamples <- 100000
 useSaved <- FALSE
 saveOutputs <- TRUE
+
+resampleSeed <- NULL # Set to an integer to reproduce results
+if (!is.null(resampleSeed)) {
+  set.seed(resampleSeed)
+} else {
+  set.seed() # Clear current seed
+}
 
 if (useSaved) {
   # Specify details of saved file
@@ -341,7 +355,8 @@ if (useSaved) {
   if (saveOutputs){
     # Save the output
     cascadeBestBayes <- cascadeBest
-    save(cascadeBestBayes, numBayesSamples, priorApproach, f4Prior,
+    save(cascadeBestBayes, numBayesSamples, priorApproach, simsSeed, 
+         resampleSeed, f4Prior,
          betastart, beta1start, beta2start, beta3start, beta4start, 
          betaend, beta1end, beta2end, beta3end, beta4end,
          f1start, f2start, f3start,  
