@@ -30,7 +30,7 @@ LoadLibrary(scales)
 startYear <- 2004 # minimum for plotting; miumum assumed to be 2004 in 
                   # analysis
 try(if (startYear < 2004) stop("Start year before 2004"))
-analysisYear <- 2014
+analysisYear <- 2015
 
 years <- 2004:analysisYear
 nYears <- length(years)
@@ -107,14 +107,14 @@ if (undiagnosedOption == "count") {
   # Take highest estimate (includes all diagnoses)
   ecdcEstimatesUpper <-propUndiag$upper / 100
   
-  undiagnosedMatrix <- matrix(0, nrow = 3, ncol = 11)
+  undiagnosedMatrix <- matrix(0, nrow = 3, ncol = length(years))
   undiagnosedMatrix[1, ] <- ecdcEstimates
   undiagnosedMatrix[2, ] <- ecdcEstimatesLower
   undiagnosedMatrix[3, ] <- ecdcEstimatesUpper
   
 } else {
   # Create best estimate using linear change
-  undiagnosedMatrix <- matrix(0, nrow = 3, ncol = 11)
+  undiagnosedMatrix <- matrix(0, nrow = 3, ncol = length(years))
   undiagnosedMatrix[1, ] <- seq(startYearProp[1], undiagnosedCount[1], 
                                 length = 11)
   undiagnosedMatrix[2, ] <- seq(startYearProp[2], undiagnosedCount[2],
@@ -434,8 +434,8 @@ if (plotCascade) {
 
   yLabels <- c("undiagnosed" = "Number undiagnosed",
                "diagnosed" = "Number diagnosed untreated",
-               "unsuppressed" = "Number on ART VL > 400",
-               "suppressed" = "Number with VL < 400")
+               "unsuppressed" = "Number on ART VL > 200",
+               "suppressed" = "Number with VL < 200")
   
   # Loop across stages and save plots 
   plotCurrent <- list()
