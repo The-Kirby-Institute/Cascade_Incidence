@@ -148,7 +148,7 @@ SuppressedOption <- function(option) {
   } else if (option == "option8"){
     return(list(dist = "truncln", params = c(log(0.25), 1.2)))
   } else if (option == "option9"){
-    return(list(dist = "exp", params = 1/0.0028))
+    return(list(dist = "exp", params = 1/0.0028)) # Beta 4 PARTNER study prior
   } else {
     stop("Unknown option for suppressed beta prior")
   }

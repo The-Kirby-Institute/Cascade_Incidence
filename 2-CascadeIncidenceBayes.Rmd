@@ -45,7 +45,8 @@ inputFile <- paste("gbm_hiv_cascade-", toString(analysisYear), "_",
 hivCascade <- read.csv(file.path(resultsFolder, inputFile), as.is = c(2))
 
 # Load new infections data 
-newInfectionsFile <- file.path(dataFolder, "new_infections_gbm.csv")
+newInfectionsFile <- file.path(dataFolder, toString(analysisYear), 
+                               "new_infections_gbm.csv")
 newInfects <- read.csv(newInfectionsFile)
 
 # Extract some useful numbers
@@ -318,7 +319,8 @@ if (useSaved) {
   # Save results and Bayes parameters
   if (saveSims){
     # Save the output
-    save(numBayesSamples, priorApproach, simsSeed, suppressOption, f4Prior,
+    save(analysisYear, numBayesSamples, priorApproach, simsSeed, 
+         suppressOption, f4Prior,
          betastart, beta1start, beta2start, beta3start, beta4start, 
          betaend, beta1end, beta2end, beta3end, beta4end,
          f1start, f2start, f3start,  
@@ -380,8 +382,8 @@ if (useSaved) {
   if (saveOutputs){
     # Save the output
     cascadeBestBayes <- cascadeBest
-    save(cascadeBestBayes, numBayesSamples, priorApproach, simsSeed, 
-         resampleSeed, suppressOption, f4Prior,
+    save(analysisYear, cascadeBestBayes, numBayesSamples, priorApproach,
+         simsSeed, resampleSeed, suppressOption, f4Prior,
          betastart, beta1start, beta2start, beta3start, beta4start, 
          betaend, beta1end, beta2end, beta3end, beta4end,
          f1start, f2start, f3start,  
