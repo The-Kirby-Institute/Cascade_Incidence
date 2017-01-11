@@ -100,7 +100,7 @@ fileTag <- "ecdc"
 
 simsSeed <- NULL # 54321 #Set to an integer to reproduce results
 if (!is.null(simsSeed)) {
-  set.seed(ranSeed)
+  set.seed(simsSeed)
 } else {
   set.seed() # Clear current seed
 }
@@ -138,6 +138,14 @@ if (saveSims) {
 
 if (useSaved) {
   load(file.path(outputFolder, savedFile))
+  
+  # Set seed
+  if (!is.null(simsSeed)) {
+    set.seed(simsSeed)
+  } else {
+    set.seed() # Clear current seed
+  }
+  
 } else {
   # Set up priors --------------------------------------------------------
   
@@ -321,7 +329,7 @@ resamples <- 100000
 useSaved <- FALSE
 saveOutputs <- TRUE
 
-resampleSeed <- NULL # Set to an integer to reproduce results
+resampleSeed <- NULL #2357 Set to an integer to reproduce results
 if (!is.null(resampleSeed)) {
   set.seed(resampleSeed)
 } else {
@@ -341,6 +349,13 @@ if (useSaved) {
   
   # Load saved file
   load(file.path(inputFolder, savedFile))
+  
+  # Set seed
+  if (!is.null(resampleSeed)) {
+    set.seed(resampleSeed)
+  } else {
+    set.seed() # Clear current seed
+  }
 } else {
   
   # Resample by weight with replacement ----------------------------------
