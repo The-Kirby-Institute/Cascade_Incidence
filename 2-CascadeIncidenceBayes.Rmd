@@ -106,7 +106,7 @@ if (!is.null(simsSeed)) {
 }
 
 # Specify f4 prior 
-f4Prior <- SuppressedOption("option6")
+f4Prior <- SuppressedOption("option9")
 
 priorWeight <- TRUE
 priorWeightValues <- c(500, 1300, -1000) # c(400. 1100, 0)

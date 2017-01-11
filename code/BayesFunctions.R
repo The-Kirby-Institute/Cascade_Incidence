@@ -111,6 +111,8 @@ PriorSample <- function(samples, dist, parameters) {
   } else if (dist == "truncln") {
     # Assume EnvStats package already loaded 
     return(rlnormTrunc(samples, parameters[1], parameters[2], max = 1))
+  } else if (dist == "exp") {
+    return(rexp(samples, parameters[1]))
   } else {
     stop("Unknown distribution")
   }
@@ -145,6 +147,8 @@ SuppressedOption <- function(option) {
     return(list(dist = "truncln", params = c(log(0.1), 1.2)))
   } else if (option == "option8"){
     return(list(dist = "truncln", params = c(log(0.25), 1.2)))
+  } else if (option == "option9"){
+    return(list(dist = "exp", params = 1/0.0028))
   } else {
     stop("Unknown option for suppressed beta prior")
   }
