@@ -35,14 +35,28 @@ analysisYear <- 2014
 years <- 2004:analysisYear
 nYears <- length(years)
 
-# Input file - this file contains preprepared estimates for the number of 
+# Input files
+# 
+# This file contains preprepared estimates for the number of 
 # gay and bisexual men living with diagnosed HIV since 2004. These 
 # estimates were obtained using the Australian HIV cascade methodology 
 # described in the Annual Surveillance Report applied to gay and bisexual 
 # men.
-pldhivFile <- file.path(dataFolder, "pldhiv_estimates_gbm.csv")
-undiagFile <- file.path(dataFolder, "undiagnosed_estimates_gbm.csv")
+pldhivFile <- file.path(dataFolder, toString(analysisYear),
+                        "pldhiv_estimates_gbm.csv")
 
+# This file contains preprepared estimates for the percenatge of 
+# undiagnosed gay and bisexual men living with HIV since 2004. These
+# estimates were obtained using the ECDC HIV Modelling Tool with previously
+# diagnosed overseas men included and excluded (npd)
+undiagFile <- file.path(dataFolder, toString(analysisYear),
+                        "undiagnosed_estimates_gbm.csv")
+
+# This file contains preprepared estimates for the proportion of 
+# gay and bisexual men diganosed with HIV on ART and with suppressed virus
+# since 2004
+treatmentFile <- file.path(dataFolder, toString(analysisYear),
+                        "treatment_proportions_gbm.csv")
 
 # File containing new diagnosis and estimated new infections for GBM
 # newInfectionsFile <- file.path(dataFolder, "new_infections_gbm.csv")
@@ -109,19 +123,21 @@ if (undiagnosedOption == "count") {
                                 length = 11)
 }
 
-# Proportion on treatment from Gay Community Periodic Surveys for
-# 2004-2014. Note first value is an assumption 
-propTreat <- c(0.601, 0.601, 0.601, 0.573, 0.686, 0.671, 0.698, 0.717, 
-               0.779, 0.764, 0.83)
+treatmentData <- read.csv(treatmentFile)
+
+# Proportion on treatment from Gay Community Periodic Surveys. 
+# Note first value for 2004 is an assumption 
+propTreat <- treatmentData$prop_treat
 
 # Proportion of people on treatment with suppressed VL at last test
-# From Australian HIV Observational Database (AHOD) for 2000-2014.
+# From Australian HIV Observational Database (AHOD).
 # Rather than a single estimate we use a range from minimum to maximum
-# proportion (% < 50 and % < 1000 at last test)
-propSuppressedMin <- c(0.52, 0.55, 0.65, 0.69,	0.71,	0.75,	0.76,	0.78,
-                       0.81, 0.85, 0.88)
-propSuppressedMax <- c(0.68, 0.71, 0.76, 0.78, 0.81, 0.83, 0.85, 0.86, 
-                       0.89, 0.91, 0.925)
+# proportion.
+# For 2014 range is given by % < 50 and % < 1000 at last test.
+# For 2014 range is given by 95% confidence interval for < 200 at last 
+# test.
+propSuppressedMin <- treatmentData$prop_suppressed_min
+propSuppressedMax <- treatmentData$prop_suppressed_max
 
 # Assume best estimate is in the middle
 propSuppressed <- (propSuppressedMin + propSuppressedMax)/2
@@ -326,10 +342,12 @@ if (plotUndiagnosed) {
     plotUnits <- "cm"
     
     # Create figure folder
-    dir.create(figFolder, showWarnings = FALSE)
+    dir.create(file.path(figFolder, toString(analysisYear)),
+               showWarnings = FALSE)
     
     # Do the plots
-    ggsave(file.path(figFolder, paste0("undiagnosedPercent-",
+    ggsave(file.path(figFolder, toString(analysisYear),
+                     paste0("undiagnosedPercent-",
                                       toString(analysisYear), ".png")),
       plot = undiagPlot, width = plotWidth, height = plotHeight, 
       units = plotUnits)
@@ -390,16 +408,19 @@ if (plotCascade) {
     plotUnits <- "cm"
     
     # Create figure folder
-    dir.create(figFolder, showWarnings = FALSE)
+    dir.create(file.path(figFolder, toString(analysisYear)), 
+               showWarnings = FALSE)
     
     # Do the plots
-    ggsave(file.path(figFolder, paste("cascadeIncidence-", "numPLHIV", 
+    ggsave(file.path(figFolder, toString(analysisYear), 
+                     paste("cascadeIncidence-", "numPLHIV", 
       "-", toString(analysisYear), "_", undiagString,
       ".png",sep ="")),
       plot = plhivPlotNum, width = plotWidth, height = plotHeight, 
       units = plotUnits)
     
-    ggsave(file.path(figFolder, paste("cascadeIncidence-", "numDiags",
+    ggsave(file.path(figFolder, toString(analysisYear),
+                     paste("cascadeIncidence-", "numDiags",
       "-", toString(analysisYear), "_", undiagString,
       ".png",sep ="")), 
       plot = plhivPlotProp, width = plotWidth, height = plotHeight, 
@@ -441,7 +462,8 @@ if (plotCascade) {
       plotHeight <- 10
       plotUnits <- "cm"
       
-      ggsave(file.path(figFolder, paste("GBMstage-", ii, "_", 
+      ggsave(file.path(figFolder, toString(analysisYear),
+                       paste("GBMstage-", ii, "_", 
         toString(startYear), "-", toString(analysisYear),
         "_", undiagString,
         ".png", sep = "")), plot = plotCurrent[[ii]], width = plotWidth, 
@@ -458,7 +480,8 @@ if (plotCascade) {
   source(file.path(Rcode, "PlotOptions.R"), echo = TRUE)
   
   # Load data
-  newInfectionsFile <- file.path(dataFolder, "new_infections_gbm.csv")
+  newInfectionsFile <- file.path(dataFolder, toString(analysisYear), 
+                                 "new_infections_gbm.csv")
   newInfects <- read.csv(newInfectionsFile)
   
   # Create plot
@@ -491,7 +514,8 @@ if (plotCascade) {
       plotHeight <- 10
       plotUnits <- "cm"
       
-      ggsave(file.path(figFolder, paste0("ECDC_new_infections-",
+      ggsave(file.path(figFolder, toString(analysisYear),
+                       paste0("ECDC_new_infections-",
                                       toString(analysisYear), ".png")),
       plot = plotInfects, width = plotWidth, height = plotHeight, 
       units = plotUnits)
@@ -542,19 +566,21 @@ cascadeFig2 <- plot_grid(cascadeStagePlots$undiagnosed,
 
 if (savePlots) {
   # Save cascade combined figure
-  ggsave(file.path(figFolder, paste0("Cascades-",
+  ggsave(file.path(figFolder, toString(analysisYear), paste0("Cascades-",
                                      toString(analysisYear), ".png")),
          plot = plhivCombined, width = 20, height = 10, 
          units = "cm")
   
   # Save first cascade figure
-  ggsave(file.path(figFolder, paste0("Cascade_Combined-",
+  ggsave(file.path(figFolder, toString(analysisYear),
+                   paste0("Cascade_Combined-",
                                      toString(analysisYear), ".png")),
          plot = cascadeFig1, width = 20, height = 20, 
          units = "cm")
   
   # Save second cascade figure
-  ggsave(file.path(figFolder, paste0("Cascade_Stages-",
+  ggsave(file.path(figFolder, toString(analysisYear),
+                   paste0("Cascade_Stages-",
                                      toString(analysisYear), ".png")),
          plot = cascadeFig2, width = 20, height = 20, 
          units = "cm")
