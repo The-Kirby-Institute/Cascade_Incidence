@@ -113,6 +113,8 @@ PriorSample <- function(samples, dist, parameters) {
     return(rlnormTrunc(samples, parameters[1], parameters[2], max = 1))
   } else if (dist == "exp") {
     return(rexp(samples, parameters[1]))
+  } else if (dist == "zero") {
+    return(rep(0, samples))
   } else {
     stop("Unknown distribution")
   }
@@ -142,13 +144,15 @@ SuppressedOption <- function(option) {
     return(list(dist = "triangle", params = c(0, 0.6, 0.3)) )
   # Truncated lognormal distribution 
   } else if (option == "option6"){
-    return(list(dist = "truncln", params = c(log(0.04), 1.2)))
+    return(list(dist = "truncln", params = c(log(0.04), 1.2))) # Cohen 2011 relative prior
   } else if (option == "option7"){
     return(list(dist = "truncln", params = c(log(0.1), 1.2)))
   } else if (option == "option8"){
     return(list(dist = "truncln", params = c(log(0.25), 1.2)))
   } else if (option == "option9"){
     return(list(dist = "exp", params = 1/0.0028)) # Beta 4 PARTNER study prior
+  } else if (option == "optionZero"){
+    return(list(dist = "zero", params = 0)) # No suppressed transmission
   } else {
     stop("Unknown option for suppressed beta prior")
   }

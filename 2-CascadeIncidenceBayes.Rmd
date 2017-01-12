@@ -34,7 +34,8 @@ source(file.path(Rcode, "BayesFunctions.R"), echo = TRUE)
 
 ```{r loaddata}
 # Need to load previoulsy generated cascadeData
-analysisYear <- 2015
+analysisYear <- 2015 # or 2014
+incError <- FALSE # False if do not want to include cascade error
 
 # Input data 
 inputFileTag <- "ecdc"
@@ -64,12 +65,20 @@ cascadeBest$infections <- (newInfects$infections +
 
 # Estimate error bounds - store information in a data frame for 
 # ease of extraction when creating priors
-errorRange <- hivCascade %>%
-  filter(stage %in% c("undiagnosed", "diagnosed", "unsuppressed",
-                      "suppressed")) %>%
-  group_by(stage) %>%
-  summarise(errlower = mean(lower/value),
-            errupper = mean(upper/value))
+if (incError) {
+  errorRange <- hivCascade %>%
+    filter(stage %in% c("undiagnosed", "diagnosed", "unsuppressed",
+                        "suppressed")) %>%
+    group_by(stage) %>%
+    summarise(errlower = mean(lower/value),
+              errupper = mean(upper/value))
+} else {
+  errorRange <- data_frame(stage = c("undiagnosed", "diagnosed",
+                                     "unsuppressed", "suppressed"),
+                           errlower = 1,
+                           errupper =1)
+  
+}
 
 # Percentage range in new infections for weighting - take upper as 
 # upper estimate when all infections are include and lower when previously
@@ -92,11 +101,11 @@ incError <- ceil(100 * pmax(incUpper, incLower)) # calculate error range
 
 # Chunk Options ----------------------------------------------------------
 
-numBayesSamples <- 5e6 # number of prior samples
+numBayesSamples <- 1e5 #5e6 # number of prior samples
 priorApproach <- "independent" # independent or relative
 
 useSaved <- FALSE  # use previous set of sampled priors
-saveSims <- TRUE   # save sample priors and weights
+saveSims <- FALSE   # save sample priors and weights
 fileTag <- "ecdc"
 
 simsSeed <- 54321 #Set to an integer to reproduce results
@@ -107,8 +116,9 @@ if (!is.null(simsSeed)) {
 }
 
 # Specify f4 prior 
-suppressOption <- "option9"
-
+suppressOption <- "option9" # option6 for Cohen 2011
+                               # option9 for PARTNER study
+                               # optionZero for no transmission
 
 priorWeight <- TRUE
 priorWeightValues <- c(500, 1300, -1000) # c(400. 1100, 0)
@@ -118,7 +128,7 @@ incidenceWeight <- incError
 # Details of inputs if required ------------------------------------------
 if (useSaved) {
   # Specify details of saved file
-  currTime <- "2016-08-23(18-16)" # in %Y-%m-%d(%H-%M) format 
+  currTime <- "2017-01-11(18-38)" # in %Y-%m-%d(%H-%M) format 
                                    # or some other name
   folder <- paste("Cascade_Bayes_", currTime, sep = "")
   outputFolder <- file.path(resultsFolder, folder)
@@ -128,7 +138,6 @@ if (useSaved) {
 
 # Details of where to store outputs if desired
 if (saveSims) {
-  currTime <- format(Sys.time(), "%Y-%m-%d(%H-%M)") # to append to files
   folder <- paste("Cascade_Bayes_", currTime, sep="")
   
   # Create directory
@@ -337,9 +346,9 @@ if (useSaved) {
 # Using the results from runsims resample with replacement to create 
 # posteriors
 
-resamples <- 1e5
+resamples <- 2e4 #1e5
 useSaved <- FALSE
-saveOutputs <- TRUE
+saveOutputs <- FALSE
 
 resampleSeed <- 2357 # Set to an integer to reproduce results
 if (!is.null(resampleSeed)) {
@@ -484,7 +493,7 @@ hist(f3end[resampleIndices], breaks = 100) # posterior
 
 hist(beta1start, breaks = 100) # prior
 hist(beta1start[resampleIndices], breaks = 100) # posterior
-hist(beta3end[resampleIndices], breaks = 100) # posterior
+hist(beta2end[resampleIndices], breaks = 100) # posterior
 
 hist(beta4start, breaks = 100, xlim = c(0, 0.02)) # prior
 hist(beta4start[resampleIndices], breaks = 100, 
