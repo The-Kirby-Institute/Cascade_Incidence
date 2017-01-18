@@ -35,7 +35,7 @@ source(file.path(Rcode, "BayesFunctions.R"), echo = TRUE)
 ```{r loaddata}
 # Need to load previoulsy generated cascadeData
 analysisYear <- 2015 # or 2014
-incError <- FALSE # False if do not want to include cascade error
+incError <- TRUE # False if do not want to include cascade error
 
 # Input data 
 inputFileTag <- "ecdc"
@@ -101,14 +101,19 @@ incError <- ceil(100 * pmax(incUpper, incLower)) # calculate error range
 
 # Chunk Options ----------------------------------------------------------
 
-numBayesSamples <- 1e5 #5e6 # number of prior samples
+numBayesSamples <- 5e6 # number of prior samples - 1e5 is good for testing
 priorApproach <- "independent" # independent or relative
 
 useSaved <- FALSE  # use previous set of sampled priors
-saveSims <- FALSE   # save sample priors and weights
+saveSims <- TRUE   # save sample priors and weights
 fileTag <- "ecdc"
 
-simsSeed <- 54321 #Set to an integer to reproduce results
+simsSeed <- 75321 #Set to an integer to reproduce results 
+                   #54321 - 2015Partner
+                   #12345 - 2015Zero
+                   #12357 - 2015Cohen
+                   #75321 - 2015Noerror (Partner)
+                   #2468  - 2014Cohen (or Partner?)
 if (!is.null(simsSeed)) {
   set.seed(simsSeed)
 } else {
@@ -138,6 +143,7 @@ if (useSaved) {
 
 # Details of where to store outputs if desired
 if (saveSims) {
+  currTime <- format(Sys.time(), "%Y-%m-%d(%H-%M)") # to append to files 
   folder <- paste("Cascade_Bayes_", currTime, sep="")
   
   # Create directory
@@ -346,11 +352,16 @@ if (useSaved) {
 # Using the results from runsims resample with replacement to create 
 # posteriors
 
-resamples <- 2e4 #1e5
+resamples <- 1e5 # Number of resamples - 2e4 is good for testing
 useSaved <- FALSE
-saveOutputs <- FALSE
+saveOutputs <- TRUE
 
-resampleSeed <- 2357 # Set to an integer to reproduce results
+resampleSeed <- 10864 # Set to an integer to reproduce results 
+                           #2357 - 2015Partner
+                           #7532 - 2015Zero
+                           #46810 - 2015Cohen
+                           #10864 - 2015Noerror (Partner)
+                           #8642 - 2014Cohen (Partner ?)
 if (!is.null(resampleSeed)) {
   set.seed(resampleSeed)
 } else {
@@ -493,7 +504,7 @@ hist(f3end[resampleIndices], breaks = 100) # posterior
 
 hist(beta1start, breaks = 100) # prior
 hist(beta1start[resampleIndices], breaks = 100) # posterior
-hist(beta2end[resampleIndices], breaks = 100) # posterior
+hist(beta1end[resampleIndices], breaks = 100) # posterior
 
 hist(beta4start, breaks = 100, xlim = c(0, 0.02)) # prior
 hist(beta4start[resampleIndices], breaks = 100, 
