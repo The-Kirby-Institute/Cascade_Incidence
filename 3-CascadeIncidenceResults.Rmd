@@ -45,12 +45,14 @@ cat(fmStr)
 
 # Specify the results production times/string for selecting the correct 
 # folder
-bayesAnalysisTime <- "Final"
+bayesAnalysisTime <- "2015Cohen"
+analysisYear <- 2015
 fileTag <- "ecdc"
 
 # Load new infections data 
-dataFolder <- file.path(basePath, "data")
-newInfectionsFile <- file.path(dataFolder, "new_infections_gbm.csv")
+dataFolder <- file.path(basePath, "data", toString(analysisYear))
+newInfectionsFile <- file.path(dataFolder, 
+                               "new_infections_gbm.csv")
 newInfects <- read.csv(newInfectionsFile)
 
 # Load Bayesian results 
@@ -433,16 +435,20 @@ combinePostEnd <- ggplot(data = posteriorFrameEnd) +
 #   distLabels = c("2004 posterior (blue)", "2014 posterior (red)"))
 beta1PlotSE <- ParameterPlot("beta1", posteriorFrameStart,
   posteriorFrameEnd, stats = TRUE,
-  distLabels =  c("2004 posterior (blue)", "2014 posterior (red)")) 
+  distLabels =  c("2004 posterior (blue)", 
+                  paste0(toString(analysisYear), "posterior (red)"))) 
 beta2PlotSE<- ParameterPlot("beta2", posteriorFrameStart,
   posteriorFrameEnd, stats = TRUE,
-  distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
+  distLabels =  c("2004 posterior (blue)", 
+                   paste0(toString(analysisYear), "posterior (red)")))
 beta3PlotSE <- ParameterPlot("beta3", posteriorFrameStart,
   posteriorFrameEnd, stats = TRUE,
-  distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
+  distLabels =  c("2004 posterior (blue)", 
+                   paste0(toString(analysisYear), "posterior (red)")))
 beta4PlotSE <- ParameterPlot("beta4", posteriorFrameStart,
   posteriorFrameEnd, logCoords = TRUE, stats = TRUE,
-  distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
+  distLabels =  c("2004 posterior (blue)", 
+                   paste0(toString(analysisYear), "posterior (red)")))
 # f1PlotSE <- ParameterPlot("f1", posteriorFrameStart, posteriorFrameEnd,
 #   stats = TRUE, 
 #   distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
@@ -454,7 +460,8 @@ beta4PlotSE <- ParameterPlot("beta4", posteriorFrameStart,
 #   distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
 f4PlotSE <- ParameterPlot("f4", posteriorFrameStart, posteriorFrameEnd,
   logCoords = TRUE, stats = TRUE,
-  distLabels =  c("2004 posterior (blue)", "2014 posterior (red)"))
+  distLabels =  c("2004 posterior (blue)", 
+                   paste0(toString(analysisYear), "posterior (red)")))
 
 if (savePlots) {
   # Print figures to separate files
@@ -548,7 +555,7 @@ startValues <- startValues %>%
 allValues <- posteriorFrameEnd # %>% distinct()
 allValues <- allValues %>%
   mutate(sim = 1:nrow(allValues),
-         year = 2014) %>%
+         year = analysisYear) %>%
          bind_rows(startValues, .) %>%
   select(year, everything()) %>%
   distinct() %>%
@@ -769,14 +776,16 @@ suppressPercent <- PercentInc("suppressed", percentFrame,
                               savefolder = saveFolder)
 
 # Plot change in proportion acquired for 2014
-undiagPercent2014 <- PercentInc("undiagnosed", percentFrame, years = 2014,
+undiagPercent2014 <- PercentInc("undiagnosed", percentFrame, 
+                                years = analysisYear,
                             savefolder = saveFolder)
-diagPercent2014 <- PercentInc("diagnosed", percentFrame, years = 2014,
+diagPercent2014 <- PercentInc("diagnosed", percentFrame, 
+                              years = analysisYear,
                           savefolder = saveFolder)
 unsuppressPercent2014 <- PercentInc("unsuppressed", percentFrame, 
-                                years = 2014, savefolder = saveFolder)
+                                years = analysisYear, savefolder = saveFolder)
 suppressPercent2014 <- PercentInc("suppressed", percentFrame, 
-                                  years = 2014,
+                                  years = analysisYear,
                                   xlimits = c(0, 20), 
                                   savefolder = saveFolder)
 
@@ -799,7 +808,7 @@ legendLabels <- c("Undiagnosed", "Diagnosed untreated",
                   "On ART: VL > 400 last test", 
                   "On ART: VL < 400 last test")
 plotCols <- asrcols[c(1:2, 4:5)]
-xValues <- seq(2004, 2014, by = 5)
+xValues <- seq(2004, analysisYear, by = 5)
 
 # Incidence bar charts - best fit
 incPlotNum <- ggplot(data = transStage, 
@@ -1009,7 +1018,7 @@ meanBetaTable <- suppBetaValues %>%
   # Add stage and year
   mutate(stage = rep(c("undiagnosed", "diagnosed",
                        "unsuppressed", "suppressed"), each = 2),
-         year = rep(c(2014, 2004), 4)) %>%
+         year = rep(c(analysisYear, 2004), 4)) %>%
   group_by(year, stage) %>%
   # Create summary string
   mutate(string = paste0(toString(mean), " (", toString(lower), 
@@ -1034,7 +1043,7 @@ relBetaTable <- relBetaValues %>%
   # Add stage and year
   mutate(stage = rep(c("undiagnosed", "diagnosed",
                        "unsuppressed", "suppressed"), each = 2),
-         year = rep(c(2014, 2004), 4)) %>%
+         year = rep(c(analysisYear, 2004), 4)) %>%
   group_by(year, stage) %>%
   # Create summary string
   mutate(string = paste0(toString(mean), " (", toString(lower), 
