@@ -25,15 +25,19 @@ source(file.path(Rcode, "GetLegend.R"), echo = TRUE)
 LoadLibrary(scales)
 ```
 
-```{r scriptdetails}
-#Script parameters
-startYear <- 2004 # minimum for plotting; miumum assumed to be 2004 in 
+```{r script details}
+# Specify year of analysis
+analysisYear <- 2015
+
+# Script parameters
+startYear <- 2005 # minimum for plotting; miumum assumed to be 2004 in 
                   # analysis
 try(if (startYear < 2004) stop("Start year before 2004"))
-analysisYear <- 2015
 
 years <- 2004:analysisYear
 nYears <- length(years)
+
+xBreak <- ifelse(analysisYear == 2015, 5, 4) # xticks for plots
 
 # Input files
 # 
@@ -262,6 +266,44 @@ print(results)
 cat(paste("HIV cascade proportions for", toString(analysisYear), "..."))
 print(results$value/sum(results$value))
 
+# Create a string version for publications
+cascadeString <- hivCascade %>%
+  filter(stage %in% c("undiagnosed", "diagnosed", "unsuppressed",
+                      "suppressed")) %>%
+  group_by(year, stage) %>%
+  mutate(string = paste0(toString(round(value, digits = -1)), 
+                         " (", 
+                         toString(round(lower, digits = -1)), 
+                           "-", 
+                         toString(round(upper, digits = -1)), 
+                         ")")) %>%
+  ungroup() %>%
+  select(year, stage, string) %>%
+  spread(stage, string)
+
+# Create string percentage version for publications
+plhivFrame <-  hivCascade %>%
+  filter(stage == "plhiv")
+
+cascadePercent <- hivCascade %>%
+  filter(stage %in% c("undiagnosed", "diagnosed", "unsuppressed",
+                      "suppressed")) %>%
+  group_by(stage) %>%
+  mutate(percent = 100 * value / plhivFrame$value,
+         perlower = 100 * lower / plhivFrame$upper,
+         perupper = 100 * upper / plhivFrame$lower) %>%
+  ungroup() %>%
+  group_by(year, stage) %>%
+  mutate(string = paste0(toString(round(percent, digits = 1)), 
+                         "% (", 
+                         toString(round(perlower, digits = 1)), 
+                           "-", 
+                         toString(round(perupper, digits = 1)), 
+                         "%)")) %>%
+  ungroup() %>%
+  select(year, stage, string) %>%
+  spread(stage, string)
+
 # Save our HIV cascade to a csv file
 if (saveCascade) {
   
@@ -273,11 +315,17 @@ if (saveCascade) {
     undiagString <- fileTag
   }
   
-  saveString <- file.path(resultsFolder, paste("gbm_hiv_cascade-", ... = 
-    toString(analysisYear), "_", undiagString,
-    sep = ""))
+  saveString <- file.path(resultsFolder, paste0("gbm_hiv_cascade-", ... = 
+    toString(analysisYear), "_", undiagString))
   
-  write.csv(hivCascade, file = paste(saveString, ".csv", sep =""), 
+  write.csv(hivCascade, file = paste0(saveString, ".csv"), 
+            row.names = FALSE)
+  
+  write.csv(cascadeString, file = paste0(saveString, "-numString.csv"), 
+            row.names = FALSE)
+  
+  write.csv(cascadePercent, file = paste0(saveString,
+                                          "-percentString.csv"), 
             row.names = FALSE)
 }
 ```
@@ -323,13 +371,13 @@ if (plotUndiagnosed) {
     geom_point(data = countDF, 
                   aes(x = year, y = 100 * estimate, colour = "count")) +
     scale_colour_manual(name = "", 
-                        labels = c("ECDC Estimates", 
-                                   "Cascade Estimates",
+                        labels = c("ECDC estimates", 
+                                   "Cascade estimates",
                                    "COUNT estimate"),
-                        values = c(asrcols[5], asrcols[2], "black"),
-                        limits = c("cascade", "ecdc", "count")) +
+                        values = c(asrcols[2], asrcols[5], "black"),
+                        limits = c("ecdc", "cascade", "count")) +
     scale_x_continuous(breaks = seq(startYear,                        
-                                      analysisYear, by = 3)) +
+                                      analysisYear, by = xBreak)) +
     coord_cartesian(ylim = c(0, 20)) +
     ylab("Percentage undiagnosed (%)") + xlab("Year") +
     plotOpts + theme(legend.justification = c(0, 0),
@@ -376,7 +424,7 @@ if (plotCascade) {
                   "On ART detectable VL", 
                   "On ART undetectable VL")
   
-  xValues <- seq(startYear, analysisYear, by = 3)
+  xValues <- seq(startYear, analysisYear, by = xBreak)
   
   # PLDHIV overall and by proportion 
   plhivPlotNum <- ggplot(data = plotData, aes(x = year, y = value, 
@@ -450,7 +498,7 @@ if (plotCascade) {
                   fill = asrcols[2], alpha = 0.4) +
       geom_line(color = asrcols[2]) + 
       scale_x_continuous(breaks = seq(startYear,                        
-                                      analysisYear, by = 3)) +
+                                      analysisYear, by = xBreak)) +
       expand_limits(y = 0) +
       ylab(yLabels[ii]) + xlab("Year") +  
       plotOpts
@@ -496,7 +544,7 @@ if (plotCascade) {
     geom_line(aes(y = infections_npd, colour = "npd")) +
     geom_line(aes(y = (infections + infections_npd)/2, colour = "best")) +
     scale_x_continuous(breaks = seq(startYear,                        
-                                      analysisYear, by = 3)) +
+                                      analysisYear, by = xBreak)) +
     scale_colour_manual(name = "",
                         limits = c("ipd", "npd", "best"),
           labels = c("Including diagnosed overseas", 
