@@ -470,32 +470,44 @@ PercentInc <- function(cascadeStage, percentFrame, years = NULL,
                      sep = "")
   }
   
+  # Setup xLimits
+  if (!is.null(xlimits)) {
+    xRange <- xlimits / 100
+  } else {
+    xRange <- c(0, 1)
+  }
+  
+  # Set up colour palette
+  getPalette = colorRampPalette(brewer.pal(11, "RdYlBu")) 
+  
   # Create plot
   if (numYears != 1) {
   distPlot <- ggplot(data = percentData, 
-                     aes(x = percentage, group = year, 
+                     aes(x = percentage / 100, group = year, 
                          colour = factor(year))) + 
     geom_line(size = 1.2, stat = "density") + 
-    scale_colour_brewer(palette = "RdYlBu", name = "Year") +  
+    scale_colour_manual(values = getPalette(12), name = "Year") +  
     ylab("Density") + 
+    scale_x_continuous(labels = percent) +
     xlab(paste("Percentage acquired from", cascadeStage)) +
-    coord_cartesian(xlim = xlimits) +
+    coord_cartesian(xlim = xRange) +
     plotOpts + theme(legend.position = "right")
   } else {
     # Only a single year plotted so remove legend and fix colour
-    distPlot <- ggplot(data = percentData, aes(x = percentage)) + 
+    distPlot <- ggplot(data = percentData, aes(x = percentage / 100)) + 
       # geom_density(size = 1.2, colour = "blue", 
       #              fill = "blue", alpha = 0.2) +
       geom_line(size = 1.2, stat = "density", colour = "blue") +
-      geom_vline(aes(xintercept = median(percentage)), size = 1.1) + 
-      geom_vline(aes(xintercept = quantile(percentage, 0.025)), 
+      geom_vline(aes(xintercept = median(percentage / 100)), size = 1.1) + 
+      geom_vline(aes(xintercept = quantile(percentage / 100, 0.025)), 
                  linetype = "dashed", size = 1.1) +
-      geom_vline(aes(xintercept = quantile(percentage, 0.975)),
+      geom_vline(aes(xintercept = quantile(percentage/ 100, 0.975)),
                  linetype = "dashed", size = 1.1) +
       ylab("Density") + 
+      scale_x_continuous(labels = percent) +
       xlab(paste("Percentage acquired from", cascadeStage
                  , "in", toString(years))) +
-      coord_cartesian(xlim = xlimits) +
+      coord_cartesian(xlim = xRange) +
       plotOpts
     
     # Overwrite save string with single year

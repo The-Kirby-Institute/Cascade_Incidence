@@ -27,7 +27,7 @@ LoadLibrary(scales)
 
 ```{r script details}
 # Specify year of analysis
-analysisYear <- 2015
+analysisYear <- 2014
 
 # Script parameters
 startYear <- 2005 # minimum for plotting; miumum assumed to be 2004 in 
@@ -421,8 +421,8 @@ if (plotCascade) {
   
   plotLabels <- c("Undiagnosed", 
                   "Diagnosed no ART", 
-                  "On ART detectable VL", 
-                  "On ART undetectable VL")
+                  "On ART unsuppressed VL", 
+                  "On ART suppressed VL")
   
   xValues <- seq(startYear, analysisYear, by = xBreak)
   
@@ -480,10 +480,17 @@ if (plotCascade) {
   plotStages <- c("undiagnosed", "diagnosed", "unsuppressed",
                   "suppressed")
 
-  yLabels <- c("undiagnosed" = "Number undiagnosed",
-               "diagnosed" = "Number diagnosed untreated",
-               "unsuppressed" = "Number on ART VL > 200",
-               "suppressed" = "Number with VL < 200")
+  if (analysisYear <= 2014) {
+    yLabels <- c("undiagnosed" = "Number undiagnosed",
+                 "diagnosed" = "Number diagnosed untreated",
+                 "unsuppressed" = "Number on ART VL > 400",
+                 "suppressed" = "Number with VL < 400")
+  } else {
+    yLabels <- c("undiagnosed" = "Number undiagnosed",
+                 "diagnosed" = "Number diagnosed untreated",
+                 "unsuppressed" = "Number on ART VL > 200",
+                 "suppressed" = "Number with VL < 200")
+  }
   
   # Loop across stages and save plots 
   plotCurrent <- list()
