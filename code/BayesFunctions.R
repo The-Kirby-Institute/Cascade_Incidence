@@ -53,7 +53,7 @@ IncFuncTV <- function(cascadeData, beta1start, beta1end,
 WeightError <- function(dataValues, estimatedValues, dataError) {
   # Function to calculate the weight for a sample of the prior 
   # distribtions. This function is used in a Bayesian melding procedure to 
-  # a model to incidence data. Assume a normal distribution for the 
+  # fit a model to incidence data. Assume a normal distribution for the 
   # likelihood.
   # 
   # Args:

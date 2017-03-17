@@ -27,7 +27,7 @@ LoadLibrary(scales)
 
 ```{r script details}
 # Specify year of analysis
-analysisYear <- 2014
+analysisYear <- 2015
 
 # Script parameters
 startYear <- 2005 # minimum for plotting; miumum assumed to be 2004 in 
@@ -606,13 +606,13 @@ cascadeFig1 <- ggdraw() +
 # Create individual stage plots - need to add titles
 cascadeStagePlots <- plotCurrent
 cascadeStagePlots$undiagnosed <- plotCurrent$undiagnosed +
-  ggtitle(yLabels["undiagnosed"])
+  ggtitle("Undiagnosed")
 cascadeStagePlots$diagnosed <- plotCurrent$diagnosed +
-  ggtitle(yLabels["diagnosed"])
+  ggtitle("Diagnosed")
 cascadeStagePlots$unsuppressed <- plotCurrent$unsuppressed +
-  ggtitle(yLabels["unsuppressed"])
+  ggtitle("Unsuppressed")
 cascadeStagePlots$suppressed <- plotCurrent$suppressed +
-  ggtitle(yLabels["suppressed"])
+  ggtitle("Suppressed")
 
 cascadeFig2 <- plot_grid(cascadeStagePlots$undiagnosed,
   cascadeStagePlots$diagnosed,
