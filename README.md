@@ -57,7 +57,7 @@ Contains all the specific R functions used in the analysis and by the main direc
 
 #### data ####
 
-Contains all the input data files used by the `1-CascadeIncidence.Rmd` script for calculating the HIV cascade for GBM. These files are stored as `.csv` files in separate directories for the years 2014 and 2015. 
+Contains all the input data files used by the `1-CascadeIncidence.Rmd` script for calculating the HIV cascade for GBM. These files are stored as `.csv` files in separate directories for the years 2014 and 2015. Associated output files from the ECDC HIV Modelling Tool used in the analysis are also stored in the repository. 
 
 #### docs (local) ####
 
