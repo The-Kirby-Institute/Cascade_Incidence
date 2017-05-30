@@ -49,7 +49,7 @@ xBreak <- ifelse(analysisYear == 2015, 5, 4) # xticks for plots
 pldhivFile <- file.path(dataFolder, toString(analysisYear),
                         "pldhiv_estimates_gbm.csv")
 
-# This file contains preprepared estimates for the percenatge of 
+# This file contains preprepared estimates for the percentage of 
 # undiagnosed gay and bisexual men living with HIV since 2004. These
 # estimates were obtained using the ECDC HIV Modelling Tool with previously
 # diagnosed overseas men included and excluded (npd)
@@ -57,7 +57,7 @@ undiagFile <- file.path(dataFolder, toString(analysisYear),
                         "undiagnosed_estimates_gbm.csv")
 
 # This file contains preprepared estimates for the proportion of 
-# gay and bisexual men diganosed with HIV on ART and with suppressed virus
+# gay and bisexual men diagnosed with HIV on ART and with suppressed virus
 # since 2004
 treatmentFile <- file.path(dataFolder, toString(analysisYear),
                         "treatment_proportions_gbm.csv")

@@ -32,16 +32,16 @@ source(file.path(Rcode, "GetLegend.R"))
 ```
 
 ```{r Front matter}
-mainPackages <- c("dplyr", "tidyr", "ggplot2", "markdown")
+mainPackages <- c("dplyr", "tidyr", "ggplot2", "markdown", "cowplot", 
+                  "gridExtra")
 source(file.path(Rcode, "FrontMatter.R"), echo = TRUE)
 fmStr <- FrontMatter(mainPackages, rstudio = "1.0.44")
 cat(fmStr)
 ```
 
 ```{r Load results}
-# Load the previoulsy generated results from the regression analysis
-# and the Bayesian melding analysis. Extract useful numbers and organize
-# results appropriately
+# Load the previoulsy generated results from the Bayesian melding analysis. 
+# Extract useful numbers and organize results appropriately.
 
 # Specify the results production times/string for selecting the correct 
 # folder

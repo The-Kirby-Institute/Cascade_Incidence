@@ -1,8 +1,7 @@
 # HIV Cascade Incidence - Bayesian Results Caomparison
 # ====================================================
 
-This Rmarkdown scipt generates the figures and results from the HIV 
-cascade incidence analysis. The aim of this analysis is to estimate the
+This Rmarkdown scipt generates comparsion figures and results from the HIV cascade incidence analysis. The aim of this analysis is to estimate the
 proportion of new infections attributable to GBM living with HIV who are
 undiagnosed, diagnosed but not on ART, on ART but with unsuppressed virus,
 and those on ART with suppressed virus. 

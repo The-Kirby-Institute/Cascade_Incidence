@@ -3,7 +3,7 @@ HIV Cascade Incidence - Bayesian Approach
   
 This Rmarkdown script builds on the cascade incidence regression analysis 
 and applies a Bayesian Melding approach. Note it is designed for the
-chunks to be run independently. Running the whole script in on go could
+chunks to be run independently. Running the whole script in one go could
 produce errors.
 
 ```{r initialization}
@@ -113,7 +113,7 @@ simsSeed <- 75321 #Set to an integer to reproduce results
                    #12345 - 2015Zero
                    #12357 - 2015Cohen
                    #75321 - 2015Noerror (Partner)
-                   #2468  - 2014Cohen (or Partner?)
+                   #2468  - 2014Cohen
 if (!is.null(simsSeed)) {
   set.seed(simsSeed)
 } else {
