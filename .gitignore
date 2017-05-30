@@ -11,6 +11,7 @@ Old_value_comparison.png
 data/2015/HIVcascadeEstimates-2015.csv
 data/2015/ahod*.csv
 Archive
+output/Results_summary.md
 
 # Include-exclude output .csv result files
 output/Compare_figures/
@@ -18,3 +19,4 @@ output/Cascade_figures/
 output/*/*.rda
 output/*/
 output/Cascade_incidence_backup - Shortcut.lnk
+
