@@ -18,6 +18,7 @@ Within each result directory raw results are saved as `.rda` files. These files 
 - `Beta_summary.csv`: The value of the infectivity parameter for each stage of the HIV cascade in 2004 and 2015.
 - `Source_Infections.csv`: The number of new infections attributed to each stage of the HIV cascade for each year.
 - `Source_Infections_Percent.csv`: The percentage of new infections attributed to each stage of the HIV cascade for each year.
+- `Total_infections.csv`: The total number of new infections each year.
 
 Corresponding figures are stored in a `figures/` directory in the result directory. 
 

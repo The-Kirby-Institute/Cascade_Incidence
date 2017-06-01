@@ -17,6 +17,6 @@ output/Results_summary.md
 output/Compare_figures/
 output/Cascade_figures/
 output/*/*.rda
-output/*/
+output/*/figures/
 output/Cascade_incidence_backup - Shortcut.lnk
 

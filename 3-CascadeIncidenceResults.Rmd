@@ -45,8 +45,8 @@ cat(fmStr)
 
 # Specify the results production times/string for selecting the correct 
 # folder
-bayesAnalysisTime <- "2014Cohen"
-analysisYear <- 2014
+bayesAnalysisTime <- "2015Partner"
+analysisYear <- 2015
 fileTag <- "ecdc"
 
 xYearsWide <- seq(2005, analysisYear, by = 2)
