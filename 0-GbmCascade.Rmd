@@ -357,31 +357,42 @@ if (plotUndiagnosed) {
   # Create plot
   undiagPlot <- ggplot(data = undiagPropECDC, aes(x = year)) +
     geom_ribbon(data = undiagPropCascade, 
-                  aes(x = year, ymin = 100 * lower, ymax = 100 * upper),
-                  fill = asrcols[5],
-                alpha = 0.4) + 
+      aes(x = year, ymin = 100 * lower, ymax = 100 * upper,
+        fill = "cascade",
+        alpha = "cascade")) + 
     geom_line(aes(y = 100 * estimate, colour = "cascade")) +
-    geom_ribbon(aes(ymin = 100 * lower, ymax = 100 * upper), 
-                    fill = asrcols[2], 
-                alpha = 0.4) +
+    geom_ribbon(aes(ymin = 100 * lower, ymax = 100 * upper, 
+      fill = "ecdc", alpha = "ecdc")) +
     geom_line(aes(y = 100 * estimate, colour = "ecdc")) +
     geom_errorbar(data = countDF, 
-                  aes(x = year, ymin = 100 * lower, ymax = 100 * upper,
-                  colour = "count")) +
+      aes(x = year, ymin = 100 * lower, ymax = 100 * upper,
+        colour = "count")) +
     geom_point(data = countDF, 
-                  aes(x = year, y = 100 * estimate, colour = "count")) +
+      aes(x = year, y = 100 * estimate, colour = "count")) +
     scale_colour_manual(name = "", 
-                        labels = c("ECDC estimates", 
-                                   "Cascade estimates",
-                                   "COUNT estimate"),
-                        values = c(asrcols[2], asrcols[5], "black"),
-                        limits = c("ecdc", "cascade", "count")) +
+      labels = c("ECDC HIV Modelling tool estimates", 
+        "Resulting cascade estimates (including uncertainty in diagnosed)",
+        "COUNT estimate and 95% CI"),
+      values = c(asrcols[2], asrcols[5], "black"),
+      limits = c("ecdc", "cascade", "count")) +
+    scale_fill_manual(name = "", 
+      labels = c("ECDC HIV Modelling tool estimates", 
+        "Resulting cascade estimates (including uncertainty in diagnosed)",
+        "COUNT estimate and 95% CI"),
+      values = c(asrcols[2], asrcols[5], NA),
+      limits = c("ecdc", "cascade", "count")) +
+    scale_alpha_manual(name = "", 
+      labels = c("ECDC HIV Modelling tool estimates", 
+        "Resulting cascade estimates (including uncertainty in diagnosed)",
+        "COUNT estimate and 95% CI"),
+      values = c(0.4, 0.4, NA),
+      limits = c("ecdc", "cascade", "count")) +
     scale_x_continuous(breaks = seq(startYear,                        
-                                      analysisYear, by = xBreak)) +
+      analysisYear, by = xBreak)) +
     coord_cartesian(ylim = c(0, 20)) +
     ylab("Percentage undiagnosed (%)") + xlab("Year") +
     plotOpts + theme(legend.justification = c(0, 0),
-                     legend.position = c(0.05, 0))
+      legend.position = c(0.05, 0))
   
   if (savePlots) {
     # Plot specs
@@ -542,23 +553,31 @@ if (plotCascade) {
   # Create plot
   plotInfects <- ggplot(data = newInfects, aes(x = year)) +
     geom_ribbon(aes(ymin = lower, ymax = upper), 
-                    fill = "blue", alpha = 0.3) + 
-    geom_point(aes(y = diagnoses), colour = "blue") + 
-    geom_line(aes(y = infections, colour = "ipd")) +
+      fill = "blue", alpha = 0.3) + 
+    geom_point(aes(y = diagnoses), colour = "blue", shape = 16) + 
+    geom_line(aes(y = infections, colour = "ipd", linetype = "ipd")) +
     geom_ribbon(aes(ymin = lower_npd, ymax = upper_npd), 
-                fill = "red", alpha = 0.3) + 
-    geom_point(aes(y = diagnoses_npd), colour = "red") + 
-    geom_line(aes(y = infections_npd, colour = "npd")) +
-    geom_line(aes(y = (infections + infections_npd)/2, colour = "best")) +
+      fill = "red", alpha = 0.3) + 
+    geom_point(aes(y = diagnoses_npd), colour = "red", shape = 17) + 
+    geom_line(aes(y = infections_npd, colour = "npd", linetype = "npd")) +
+    geom_line(aes(y = (infections + infections_npd)/2, colour = "best",
+      linetype = "best")) +
     scale_x_continuous(breaks = seq(startYear,                        
-                                      analysisYear, by = xBreak)) +
+      analysisYear, by = xBreak)) +
     scale_colour_manual(name = "",
-                        limits = c("ipd", "npd", "best"),
-          labels = c("Including diagnosed overseas", 
-                     "Excluding diagnosed overseas",
-                                   "Estimated new infections"), 
-                        values = c("blue", "red", "black"),
-                        guide = guide_legend(nrow = 3)) + 
+      limits = c("ipd", "npd", "best"),
+      labels = c("Including diagnosed overseas (data: blue discs)", 
+        "Excluding diagnosed overseas (data: red triangles)",
+        "Estimated new infections"), 
+      values = c("blue", "red", "black"),
+      guide = guide_legend(nrow = 3)) + 
+    scale_linetype_manual(name = "",
+      limits = c("ipd", "npd", "best"), 
+      labels = c("Including diagnosed overseas (data: blue discs)", 
+        "Excluding diagnosed overseas (data: red triangles)",
+        "Estimated new infections"),
+      values = c("longdash", "dotted", "solid"),
+      guide = guide_legend(nrow = 3)) +
     expand_limits(y = 0) +
     ylab("Number") + xlab("Year") + 
     plotOpts + theme(legend.justification=c(0,0), legend.position=c(0,0))
@@ -596,12 +615,21 @@ plhivCombined <- grid.arrange(legend, plhivPlotNum2, plhivPlotProp2,
                               widths = c(4, 4), heights = c(0.6, 3.4))
 
 # Create a cascade main plot
-cascadeFig1 <- ggdraw() + 
+# cascadeFig1 <- ggdraw() + 
+#   draw_plot(undiagPlot, 0, 0.5, 0.5, 0.5) +
+#   draw_plot(plotInfects, 0.5, 0.5, 0.5, 0.5) +
+#   draw_plot(plhivCombined, 0, 0, 1, 0.5) +
+#   draw_plot_label(c("A", "B", "C"), c(0, 0.5, 0), c(1, 1, 0.5), 
+#                   size = 12)
+
+# Reviewer wants labels on each subfigure                  
+cascadeFig1 <- ggdraw() +
   draw_plot(undiagPlot, 0, 0.5, 0.5, 0.5) +
   draw_plot(plotInfects, 0.5, 0.5, 0.5, 0.5) +
-  draw_plot(plhivCombined, 0, 0, 1, 0.5) +
-  draw_plot_label(c("A", "B", "C"), c(0, 0.5, 0), c(1, 1, 0.5), 
-                  size = 12)
+  draw_plot(plhivPlotNum, 0, 0, 0.5, 0.5) +
+  draw_plot(plhivPlotProp, 0.5, 0, 0.5, 0.5) +
+  draw_plot_label(c("A", "B", "C", "D"), c(0, 0.5, 0, 0.5), 
+    c(1, 1, 0.5, 0.5), size = 12)
 
 # Create individual stage plots - need to add titles
 cascadeStagePlots <- plotCurrent
@@ -630,7 +658,7 @@ if (savePlots) {
   ggsave(file.path(figFolder, toString(analysisYear),
                    paste0("Cascade_Combined-",
                                      toString(analysisYear), ".png")),
-         plot = cascadeFig1, width = 20, height = 20, 
+         plot = cascadeFig1, width = 22, height = 20, 
          units = "cm")
   
   # Save second cascade figure
