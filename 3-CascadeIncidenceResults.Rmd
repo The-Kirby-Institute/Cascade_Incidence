@@ -33,7 +33,7 @@ source(file.path(Rcode, "GetLegend.R"))
 
 ```{r Front matter}
 mainPackages <- c("dplyr", "tidyr", "ggplot2", "markdown", "cowplot", 
-                  "gridExtra")
+  "gridExtra")
 source(file.path(Rcode, "FrontMatter.R"), echo = TRUE)
 fmStr <- FrontMatter(mainPackages, rstudio = "1.0.44")
 cat(fmStr)
@@ -60,7 +60,7 @@ if (analysisYear <= 2014) {
 # Load new infections data 
 dataFolder <- file.path(basePath, "data", toString(analysisYear))
 newInfectionsFile <- file.path(dataFolder, 
-                               "new_infections_gbm.csv")
+  "new_infections_gbm.csv")
 newInfects <- read.csv(newInfectionsFile)
 
 # Load Bayesian results 
@@ -78,14 +78,14 @@ numyears <- length(years)
 bestFit <- GetMode(resampleIndices)
 
 betaBest <- c(beta1start[bestFit], beta1end[bestFit],
-              beta2start[bestFit], beta2end[bestFit],
-              beta3start[bestFit], beta3end[bestFit],
-              beta4start[bestFit], beta4end[bestFit])
+  beta2start[bestFit], beta2end[bestFit],
+  beta3start[bestFit], beta3end[bestFit],
+  beta4start[bestFit], beta4end[bestFit])
 
 betaBestStart <- c(beta1start[bestFit], beta2start[bestFit],
-              beta3start[bestFit], beta4start[bestFit])
+  beta3start[bestFit], beta4start[bestFit])
 betaBestEnd <- c(beta1end[bestFit], beta2end[bestFit],
-              beta3end[bestFit], beta4end[bestFit])
+  beta3end[bestFit], beta4end[bestFit])
 
 betaBestRelStart <- betaBestStart / betaBestStart[2]   
 betaBestRelEnd <- betaBestEnd / betaBestEnd[2] 
@@ -97,7 +97,7 @@ medBeta3start <- median(beta3start[resampleIndices])
 medBeta4start <- median(beta4start[resampleIndices])
 
 betaMedStart <- c(medBeta1start, medBeta2start, medBeta3start,
-                  medBeta4start)
+  medBeta4start)
 betaRelMedStart <- betaMedStart / betaMedStart[2]
 
 medBeta1end <- median(beta1end[resampleIndices])
@@ -109,13 +109,13 @@ betaMedEnd <- c(medBeta1end, medBeta2end, medBeta3end, medBeta4end)
 betaRelMedEnd <- betaMedEnd / betaMedEnd[2]
 
 betaMed <- c(medBeta1start, medBeta1end,
-             medBeta2start, medBeta2end,
-             medBeta3start, medBeta3end,
-             medBeta4start, medBeta4end)
+  medBeta2start, medBeta2end,
+  medBeta3start, medBeta3end,
+  medBeta4start, medBeta4end)
 
 # Proportion infections for each stage for betaBest ---------------------
 cascadeData <- select(cascadeBest, undiagnosed, diagnosed, unsuppressed,
-                      suppressed)
+  suppressed)
 
 # propInfectsBest <- PropInfectionsTV(cascadeData, betaBestStart,
 #                                     betaBestEnd)
@@ -128,6 +128,7 @@ propInfectsMed <- PropInfectionsTV(cascadeData, betaMedStart, betaMedEnd)
 savePlots <- TRUE # save plots as separate files
 saveTables <- TRUE
 publicationPlots <- TRUE
+pubBoxPlot <- TRUE
 
 if (savePlots) {
   # Create folder for the plots using the current time
@@ -136,17 +137,17 @@ if (savePlots) {
   
   # Create directory if it doesn't already exist
   dir.create(file.path(bayesResultsFolder, "figures"), 
-             showWarnings = FALSE)
+    showWarnings = FALSE)
   outputFolder <- file.path(bayesResultsFolder, "figures")
   
   # Wrapper function so we don't have to keep entering everything in
   # ggsave. Plot defaults are put iteh figure defaults
   SaveFigure <- function(folder, filename, figure, 
-                         format = ".png", width = 15, 
-                         height = 10, units = "cm", ...) {
+    format = ".png", width = 15, 
+    height = 10, units = "cm", ...) {
     ggsave(file.path(folder, paste(filename, format, sep = "")), 
-           plot = figure, 
-           width = width, height = height, units = units, ...)
+      plot = figure, 
+      width = width, height = height, units = units, ...)
   }
 }
 
@@ -166,101 +167,101 @@ rangeLower <- function(x) {
 
 # Convert incidence Matrix into a long data frame
 incidenceDF <- TidyLongitudinal(incidenceMatrix[unique(resampleIndices),],
-                                2004) %>% tbl_df()
+  2004) %>% tbl_df()
 
 # Set up complicated legend
 aesLabels <- c("data", "sims", "mean", "range" ) # legend order 
 
 cols <- c("data" = "black", "sims" = "grey", "mean" = "red3", 
-          "range" = "red3")
+  "range" = "red3")
 
 labels <- c("data" = "Estimated new infections",
-            "sims" = "Posterior simulations",
-            "mean" = "Posterior mean",
-            "range" = "95% credible interval")
+  "sims" = "Posterior simulations",
+  "mean" = "Posterior mean",
+  "range" = "95% credible interval")
 
 lines <- c("data" = "blank", "sims" = "solid", "mean" = "solid", 
-          "range" = "dotted")
+  "range" = "dotted")
 
 shapes <- c("data" = 16, "sims" = NA, "mean" = NA, 
-          "range" = NA)
+  "range" = NA)
 
 
 # Create the plot - annoylingly hard to get the legend split and in the 
 # right place! Have to do the plot three times essentially.
 simsPlotColour <- ggplot(data = incidenceDF, 
-                   aes(x = year, y = value, group = sim)) +
+  aes(x = year, y = value, group = sim)) +
   geom_line(aes(colour = "sims"), alpha = 0.4) +
   geom_pointrange(data = newInfects, 
-                  aes(y = (infections + infections_npd) / 2, 
-                                         ymin = lower_npd,
-                                         ymax = upper, group = 1), 
-                  shape = shapes["data"]) + 
+    aes(y = (infections + infections_npd) / 2, 
+      ymin = lower_npd,
+      ymax = upper, group = 1), 
+    shape = shapes["data"]) + 
   stat_summary(aes(group = 1, colour = "mean"), geom = "line", 
-               fun.y = mean) +
+    fun.y = mean) +
   stat_summary(aes(group = 1, colour = "range"), geom = "line", 
-               fun.y = rangeUpper, linetype = lines["range"]) + 
+    fun.y = rangeUpper, linetype = lines["range"]) + 
   stat_summary(aes(group = 1), geom = "line", colour = cols[4],
-               fun.y = rangeLower, linetype = lines["range"]) +
+    fun.y = rangeLower, linetype = lines["range"]) +
   coord_cartesian(ylim = c(0, 1500)) + 
   scale_colour_manual(name = "New infections posterior ", 
-                      values = cols[aesLabels[2:4]],
-                      labels = labels[aesLabels[2:4]],
-                      breaks = aesLabels[2:4],
-                      guide = guide_legend(override.aes = list(
-                         linetype = lines[aesLabels[2:4]]))) +
+    values = cols[aesLabels[2:4]],
+    labels = labels[aesLabels[2:4]],
+    breaks = aesLabels[2:4],
+    guide = guide_legend(override.aes = list(
+      linetype = lines[aesLabels[2:4]]))) +
   scale_x_continuous(breaks = xYearsWide) + 
   ylab("New infections") + xlab("Year") + 
   plotOpts + theme(legend.position = "right")
 legendColour <- GetLegend(simsPlotColour)
 
 simsPlotShape <- ggplot(data = incidenceDF, 
-                   aes(x = year, y = value, group = sim)) +
+  aes(x = year, y = value, group = sim)) +
   geom_line(colour = cols["sims"], alpha = 0.4) +
   geom_pointrange(data = newInfects, 
-                  aes(y = (infections + infections_npd) / 2, 
-                                         ymin = lower_npd,
-                                         ymax = upper, group = 1,
-             shape = "data")) + 
+    aes(y = (infections + infections_npd) / 2, 
+      ymin = lower_npd,
+      ymax = upper, group = 1,
+      shape = "data")) + 
   stat_summary(aes(group = 1), colour = cols["mean"], geom = "line", 
-               fun.y = mean) +
+    fun.y = mean) +
   stat_summary(aes(group = 1), colour = cols["range"], geom = "line", 
-               fun.y = rangeUpper, linetype = lines["range"]) + 
+    fun.y = rangeUpper, linetype = lines["range"]) + 
   stat_summary(aes(group = 1), geom = "line", colour = cols["range"],
-               fun.y = rangeLower, linetype = lines["range"]) +
+    fun.y = rangeLower, linetype = lines["range"]) +
   coord_cartesian(ylim = c(0, 1500)) + 
   scale_shape_manual(name = "Estimate and range", 
-                     values = shapes[1],
-                     labels = "ECDC model estimates") +
+    values = shapes[1],
+    labels = "ECDC model estimates") +
   scale_x_continuous(breaks = xYearsWide) + 
   ylab("New infections") + xlab("Year") + 
   plotOpts + theme(legend.position = "right")
 legendShape <- GetLegend(simsPlotShape)
 
 simsPlotNone <- ggplot(data = incidenceDF, 
-                   aes(x = year, y = value, group = sim)) +
+  aes(x = year, y = value, group = sim)) +
   geom_line(aes(colour = "sims"), alpha = 0.4) +
   geom_pointrange(data = newInfects, 
-                  aes(y = (infections + infections_npd) / 2, 
-                                         ymin = lower_npd,
-                                         ymax = upper, group = 1, 
-                  shape = "data")) + 
+    aes(y = (infections + infections_npd) / 2, 
+      ymin = lower_npd,
+      ymax = upper, group = 1, 
+      shape = "data")) + 
   stat_summary(aes(group = 1, colour = "mean"), geom = "line", 
-               fun.y = mean) +
+    fun.y = mean) +
   stat_summary(aes(group = 1, colour = "range"), geom = "line", 
-               fun.y = rangeUpper, linetype = lines["range"]) + 
+    fun.y = rangeUpper, linetype = lines["range"]) + 
   stat_summary(aes(group = 1), geom = "line", colour = cols[4],
-               fun.y = rangeLower, linetype = lines["range"]) +
+    fun.y = rangeLower, linetype = lines["range"]) +
   coord_cartesian(ylim = c(0, 1500)) + 
   scale_colour_manual(name = "New infections posterior ", 
-                      values = cols[aesLabels[2:4]],
-                      labels = labels[aesLabels[2:4]],
-                      breaks = aesLabels[2:4],
-                      guide = guide_legend(override.aes = list(
-                         linetype = lines[aesLabels[2:4]]))) +
+    values = cols[aesLabels[2:4]],
+    labels = labels[aesLabels[2:4]],
+    breaks = aesLabels[2:4],
+    guide = guide_legend(override.aes = list(
+      linetype = lines[aesLabels[2:4]]))) +
   scale_shape_manual(name = "Estimate and range", 
-                     values = shapes[1],
-                     labels = "ECDC model estimates") +
+    values = shapes[1],
+    labels = "ECDC model estimates") +
   scale_x_continuous(breaks = xYearsWide) + 
   ylab("New infections") + xlab("Year") + 
   plotOpts + theme(legend.position = "none")
@@ -273,7 +274,7 @@ simsPlot <- ggdraw() +
 
 if (savePlots) {
   SaveFigure(outputFolder, "Incidence_fit", simsPlot, width = 20, 
-             height = 10)
+    height = 10)
 }
 
 ```
@@ -286,46 +287,46 @@ if (savePlots) {
 priorIndices <- sample(1:numBayesSamples, resamples, replace = TRUE)
 
 priorFrameStart <- data.frame(beta = betastart[priorIndices], 
-                         beta1 = beta1start[priorIndices],
-                         beta2 = beta2start[priorIndices],
-                         beta3 = beta3start[priorIndices],
-                         beta4 = beta4start[priorIndices],
-                         f1 = f1start[priorIndices],
-                         f2 = f2start[priorIndices],
-                         f3 = f3start[priorIndices],
-                         f4 = f4[priorIndices])
+  beta1 = beta1start[priorIndices],
+  beta2 = beta2start[priorIndices],
+  beta3 = beta3start[priorIndices],
+  beta4 = beta4start[priorIndices],
+  f1 = f1start[priorIndices],
+  f2 = f2start[priorIndices],
+  f3 = f3start[priorIndices],
+  f4 = f4[priorIndices])
 
 posteriorFrameStart <- data.frame(beta = betastart[resampleIndices],
-                             beta1 = beta1start[resampleIndices],
-                             beta2 = beta2start[resampleIndices],
-                             beta3 = beta3start[resampleIndices],
-                             beta4 = beta4start[resampleIndices],
-                             f1 = f1start[resampleIndices],
-                             f2 = f2start[resampleIndices],
-                             f3 = f3start[resampleIndices],
-                             f4 = f4[resampleIndices])
+  beta1 = beta1start[resampleIndices],
+  beta2 = beta2start[resampleIndices],
+  beta3 = beta3start[resampleIndices],
+  beta4 = beta4start[resampleIndices],
+  f1 = f1start[resampleIndices],
+  f2 = f2start[resampleIndices],
+  f3 = f3start[resampleIndices],
+  f4 = f4[resampleIndices])
 
 priorIndices <- sample(1:numBayesSamples, resamples, replace = TRUE)
 
 priorFrameEnd <- data.frame(beta = betaend[priorIndices], 
-                         beta1 = beta1end[priorIndices],
-                         beta2 = beta2end[priorIndices],
-                         beta3 = beta3end[priorIndices],
-                         beta4 = beta4end[priorIndices],
-                         f1 = f1end[priorIndices],
-                         f2 = f2end[priorIndices],
-                         f3 = f3end[priorIndices],
-                         f4 = f4[priorIndices])
+  beta1 = beta1end[priorIndices],
+  beta2 = beta2end[priorIndices],
+  beta3 = beta3end[priorIndices],
+  beta4 = beta4end[priorIndices],
+  f1 = f1end[priorIndices],
+  f2 = f2end[priorIndices],
+  f3 = f3end[priorIndices],
+  f4 = f4[priorIndices])
 
-posteriorFrameEnd<- data.frame(beta = betaend[resampleIndices],
-                             beta1 = beta1end[resampleIndices],
-                             beta2 = beta2end[resampleIndices],
-                             beta3 = beta3end[resampleIndices],
-                             beta4 = beta4end[resampleIndices],
-                             f1 = f1end[resampleIndices],
-                             f2 = f2end[resampleIndices],
-                             f3 = f3end[resampleIndices],
-                             f4 = f4[resampleIndices])
+posteriorFrameEnd <- data.frame(beta = betaend[resampleIndices],
+  beta1 = beta1end[resampleIndices],
+  beta2 = beta2end[resampleIndices],
+  beta3 = beta3end[resampleIndices],
+  beta4 = beta4end[resampleIndices],
+  f1 = f1end[resampleIndices],
+  f2 = f2end[resampleIndices],
+  f3 = f3end[resampleIndices],
+  f4 = f4[resampleIndices])
 
 # Use log coordinates for beta4?
 if (bayesAnalysisTime == "2014Cohen" || bayesAnalysisTime == "2015Cohen") {
@@ -336,107 +337,166 @@ if (bayesAnalysisTime == "2014Cohen" || bayesAnalysisTime == "2015Cohen") {
 
 
 beta1PlotStart <- ParameterPlot("beta1", priorFrameStart,
-                                posteriorFrameStart, stats = TRUE)
+  posteriorFrameStart, stats = TRUE)
 beta2PlotStart <- ParameterPlot("beta2", priorFrameStart,
-                                posteriorFrameStart, stats = TRUE)
+  posteriorFrameStart, stats = TRUE)
 beta3PlotStart <- ParameterPlot("beta3", priorFrameStart,
-                                posteriorFrameStart, stats = TRUE)
+  posteriorFrameStart, stats = TRUE)
 beta4PlotStart <- ParameterPlot("beta4", priorFrameStart,
-                                posteriorFrameStart, logCoords = logCoordinates,
-                                stats = TRUE)
+  posteriorFrameStart, logCoords = logCoordinates,
+  stats = TRUE)
 f4PlotStart <- ParameterPlot("f4", priorFrameStart, posteriorFrameStart,
-                        logCoords = logCoordinates, stats = TRUE)
+  logCoords = logCoordinates, stats = TRUE)
 
 beta1PlotEnd <- ParameterPlot("beta1", priorFrameEnd,
-                                posteriorFrameEnd, stats = TRUE)
+  posteriorFrameEnd, stats = TRUE)
 beta2PlotEnd <- ParameterPlot("beta2", priorFrameEnd,
-                                posteriorFrameEnd, stats = TRUE)
+  posteriorFrameEnd, stats = TRUE)
 beta3PlotEnd <- ParameterPlot("beta3", priorFrameEnd,
-                                posteriorFrameEnd, stats = TRUE)
+  posteriorFrameEnd, stats = TRUE)
 beta4PlotEnd <- ParameterPlot("beta4", priorFrameEnd,
-                              posteriorFrameEnd, logCoords = logCoordinates,
-                              stats = TRUE)
+  posteriorFrameEnd, logCoords = logCoordinates,
+  stats = TRUE)
 f4PlotEnd <- ParameterPlot("f4", priorFrameEnd, posteriorFrameEnd,
-                        logCoords = logCoordinates, stats = TRUE)
+  logCoords = logCoordinates, stats = TRUE)
 
 # Plot beta posteriors separately
 beta1PlotPostStart <- ParameterPlot("beta1", priorFrameStart,
-                                    posteriorFrameStart, 
-                                    singleplot = TRUE, stats = TRUE)
+  posteriorFrameStart, 
+  singleplot = TRUE, stats = TRUE)
 beta2PlotPostStart <- ParameterPlot("beta2", priorFrameStart,
-                                    posteriorFrameStart, 
-                                    singleplot = TRUE, stats = TRUE)
+  posteriorFrameStart, 
+  singleplot = TRUE, stats = TRUE)
 beta3PlotPostStart <- ParameterPlot("beta3", priorFrameStart, 
-                                    posteriorFrameStart, 
-                                    singleplot = TRUE, stats = TRUE)
+  posteriorFrameStart, 
+  singleplot = TRUE, stats = TRUE)
 beta4PlotPostStart <- ParameterPlot("beta4", priorFrameStart,
-                                    posteriorFrameStart, 
-                           logCoords = logCoordinates, singleplot = TRUE, 
-                           stats = TRUE)
+  posteriorFrameStart, 
+  logCoords = logCoordinates, singleplot = TRUE, 
+  stats = TRUE)
 
 beta1PlotPostEnd <- ParameterPlot("beta1", priorFrameEnd,
-                                    posteriorFrameEnd, singleplot = TRUE,
-                                   stats = TRUE)
+  posteriorFrameEnd, singleplot = TRUE,
+  stats = TRUE)
 beta2PlotPostEnd <- ParameterPlot("beta2", priorFrameEnd,
-                                    posteriorFrameEnd, singleplot = TRUE,
-                                    stats = TRUE)
+  posteriorFrameEnd, singleplot = TRUE,
+  stats = TRUE)
 beta3PlotPostEnd <- ParameterPlot("beta3", priorFrameStart, 
-                                    posteriorFrameEnd, 
-                                  singleplot = TRUE, stats = TRUE)
+  posteriorFrameEnd, 
+  singleplot = TRUE, stats = TRUE)
 beta4PlotPostEnd <- ParameterPlot("beta4", priorFrameEnd,
-                                    posteriorFrameEnd, 
-                           logCoords = logCoordinates, singleplot = TRUE, 
-                           stats = TRUE)
+  posteriorFrameEnd, 
+  logCoords = logCoordinates, singleplot = TRUE, 
+  stats = TRUE)
 
 # Plot beta posteriors on one plot
+# combinePostStart <- ggplot(data = posteriorFrameStart) +
+#   geom_density(aes(x = 1000 * beta1, colour = "beta1", 
+#     fill = "beta1", alpha = "beta1")) + 
+#   geom_density(aes(x = 1000 * beta2, colour = "beta2",
+#     fill = "beta2", alpha = "beta2")) + 
+#   geom_density(aes(x = 1000 * beta3, colour = "beta3",
+#     fill = "beta3", alpha = "beta3")) + 
+#   geom_density(aes(x = 1000 * beta4, colour = "beta4",
+#     fill = "beta4", alpha = "beta4")) +
+#   scale_colour_manual(name = "",
+#     values = asrcols[c(1:2, 3:4)],
+#     breaks = c("beta1", "beta2", "beta3", "beta4"),
+#     labels = c("Undiagnosed", "Diagnosed", 
+#       "Unsuppressed", "Suppressed")) +
+#   scale_fill_manual(name = "",
+#     values = asrcols[c(1:2, 3:4)],
+#     breaks = c("beta1", "beta2", "beta3", "beta4"),
+#     labels = c("Undiagnosed", "Diagnosed", 
+#       "Unsuppressed", "Suppressed")) +
+#   scale_alpha_manual(name = "",
+#     values = rep(0.2, 4),
+#     breaks = c("beta1", "beta2", "beta3", "beta4"),
+#     labels = c("Undiagnosed", "Diagnosed", 
+#       "Unsuppressed", "Suppressed")) +
+#   ylab("Density") + 
+#   xlab("Transmission rate per 1000 people, log10 scale") + 
+#   scale_x_log10(breaks = c(0.01, 0.1, 1, 10, 100, 1000), 
+#     labels = c("0.01", "0.1", "1", "10", "100", "1000")) +
+#   plotOpts
+
 combinePostStart <- ggplot(data = posteriorFrameStart) +
   geom_density(aes(x = 1000 * beta1, colour = "beta1", 
-                   fill = "beta1"), alpha = 0.2) + 
+    linetype = "beta1")) + 
   geom_density(aes(x = 1000 * beta2, colour = "beta2",
-                   fill = "beta2"), alpha = 0.2) + 
+    linetype = "beta2")) + 
   geom_density(aes(x = 1000 * beta3, colour = "beta3",
-                   fill = "beta3"), alpha = 0.2) + 
+    linetype = "beta3")) + 
   geom_density(aes(x = 1000 * beta4, colour = "beta4",
-                   fill = "beta4"), alpha = 0.2) +
+    linetype = "beta4")) +
   scale_colour_manual(name = "",
     values = asrcols[c(1:2, 3:4)],
     breaks = c("beta1", "beta2", "beta3", "beta4"),
     labels = c("Undiagnosed", "Diagnosed", 
-               "Unsuppressed", "Suppressed")) +
-  scale_fill_manual(name = "",
-    values = asrcols[c(1:2, 3:4)],
+      "Unsuppressed", "Suppressed")) +
+  scale_linetype_manual(name = "",
+    values = c("solid", "dotdash", "dotted", "longdash"),
     breaks = c("beta1", "beta2", "beta3", "beta4"),
     labels = c("Undiagnosed", "Diagnosed", 
-               "Unsuppressed", "Suppressed")) +
+      "Unsuppressed", "Suppressed")) +
   ylab("Density") + 
   xlab("Transmission rate per 1000 people, log10 scale") + 
   scale_x_log10(breaks = c(0.01, 0.1, 1, 10, 100, 1000), 
-                labels = c("0.01", "0.1", "1", "10", "100", "1000")) +
+    labels = c("0.01", "0.1", "1", "10", "100", "1000")) +
   plotOpts
+
+# combinePostEnd <- ggplot(data = posteriorFrameEnd) +
+#   geom_density(aes(x = 1000 * beta1, colour = "beta1", 
+#     fill = "beta1", alpha = "beta1")) + 
+#   geom_density(aes(x = 1000 * beta2, colour = "beta2",
+#     fill = "beta2", alpha = "beta2")) + 
+#   geom_density(aes(x = 1000 * beta3, colour = "beta3",
+#     fill = "beta3", alpha = "beta3")) + 
+#   geom_density(aes(x =  1000 *beta4, colour = "beta4",
+#     fill = "beta4", alpha = "beta4")) +
+#   scale_fill_manual(name = "",  scale_colour_manual(name = "",
+#     values = asrcols[c(1:2, 3:4)],
+#     breaks = c("beta1", "beta2", "beta3", "beta4"),
+#     labels = c("Undiagnosed", "Diagnosed",
+#       "Unsuppressed", "Suppressed")) +
+#     values = asrcols[c(1:2, 3:4)],
+#     breaks = c("beta1", "beta2", "beta3", "beta4"),
+#     labels = c("Undiagnosed", "Diagnosed", 
+#       "Unsuppressed", "Suppressed")) +
+#   scale_alpha_manual(name = "",
+#     values = rep(0.2, 4),
+#     breaks = c("beta1", "beta2", "beta3", "beta4"),
+#     labels = c("Undiagnosed", "Diagnosed", 
+#       "Unsuppressed", "Suppressed")) +
+#   ylab("Density") + 
+#   xlab("Transmission per 1000 people, log10 scale") + 
+#   scale_x_log10(breaks = c(0.01, 0.1, 1, 10, 100, 1000), 
+#     labels = c("0.01", "0.1", "1", "10", "100", "1000")) +
+#   plotOpts
 
 combinePostEnd <- ggplot(data = posteriorFrameEnd) +
   geom_density(aes(x = 1000 * beta1, colour = "beta1", 
-                   fill = "beta1"), alpha = 0.2) + 
+    linetype = "beta1")) + 
   geom_density(aes(x = 1000 * beta2, colour = "beta2",
-                   fill = "beta2"), alpha = 0.2) + 
+    linetype = "beta2")) + 
   geom_density(aes(x = 1000 * beta3, colour = "beta3",
-                   fill = "beta3"), alpha = 0.2) + 
+    linetype = "beta3")) + 
   geom_density(aes(x =  1000 *beta4, colour = "beta4",
-                   fill = "beta4"), alpha = 0.2) +
+    linetype = "beta4")) +
   scale_colour_manual(name = "",
     values = asrcols[c(1:2, 3:4)],
     breaks = c("beta1", "beta2", "beta3", "beta4"),
     labels = c("Undiagnosed", "Diagnosed", 
-               "Unsuppressed", "Suppressed")) +
-  scale_fill_manual(name = "",
-    values = asrcols[c(1:2, 3:4)],
+      "Unsuppressed", "Suppressed")) +
+  scale_linetype_manual(name = "",
+    values = c("solid", "dotdash", "dotted", "longdash"),
     breaks = c("beta1", "beta2", "beta3", "beta4"),
     labels = c("Undiagnosed", "Diagnosed", 
-               "Unsuppressed", "Suppressed")) +
+      "Unsuppressed", "Suppressed")) +
   ylab("Density") + 
   xlab("Transmission per 1000 people, log10 scale") + 
   scale_x_log10(breaks = c(0.01, 0.1, 1, 10, 100, 1000), 
-                labels = c("0.01", "0.1", "1", "10", "100", "1000")) +
+    labels = c("0.01", "0.1", "1", "10", "100", "1000")) +
   plotOpts
 
 # Compare start and end posteriors
@@ -445,24 +505,24 @@ combinePostEnd <- ggplot(data = posteriorFrameEnd) +
 #   distLabels = c("2004 posterior (blue)", "2014 posterior (red)"))
 beta1PlotSE <- ParameterPlot("beta1", posteriorFrameStart,
   posteriorFrameEnd, stats = TRUE,
-  distLabels =  c("2004 posterior (blue)", 
-                  paste0(toString(analysisYear), " posterior (red)"))) 
+  distLabels =  c("2004 posterior (dot-dash, blue)", 
+    paste0(toString(analysisYear), " posterior (solid, red)"))) 
 beta2PlotSE<- ParameterPlot("beta2", posteriorFrameStart,
   posteriorFrameEnd, stats = TRUE,
-  distLabels =  c("2004 posterior (blue)", 
-                   paste0(toString(analysisYear), " posterior (red)")))
+  distLabels =  c("2004 posterior (dot-dash, blue)", 
+    paste0(toString(analysisYear), " posterior (solid, red)")))
 beta3PlotSE <- ParameterPlot("beta3", posteriorFrameStart,
   posteriorFrameEnd, stats = TRUE,
-  distLabels =  c("2004 posterior (blue)", 
-                   paste0(toString(analysisYear), " posterior (red)")))
+  distLabels =  c("2004 posterior (dot-dash, blue)", 
+    paste0(toString(analysisYear), " posterior (solid, red)")))
 beta4PlotSE <- ParameterPlot("beta4", posteriorFrameStart,
   posteriorFrameEnd, logCoords = logCoordinates, stats = TRUE,
-  distLabels =  c("2004 posterior (blue)", 
-                   paste0(toString(analysisYear), " posterior (red)")))
+  distLabels =  c("2004 posterior (dot-dash, blue)", 
+    paste0(toString(analysisYear), " posterior (solid, red)")))
 f4PlotSE <- ParameterPlot("f4", posteriorFrameStart, posteriorFrameEnd,
   logCoords = logCoordinates, stats = TRUE,
-  distLabels =  c("2004 posterior (blue)", 
-                   paste0(toString(analysisYear), " posterior (red)")))
+  distLabels =  c("2004 posterior (dot-dash, blue)", 
+    paste0(toString(analysisYear), " posterior (solid, red)")))
 
 if (savePlots) {
   # Print figures to separate files
@@ -472,16 +532,16 @@ if (savePlots) {
   SaveFigure(outputFolder, "Beta4_distributions_start", beta4PlotStart)
   SaveFigure(outputFolder, "f4_distributions_start", f4PlotStart)
   SaveFigure(outputFolder, "Beta1_post_distribution_start",
-             beta1PlotPostStart)
+    beta1PlotPostStart)
   SaveFigure(outputFolder, "Beta2_post_distribution_start",
-             beta2PlotPostStart)
+    beta2PlotPostStart)
   SaveFigure(outputFolder, "Beta3_post_distribution_start",
-             beta3PlotPostStart)
+    beta3PlotPostStart)
   SaveFigure(outputFolder, "Beta4_post_distribution_start",
-             beta4PlotPostStart)
+    beta4PlotPostStart)
   SaveFigure(outputFolder, "Beta_post_distributions_start",
-             combinePostStart, 
-             width = 20)
+    combinePostStart, 
+    width = 20)
   
   SaveFigure(outputFolder, "Beta1_distributions_end", beta1PlotEnd)
   SaveFigure(outputFolder, "Beta2_distributions_end", beta2PlotEnd)
@@ -489,15 +549,15 @@ if (savePlots) {
   SaveFigure(outputFolder, "Beta4_distributions_end", beta4PlotEnd)
   SaveFigure(outputFolder, "f4_distributions_end", f4PlotEnd)
   SaveFigure(outputFolder, "Beta1_post_distribution_end",
-             beta1PlotPostEnd)
+    beta1PlotPostEnd)
   SaveFigure(outputFolder, "Beta2_post_distribution_end",
-             beta2PlotPostEnd)
+    beta2PlotPostEnd)
   SaveFigure(outputFolder, "Beta3_post_distribution_end",
-             beta3PlotPostEnd)
+    beta3PlotPostEnd)
   SaveFigure(outputFolder, "Beta4_post_distribution_end",
-             beta4PlotPostEnd)
+    beta4PlotPostEnd)
   SaveFigure(outputFolder, "Beta_post_distributions_end", combinePostEnd, 
-             width = 20)
+    width = 20)
   
   SaveFigure(outputFolder, "Beta1_distributions_se", beta1PlotSE)
   SaveFigure(outputFolder, "Beta2_distributions_se", beta2PlotSE)
@@ -515,15 +575,15 @@ if (savePlots) {
 aesLabels <- c("sims", "median", "iqr", "range" ) # legend order 
 
 cols <- c("sims" = "grey", "median" = "red3", "iqr" = "red3",
-          "range" = "red3")
+  "range" = "red3")
 
 labels <- c("sims" = "Posterior simulations",
-            "mean" = "Posterior median",
-            "iqr"  = "Interquartile range",
-            "range" = "95% credible interval")
+  "mean" = "Posterior median",
+  "iqr"  = "Interquartile range",
+  "range" = "95% credible interval")
 
 lines <- c("sims" = "solid", "median" = "solid", "iqr" = "dashed",
-          "range" = "dotted")
+  "range" = "dotted")
 
 # Additional functions for iqr plotting
 iqrUpper <- function(x) {
@@ -539,13 +599,13 @@ iqrLower <- function(x) {
 startValues <- posteriorFrameStart # %>% distinct()
 startValues <- startValues %>%
   mutate(sim = 1:nrow(startValues),
-         year = 2004) 
+    year = 2004) 
 
 allValues <- posteriorFrameEnd # %>% distinct()
 allValues <- allValues %>%
   mutate(sim = 1:nrow(allValues),
-         year = analysisYear) %>%
-         bind_rows(startValues, .) %>%
+    year = analysisYear) %>%
+  bind_rows(startValues, .) %>%
   select(year, everything()) %>%
   distinct() %>%
   tbl_df()
@@ -554,60 +614,85 @@ allValues <- allValues %>%
 allValues[, 2:ncol(allValues)]  <- 1000 * allValues[, 2:ncol(allValues)] 
 
 # Create a function for plotting purposes
-betaTime <- function(betaName, title) {
-  betaPlot <- ggplot(data = allValues, 
-               aes_string(x = "year", y = betaName, group = "sim")) +
-  geom_line(aes(colour = "sims")) +
-  stat_summary(aes(group = 1, colour = "median"), 
-               geom = "line", 
-               fun.y = median, size = 1.1) +
-  stat_summary(aes(group = 1, colour = "iqr"), 
-               geom = "line", 
-               fun.y = iqrLower, 
-               size = 1.1, linetype = lines["iqr"]) +
-  stat_summary(aes(group = 1), colour = cols["iqr"], 
-               geom = "line", 
-               fun.y = iqrUpper, 
-               size = 1.1, linetype = lines["iqr"]) +
-  stat_summary(aes(group = 1, colour = "range"), 
-               geom = "line", 
-               fun.y = rangeLower,
-               size = 1.1, linetype = lines["range"]) +
-  stat_summary(aes(group = 1), geom = "line", colour = cols["range"],
-               fun.y = rangeUpper, linetype = lines["range"],
-               size = 1.1) +
-  scale_colour_manual(name = "", 
-                      values = cols[aesLabels],
-                      labels = labels[aesLabels],
-                      breaks = aesLabels,
-                      guide = guide_legend(nrow = 2, 
-                        override.aes = list(
-                         linetype = lines[aesLabels]))) +
-  scale_x_continuous(breaks = xYearsNarrow) + 
-  ylab("Transmissions per 1000 PLHIV") + xlab("Year") +
-  plotOpts + ggtitle(title) +
-  theme(legend.justification=c(0,0), legend.position=c(0.01,0.75),
+betaTime <- function(betaName, title, boxplot = TRUE) {
+  if (boxplot) { 
+    # Boxplot option - adjust data to replace year with blank values
+    allValues <- allValues %>%
+      mutate(year = ifelse(year == 2004, 1, 2))
+    
+    # Function for 95% CrI quantiles
+    quantiles_95 <- function(x) {
+      r <- quantile(x, probs=c(0.025, 0.25, 0.5, 0.75, 0.975))
+      names(r) <- c("ymin", "lower", "middle", "upper", "ymax")
+      return(r)
+    }
+    
+    # Do a box plot for the start and end values
+    betaPlot <- ggplot(data = allValues, 
+      aes_string(x = "year", y = betaName, group = "year")) +
+      stat_summary(fun.data = quantiles_95, geom = "boxplot",
+        fill = "grey", aes(width = 0.6)) +
+      scale_x_continuous(breaks = c(1, 2), 
+        labels = c("2004", toString(analysisYear))) +
+      ylab("Transmissions per 1000 PLHIV") + xlab("Year") +
+      plotOpts + ggtitle(title) +
+      theme(plot.title = element_text(hjust = 0.5))
+    
+  } else {
+    # esle do a line plot linking start and end values
+    betaPlot <- ggplot(data = allValues, 
+      aes_string(x = "year", y = betaName, group = "sim")) +
+      geom_line(aes(colour = "sims")) +
+      stat_summary(aes(group = 1, colour = "median"), 
+        geom = "line", 
+        fun.y = median, size = 1.1) +
+      stat_summary(aes(group = 1, colour = "iqr"), 
+        geom = "line", 
+        fun.y = iqrLower, 
+        size = 1.1, linetype = lines["iqr"]) +
+      stat_summary(aes(group = 1), colour = cols["iqr"], 
+        geom = "line", 
+        fun.y = iqrUpper, 
+        size = 1.1, linetype = lines["iqr"]) +
+      stat_summary(aes(group = 1, colour = "range"), 
+        geom = "line", 
+        fun.y = rangeLower,
+        size = 1.1, linetype = lines["range"]) +
+      stat_summary(aes(group = 1), geom = "line", colour = cols["range"],
+        fun.y = rangeUpper, linetype = lines["range"],
+        size = 1.1) +
+      scale_colour_manual(name = "", 
+        values = cols[aesLabels],
+        labels = labels[aesLabels],
+        breaks = aesLabels,
+        guide = guide_legend(nrow = 2, 
+          override.aes = list(
+            linetype = lines[aesLabels]))) +
+      scale_x_continuous(breaks = xYearsNarrow) + 
+      ylab("Transmissions per 1000 PLHIV") + xlab("Year") +
+      plotOpts + ggtitle(title) +
+      theme(legend.justification=c(0,0), legend.position=c(0.01,0.75),
         legend.title = element_blank(),
         plot.title = element_text(hjust = 0.5))
-  
+  }
   return(betaPlot)
 }
 
-# Generate the plots
-plotBeta1time <- betaTime("beta1", "Undiagnosed")
-plotBeta2time <- betaTime("beta2", "Diagnosed")
-plotBeta3time <- betaTime("beta3", "Unsuppressed")
-plotBeta4time <- betaTime("beta4", "Suppressed") +
+# Generate the plots (using boxplots)
+plotBeta1time <- betaTime("beta1", "Undiagnosed", boxplot = pubBoxPlot)
+plotBeta2time <- betaTime("beta2", "Diagnosed", boxplot = pubBoxPlot)
+plotBeta3time <- betaTime("beta3", "Unsuppressed", boxplot = pubBoxPlot)
+plotBeta4time <- betaTime("beta4", "Suppressed", boxplot = pubBoxPlot) +
   ylab("Transmissions per 1000 PLHIV \n(log10 scale)") +
   scale_y_log10(limits = c(0.01, 100), breaks = c(0.01, 0.1, 1, 10, 100),
-                labels = c("0.01", "0.1", "1", "10", "100"))
+    labels = c("0.01", "0.1", "1", "10", "100"))
 
 if (savePlots) {
   # Print figures to separate files
-  SaveFigure(outputFolder, "Beta1_time", plotBeta1time)
-  SaveFigure(outputFolder, "Beta2_time", plotBeta2time)
-  SaveFigure(outputFolder, "Beta3_time", plotBeta3time)
-  SaveFigure(outputFolder, "Beta4_time", plotBeta4time)
+  SaveFigure(outputFolder, "Beta1_time", plotBeta1time, width = 10)
+  SaveFigure(outputFolder, "Beta2_time", plotBeta2time, width = 10)
+  SaveFigure(outputFolder, "Beta3_time", plotBeta3time, width = 10)
+  SaveFigure(outputFolder, "Beta4_time", plotBeta4time, width = 10)
 }
 
 ```
@@ -619,11 +704,11 @@ if (savePlots) {
 
 # Pre-allocate results frame
 percentFrame <- data.frame(sample = NULL, 
-                        year = NULL, 
-                        undiagnosed = NULL,
-                        diagnosed = NULL,
-                        unsuppressed = NULL,
-                        suppressed = NULL)
+  year = NULL, 
+  undiagnosed = NULL,
+  diagnosed = NULL,
+  unsuppressed = NULL,
+  suppressed = NULL)
 
 transFrame <- percentFrame
 
@@ -656,9 +741,9 @@ for (year in 1:nyears) {
     function(x) x * yearCascade)))
   
   colnames(propFrame) <- c("undiagnosed", "diagnosed", "unsuppressed", 
-                           "suppressed")
+    "suppressed")
   colnames(numFrame) <- c("undiagnosed", "diagnosed", "unsuppressed", 
-                           "suppressed")
+    "suppressed")
   
   
   propFrame$year <- yearprop
@@ -692,9 +777,9 @@ if (savePlots) {
 transPercentFrame <- percentFrame %>%
   group_by(year, stage) %>%
   summarise(median = median(percentage),
-            mean = mean(percentage),
-            lower05 = quantile(percentage, 0.025),
-            upper95 = quantile(percentage, 0.975)) %>%
+    mean = mean(percentage),
+    lower05 = quantile(percentage, 0.025),
+    upper95 = quantile(percentage, 0.975)) %>%
   ungroup()
 
 meanPercentFrame <- transPercentFrame %>%
@@ -705,17 +790,17 @@ meanPercentFrame <- transPercentFrame %>%
 transNumberFrame <- transFrame %>%
   group_by(year, stage) %>%
   summarise(median = median(infections),
-            mean = mean(infections),
-            lower05 = quantile(infections, 0.025),
-            upper95 = quantile(infections, 0.975)) %>%
+    mean = mean(infections),
+    lower05 = quantile(infections, 0.025),
+    upper95 = quantile(infections, 0.975)) %>%
   ungroup() 
 
 transNumberTotal <- incidenceDF %>%
   group_by(year) %>%
   summarise(median = median(value),
-            mean = mean(value),
-            lower05 = quantile(value, 0.025),
-            upper95 = quantile(value, 0.975)) %>%
+    mean = mean(value),
+    lower05 = quantile(value, 0.025),
+    upper95 = quantile(value, 0.975)) %>%
   ungroup() 
 
 if (saveTables) {
@@ -723,15 +808,15 @@ if (saveTables) {
   meanTableNumber <- transNumberFrame %>%
     select(year, stage, mean, lower05, upper95) %>%
     mutate(stage = factor(stage, 
-                          levels = c("undiagnosed", "diagnosed",      
-                                     "unsuppressed", "suppressed")),
-           mean = round(mean),
-           lower05 = round(lower05),
-           upper95 = round(upper95)) %>%
+      levels = c("undiagnosed", "diagnosed",      
+        "unsuppressed", "suppressed")),
+      mean = round(mean),
+      lower05 = round(lower05),
+      upper95 = round(upper95)) %>%
     arrange(stage) %>%
     group_by(year, stage) %>%
     mutate(string = paste0(toString(mean), " (", toString(lower05), 
-                           "-", toString(upper95), ")")) %>%
+      "-", toString(upper95), ")")) %>%
     ungroup() %>%
     select(year, stage, string) %>%
     spread(stage, string)
@@ -739,11 +824,11 @@ if (saveTables) {
   meanTableTotal <- transNumberTotal%>%
     select(year, mean, lower05, upper95) %>%
     mutate(mean = round(mean),
-           lower05 = round(lower05),
-           upper95 = round(upper95)) %>%
+      lower05 = round(lower05),
+      upper95 = round(upper95)) %>%
     group_by(year) %>%
     mutate(total = paste0(toString(mean), " (", toString(lower05), 
-                           "-", toString(upper95), ")")) %>%
+      "-", toString(upper95), ")")) %>%
     ungroup() %>%
     select(year, total)
   
@@ -751,56 +836,71 @@ if (saveTables) {
   meanTablePercent <- transPercentFrame %>%
     select(year, stage, mean, lower05, upper95) %>%
     mutate(stage = factor(stage, 
-                          levels = c("undiagnosed", "diagnosed",      
-                                     "unsuppressed", "suppressed")),
-           mean = round(mean, digits = 1),
-           lower05 = round(lower05, digits = 1),
-           upper95 = round(upper95, digits = 1)) %>%
+      levels = c("undiagnosed", "diagnosed",      
+        "unsuppressed", "suppressed")),
+      mean = round(mean, digits = 1),
+      lower05 = round(lower05, digits = 1),
+      upper95 = round(upper95, digits = 1)) %>%
     arrange(stage) %>%
     group_by(year, stage) %>%
     mutate(string = paste0(toString(mean), "% (", toString(lower05), 
-                           "-", toString(upper95), "%)")) %>%
+      "-", toString(upper95), "%)")) %>%
     ungroup() %>%
     select(year, stage, string) %>%
     spread(stage, string)
-
+  
   # Save incidence results to csv files
   write.csv(meanTableNumber, file.path(bayesResultsFolder,
-                                      "Source_Infections.csv"))
+    "Source_Infections.csv"))
   
   write.csv(meanTableTotal, file.path(bayesResultsFolder,
-                                      "Total_Infections.csv"))
+    "Total_Infections.csv"))
   
   write.csv(meanTablePercent, file.path(bayesResultsFolder,
-                                       "Source_Infections_Percent.csv"))
+    "Source_Infections_Percent.csv"))
 }
 
 # Plot change in proportion acquired by stage over time
-undiagPercent <- PercentInc("undiagnosed", percentFrame, 
-                            savefolder = saveFolder)
-diagPercent <- PercentInc("diagnosed", percentFrame, 
-                          savefolder = saveFolder)
-unsuppressPercent <- PercentInc("unsuppressed", percentFrame,
-                                savefolder = saveFolder)
-suppressPercent <- PercentInc("suppressed", percentFrame, 
-                              xlimits = c(0, 5),
-                              savefolder = saveFolder)
+if (pubBoxPlot) {
+  undiagPercent <- PercentInc("undiagnosed", percentFrame, 
+    savefolder = saveFolder, boxplot = TRUE,
+    xlimits = xYearsWide)
+  diagPercent <- PercentInc("diagnosed", percentFrame, 
+    savefolder = saveFolder, boxplot = TRUE,
+    xlimits = xYearsWide)
+  unsuppressPercent <- PercentInc("unsuppressed", percentFrame,
+    savefolder = saveFolder, boxplot = TRUE,
+    xlimits = xYearsWide)
+  suppressPercent <- PercentInc("suppressed", percentFrame, 
+    savefolder = saveFolder, boxplot = TRUE,
+    xlimits = xYearsWide)
+} else {
+  undiagPercent <- PercentInc("undiagnosed", percentFrame, 
+    savefolder = saveFolder)
+  diagPercent <- PercentInc("diagnosed", percentFrame, 
+    savefolder = saveFolder)
+  unsuppressPercent <- PercentInc("unsuppressed", percentFrame,
+    savefolder = saveFolder)
+  suppressPercent <- PercentInc("suppressed", percentFrame, 
+    xlimits = c(0, 5),
+    savefolder = saveFolder)
+}
 
 # Plot change in proportion acquired for analysis year
 undiagPercentEnd <- PercentInc("undiagnosed", percentFrame, 
-                                years = analysisYear,
-                            savefolder = saveFolder)
+  years = analysisYear,
+  savefolder = saveFolder)
 diagPercentEnd <- PercentInc("diagnosed", percentFrame, 
-                              years = analysisYear,
-                          savefolder = saveFolder)
+  years = analysisYear,
+  savefolder = saveFolder)
 unsuppressPercentEnd <- PercentInc("unsuppressed", percentFrame, 
-                                years = analysisYear, savefolder = saveFolder)
+  years = analysisYear, savefolder = saveFolder)
 # Note the following produces an incrorect plot for the 2015Zero results 
 # because of the density command in teh function
 suppressPercentEnd <- PercentInc("suppressed", percentFrame, 
-                                  years = analysisYear,
-                                  xlimits = c(0, 20), 
-                                  savefolder = saveFolder)
+  years = analysisYear,
+  xlimits = c(0, 20), 
+  savefolder = saveFolder)
 
 ```
 
@@ -812,31 +912,31 @@ transStage <- transNumberFrame %>%
   select(year, stage, mean) %>%
   rename(infections = mean) %>%
   mutate(stage = factor(stage, levels = c("undiagnosed", "diagnosed", 
-                               "unsuppressed", "suppressed"))) %>%
+    "unsuppressed", "suppressed"))) %>%
   arrange(stage)
 
-  
+
 # Set up plots 
 legendLabels <- c("Undiagnosed", "Diagnosed untreated", 
-                  "On ART unsuppressed VL", 
-                  "On ART suppressed VL")
+  "On ART unsuppressed VL", 
+  "On ART suppressed VL")
 plotCols <- asrcols[c(1:2, 4:5)]
 
 # Incidence bar charts - best fit
 incPlotNum <- ggplot(data = transStage, 
-                     aes(x = year, y = infections, fill = stage)) + 
+  aes(x = year, y = infections, fill = stage)) + 
   geom_area(stat="identity") + 
   ylab("New infections") + xlab("Year") +
   scale_fill_manual(values = plotCols, name = "", labels = legendLabels, 
-                    guide = guide_legend(reverse = FALSE, nrow = 2)) +  
+    guide = guide_legend(reverse = FALSE, nrow = 2)) +  
   scale_x_continuous(breaks = xYearsNarrow) + plotOpts 
 
 incPlotProp <- ggplot(data = transStage, 
-                     aes(x = year, y = infections, fill = stage)) + 
+  aes(x = year, y = infections, fill = stage)) + 
   geom_area(stat="identity", position= "fill") + 
   ylab("Percentage of new infections") + xlab("Year") +
   scale_fill_manual(values = plotCols, name = "", labels = legendLabels, 
-                    guide = guide_legend(reverse = FALSE, nrow = 2)) +  
+    guide = guide_legend(reverse = FALSE, nrow = 2)) +  
   scale_x_continuous(breaks = xYearsNarrow) + 
   scale_y_continuous(labels = percent) + 
   plotOpts
@@ -845,9 +945,9 @@ incPlotProp <- ggplot(data = transStage,
 if (savePlots) {
   # Print figures to separate files
   SaveFigure(outputFolder, "New_infections_stage", incPlotNum, 
-             height = 10)
+    height = 10)
   SaveFigure(outputFolder, "Prop_infections_stage", incPlotProp,
-             height = 10)
+    height = 10)
 }
 
 ```
@@ -858,6 +958,7 @@ if (publicationPlots) {
   # Create some combined plots for publications
   LoadLibrary(cowplot)
   LoadLibrary(gridExtra)
+  LoadLibrary(grid)
   
   # Create a combined transmision plot - extract legend so we only use 
   # it once
@@ -866,29 +967,43 @@ if (publicationPlots) {
   transPlotProp2 <- incPlotProp + theme(legend.position="none")
   
   transCombined <- grid.arrange(legend, transPlotNum2, transPlotProp2,
-                                ncol=2, nrow = 2, 
-                                layout_matrix = rbind(c(1,1), c(2,3)),
-                                widths = c(4, 4), heights = c(0.6, 3.4))
+    ncol=2, nrow = 2, 
+    layout_matrix = rbind(c(1,1), c(2,3)),
+    widths = c(4, 4), heights = c(0.6, 3.4))
   
   # Create a transmission main plot
+  # transFig2 <- ggdraw() + 
+  #   draw_plot(simsPlot, 0, 0.5, 1, 0.5) +
+  #   draw_plot(transCombined, 0, 0, 1, 0.5) +
+  #   draw_plot_label(c("A", "B"), c(0, 0), c(1, 0.5), 
+  #                   size = 12)
+  
+  # Reiewer wanted legends and labels for each subplot
   transFig2 <- ggdraw() + 
     draw_plot(simsPlot, 0, 0.5, 1, 0.5) +
-    draw_plot(transCombined, 0, 0, 1, 0.5) +
-    draw_plot_label(c("A", "B"), c(0, 0), c(1, 0.5), 
-                    size = 12)
+    draw_plot(incPlotNum, 0, 0, 0.5, 0.5) +
+    draw_plot(incPlotProp, 0.5, 0, 0.5, 0.5) +
+    draw_plot_label(c("A", "B", "C"), c(0, 0, 0.5), c(1, 0.5, 0.5),
+      size = 12)
   
   # Save the combined plots
   SaveFigure(outputFolder, "Combined_transmission", 
-             transCombined, width = 20, height = 10)
+    transCombined, width = 20, height = 10)
   
   SaveFigure(outputFolder, "Combined_new_infections", transFig2, 
-             width = 20, height = 20, 
-             units = "cm")
-
+    width = 22, height = 20, units = "cm")
+  
   # Create a combined beta time plot
   tempPlot <- plotBeta1time + theme(legend.position = "top") +
     ggtitle("")
-  legend <- GetLegend(tempPlot)
+  
+  if (pubBoxPlot) {
+    # No legend to get
+    legend <- nullGrob()
+  } else {
+    legend <- GetLegend(tempPlot)
+  }
+  
   plotBeta1 <- plotBeta1time + theme(legend.position = "none")
   plotBeta2 <- plotBeta2time + theme(legend.position = "none") + 
     expand_limits(y = 0)
@@ -897,36 +1012,36 @@ if (publicationPlots) {
   
   if (bayesAnalysisTime == "2015Zero") {
     betaTimeCombined <- grid.arrange(legend, plotBeta1, plotBeta2,
-                                     plotBeta3,
-                                     ncol = 1, nrow = 4, 
-                                     # layout_matrix = rbind(c(1, 1), 
-                                     #                       c(2, 3), 
-                                     #                       c(4, 5)),
-                                     widths = c(4), 
-                                     heights = c(0.8, 3.1, 3.1, 3.1)) 
+      plotBeta3,
+      ncol = 1, nrow = 4, 
+      # layout_matrix = rbind(c(1, 1), 
+      #                       c(2, 3), 
+      #                       c(4, 5)),
+      widths = c(4), 
+      heights = c(0.8, 3.1, 3.1, 3.1)) 
     
     transFig3 <- ggdraw() +
-    draw_plot(betaTimeCombined, 0, 0, 1, 1) +
-    draw_plot_label(c("A", "B", "C"), c(0, 0, 0), 
-                   c(0.92, 0.62, 0.31), size = 12)
+      draw_plot(betaTimeCombined, 0, 0, 1, 1) +
+      draw_plot_label(c("A", "B", "C"), c(0, 0, 0), 
+        c(0.92, 0.62, 0.31), size = 12)
     
     plotWidth <- 15
     plotHeight <- 30
     
   } else {
     betaTimeCombined <- grid.arrange(legend, plotBeta1, plotBeta2,
-                                     plotBeta3, plotBeta4,
-                                     ncol = 2, nrow = 3, 
-                                     layout_matrix = rbind(c(1, 1), 
-                                                           c(2, 3), 
-                                                           c(4, 5)),
-                                     widths = c(4, 4), 
-                                     heights = c(0.8, 3.1, 3.1))
+      plotBeta3, plotBeta4,
+      ncol = 2, nrow = 3, 
+      layout_matrix = rbind(c(1, 1), 
+        c(2, 3), 
+        c(4, 5)),
+      widths = c(4, 4), 
+      heights = c(0.8, 3.1, 3.1))
     
     transFig3 <- ggdraw() +
-    draw_plot(betaTimeCombined, 0, 0, 1, 1) +
-    draw_plot_label(c("A", "B", "C", "D"), c(0, 0.5, 0, 0.5), 
-                   c(0.9, 0.9, 0.45, 0.45), size = 12)
+      draw_plot(betaTimeCombined, 0, 0, 1, 1) +
+      draw_plot_label(c("A", "B", "C", "D"), c(0, 0.5, 0, 0.5), 
+        c(0.9, 0.9, 0.45, 0.45), size = 12)
     
     plotWidth <- 20
     plotHeight <- 20
@@ -934,11 +1049,16 @@ if (publicationPlots) {
   
   # Save figure
   SaveFigure(outputFolder, "Combined_beta_times", transFig3, 
-             width = plotWidth, height = plotHeight, 
-             units = "cm")
+    width = plotWidth, height = plotHeight, 
+    units = "cm")
   
   # Create a proportion new infections over time plot
-  legend <- GetLegend(undiagPercent)
+  if (pubBoxPlot) {
+    # No legend to get
+    legend <- nullGrob()
+  } else {
+    legend <- GetLegend(undiagPercent)
+  }
   plotUndiag <- undiagPercent + theme(legend.position = "none")
   plotDiag <- diagPercent + theme(legend.position = "none")
   plotUnsuppress <- unsuppressPercent + theme(legend.position = "none")
@@ -947,44 +1067,36 @@ if (publicationPlots) {
   
   if (bayesAnalysisTime == "2015Zero") {
     propInfectionsCombined <- grid.arrange(plotUndiag, plotDiag, legend, 
-                                           plotUnsuppress, 
-                                           ncol = 2, nrow = 3, 
-                                           layout_matrix = rbind(c(1, 3), 
-                                                                 c(2, 3),
-                                                                 c(4, 3)),
-                                           widths = c(3.2, 0.6), 
-                                           heights = c(4, 4, 4))
+      plotUnsuppress, ncol = 2, nrow = 3, 
+      layout_matrix = rbind(c(1, 3), c(2, 3), c(4, 3)),
+      widths = c(3.2, 0.6), 
+      heights = c(4, 4, 4))
     
     transFig4 <- ggdraw() +
-    draw_plot(propInfectionsCombined, 0, 0, 1, 1) +
-    draw_plot_label(c("A", "B", "C"), c(0, 0, 0), 
-                   c(1, 0.66, 0.33), size = 12)
+      draw_plot(propInfectionsCombined, 0, 0, 1, 1) +
+      draw_plot_label(c("A", "B", "C"), c(0, 0, 0), 
+        c(1, 0.66, 0.33), size = 12)
     
     plotWidth <- 15
     
   } else {
     propInfectionsCombined <- grid.arrange(plotUndiag, plotDiag, legend, 
-                                           plotUnsuppress, plotSuppress,
-                                           ncol = 3, nrow = 2, 
-                                           layout_matrix = rbind(c(1, 2, 3), 
-                                                                 c(4, 5, 3)),
-                                           widths = c(3.2, 3.2, 0.6), 
-                                           heights = c(4, 4))
-    
+      plotUnsuppress, plotSuppress, ncol = 3, nrow = 2, 
+      layout_matrix = rbind(c(1, 2, 3), c(4, 5, 3)),
+      widths = c(3.2, 3.2, 0.6), 
+      heights = c(4, 4))
     
     transFig4 <- ggdraw() +
-    draw_plot(propInfectionsCombined, 0, 0, 1, 1) +
-    draw_plot_label(c("A", "B", "C", "D"), c(0, 0.45, 0, 0.45), 
-                   c(1, 1, 0.5, 0.5), size = 12)
+      draw_plot(propInfectionsCombined, 0, 0, 1, 1) +
+      draw_plot_label(c("A", "B", "C", "D"), c(0, 0.45, 0, 0.45), 
+        c(1, 1, 0.5, 0.5), size = 12)
     
     plotWidth <- 25
   }
   
-  
   # Save figure
   SaveFigure(outputFolder, "Combined_prop_infections", transFig4, 
-             width = plotWidth, height = 20, 
-             units = "cm")
+    width = plotWidth, height = 20, units = "cm")
   
 }
 
@@ -999,102 +1111,103 @@ if (publicationPlots) {
   LoadLibrary(gridExtra)
   
   # Create a combined parameter prior and posterior plot
-  if (bayesAnalysisTime == "2015Partner" || bayesAnalysisTime == "2015Noerror") {
+  if (bayesAnalysisTime == "2015Partner" || 
+      bayesAnalysisTime == "2015Noerror") {
     priorCombined <- grid.arrange(beta1PlotStart, beta1PlotEnd, 
-                                  beta2PlotStart, beta2PlotEnd,
-                                  beta3PlotStart, beta3PlotEnd,
-                                  beta4PlotStart, beta4PlotEnd,
-                                  ncol = 2, nrow = 4, 
-                                  layout_matrix = rbind(c(1, 2), 
-                                                        c(3, 4), 
-                                                        c(5, 6),
-                                                        c(7, 8)),
-                                  widths = c(4, 4), heights = c(4, 4, 4, 4))
+      beta2PlotStart, beta2PlotEnd,
+      beta3PlotStart, beta3PlotEnd,
+      beta4PlotStart, beta4PlotEnd,
+      ncol = 2, nrow = 4, 
+      layout_matrix = rbind(c(1, 2), 
+        c(3, 4), 
+        c(5, 6),
+        c(7, 8)),
+      widths = c(4, 4), heights = c(4, 4, 4, 4))
     
     suppFig2 <- ggdraw() +
-    draw_plot(priorCombined, 0, 0, 1, 1) +
-    draw_plot_label(c("A", "B", "C", "D", "E", "F"), 
-                    c(0, 0.5, 0, 0.5, 0, 0.5), 
-                    c(1, 1, 0.66, 0.66, 0.33, 0.33), size = 12)
+      draw_plot(priorCombined, 0, 0, 1, 1) +
+      draw_plot_label(c("A", "B", "C", "D", "E", "F"), 
+        c(0, 0.5, 0, 0.5, 0, 0.5), 
+        c(1, 1, 0.66, 0.66, 0.33, 0.33), size = 12)
     
   } else if (bayesAnalysisTime == "2015Zero") {
     priorCombined <- grid.arrange(beta1PlotStart, beta1PlotEnd, 
-                                  beta2PlotStart, beta2PlotEnd,
-                                  beta3PlotStart, beta3PlotEnd,
-                                  ncol = 2, nrow = 3, 
-                                  layout_matrix = rbind(c(1, 2), 
-                                                        c(3, 4), 
-                                                        c(5, 6)),
-                                  widths = c(4, 4), heights = c(4, 4, 4))
+      beta2PlotStart, beta2PlotEnd,
+      beta3PlotStart, beta3PlotEnd,
+      ncol = 2, nrow = 3, 
+      layout_matrix = rbind(c(1, 2), 
+        c(3, 4), 
+        c(5, 6)),
+      widths = c(4, 4), heights = c(4, 4, 4))
     
     suppFig2 <- ggdraw() +
-    draw_plot(priorCombined, 0, 0, 1, 1) +
-    draw_plot_label(c("A", "B", "C", "D", "E", "F", "G", "H"), 
-                    c(0, 0.5, 0, 0.5, 0, 0.5, 0, 0.5), 
-                    c(1, 1, 0.75, 0.75, 0.5, 0.5, 0.25, 0.25), size = 12)
+      draw_plot(priorCombined, 0, 0, 1, 1) +
+      draw_plot_label(c("A", "B", "C", "D", "E", "F", "G", "H"), 
+        c(0, 0.5, 0, 0.5, 0, 0.5, 0, 0.5), 
+        c(1, 1, 0.75, 0.75, 0.5, 0.5, 0.25, 0.25), size = 12)
     
   } else {
     priorCombined <- grid.arrange(beta1PlotStart, beta1PlotEnd, 
-                                  beta2PlotStart, beta2PlotEnd,
-                                  beta3PlotStart, beta3PlotEnd,
-                                  f4PlotStart, f4PlotEnd,
-                                  ncol = 2, nrow = 4, 
-                                  layout_matrix = rbind(c(1, 2), 
-                                                        c(3, 4), 
-                                                        c(5, 6),
-                                                        c(7, 8)),
-                                  widths = c(4, 4), heights = c(4, 4, 4, 4))
+      beta2PlotStart, beta2PlotEnd,
+      beta3PlotStart, beta3PlotEnd,
+      f4PlotStart, f4PlotEnd,
+      ncol = 2, nrow = 4, 
+      layout_matrix = rbind(c(1, 2), 
+        c(3, 4), 
+        c(5, 6),
+        c(7, 8)),
+      widths = c(4, 4), heights = c(4, 4, 4, 4))
     
     suppFig2 <- ggdraw() +
-    draw_plot(priorCombined, 0, 0, 1, 1) +
-    draw_plot_label(c("A", "B", "C", "D", "E", "F", "G", "H"), 
-                    c(0, 0.5, 0, 0.5, 0, 0.5, 0, 0.5), 
-                    c(1, 1, 0.75, 0.75, 0.5, 0.5, 0.25, 0.25), size = 12)
+      draw_plot(priorCombined, 0, 0, 1, 1) +
+      draw_plot_label(c("A", "B", "C", "D", "E", "F", "G", "H"), 
+        c(0, 0.5, 0, 0.5, 0, 0.5, 0, 0.5), 
+        c(1, 1, 0.75, 0.75, 0.5, 0.5, 0.25, 0.25), size = 12)
   }
   
   
   SaveFigure(outputFolder, "Combined_priors", suppFig2, 
-             width = 24, height = 32, 
-             units = "cm")
+    width = 24, height = 32, 
+    units = "cm")
   
   # Create a posterior start and end plot
- if (bayesAnalysisTime == "2015Zero") {
+  if (bayesAnalysisTime == "2015Zero") {
     posteriorCombined <- grid.arrange(beta1PlotSE, beta2PlotSE,
-                                      beta3PlotSE,  
-                                      ncol = 1, nrow = 3, 
-                                      # layout_matrix = rbind(c(1, 2), 
-                                      #                       c(3, 4)),
-                                      widths = c(4), heights = c(4, 4, 4))
+      beta3PlotSE,  
+      ncol = 1, nrow = 3, 
+      # layout_matrix = rbind(c(1, 2), 
+      #                       c(3, 4)),
+      widths = c(4), heights = c(4, 4, 4))
     plotWidth <- 15
     
     suppFig3 <- ggdraw() +
-    draw_plot(posteriorCombined, 0, 0, 1, 1) +
-    draw_plot_label(c("A", "B", "C"), 
-                    c(0, 0, 0), 
-                    c(1, 0.66, 0.33), size = 12)
+      draw_plot(posteriorCombined, 0, 0, 1, 1) +
+      draw_plot_label(c("A", "B", "C"), 
+        c(0, 0, 0), 
+        c(1, 0.66, 0.33), size = 12)
     
   } else {
     posteriorCombined <- grid.arrange(beta1PlotSE, beta2PlotSE,
-                                      beta3PlotSE, beta4PlotSE, 
-                                      ncol = 2, nrow = 2, 
-                                      layout_matrix = rbind(c(1, 2), 
-                                                            c(3, 4)),
-                                      widths = c(4, 4), heights = c(4, 4))
+      beta3PlotSE, beta4PlotSE, 
+      ncol = 2, nrow = 2, 
+      layout_matrix = rbind(c(1, 2), 
+        c(3, 4)),
+      widths = c(4, 4), heights = c(4, 4))
     
     plotWidth <- 30
     
     suppFig3 <- ggdraw() +
-    draw_plot(posteriorCombined, 0, 0, 1, 1) +
-    draw_plot_label(c("A", "B", "C", "D"), 
-                    c(0, 0.5, 0, 0.5), 
-                    c(1, 1, 0.5, 0.5), size = 12)
+      draw_plot(posteriorCombined, 0, 0, 1, 1) +
+      draw_plot_label(c("A", "B", "C", "D"), 
+        c(0, 0.5, 0, 0.5), 
+        c(1, 1, 0.5, 0.5), size = 12)
   }
   
   
   
   SaveFigure(outputFolder, "Combined_posteriors", suppFig3, 
-             width = plotWidth, height = 30, 
-             units = "cm")
+    width = plotWidth, height = 30, 
+    units = "cm")
   
 }
 ```
@@ -1106,23 +1219,23 @@ if (publicationPlots) {
 suppBetaValues <- posteriorFrameStart %>%
   select(beta1, beta2, beta3, beta4) %>%
   rename(beta1start = beta1, beta2start = beta2, beta3start = beta3, 
-           beta4start = beta4) %>%
+    beta4start = beta4) %>%
   bind_cols(., posteriorFrameEnd) %>% 
   select(beta1start, beta2start, beta3start, beta4start,
-         beta1, beta2, beta3, beta4) %>%
+    beta1, beta2, beta3, beta4) %>%
   rename(beta1end = beta1, beta2end = beta2, beta3end = beta3, 
-         beta4end = beta4) %>%
+    beta4end = beta4) %>%
   tbl_df()
 
 relBetaValues <- suppBetaValues %>%
   transmute(beta1relstart = beta1start / beta2start,
-         beta2relstart = beta2start / beta2start,
-         beta3relstart = beta3start / beta2start,
-         beta4relstart = beta4start / beta2start,
-         beta1relend = beta1end / beta2end,
-         beta2relend = beta2end / beta2end,
-         beta3relend = beta3end / beta2end,
-         beta4relend = beta4end / beta2end) %>%
+    beta2relstart = beta2start / beta2start,
+    beta3relstart = beta3start / beta2start,
+    beta4relstart = beta4start / beta2start,
+    beta1relend = beta1end / beta2end,
+    beta2relend = beta2end / beta2end,
+    beta3relend = beta3end / beta2end,
+    beta4relend = beta4end / beta2end) %>%
   
   tbl_df()
 
@@ -1132,23 +1245,23 @@ meanBetaTable <- suppBetaValues %>%
   group_by(beta) %>%
   # Calculate summary stats and round to 2 sig figs
   summarise(mean = signif(1000 * mean(value), digits = 2),
-            lower = signif(1000 * quantile(value, 0.025), digits = 2),
-            upper = signif(1000 * quantile(value, 0.975), digits = 2)) %>%
+    lower = signif(1000 * quantile(value, 0.025), digits = 2),
+    upper = signif(1000 * quantile(value, 0.975), digits = 2)) %>%
   ungroup() %>%
   # Add stage and year
   mutate(stage = rep(c("undiagnosed", "diagnosed",
-                       "unsuppressed", "suppressed"), each = 2),
-         year = rep(c(analysisYear, 2004), 4)) %>%
+    "unsuppressed", "suppressed"), each = 2),
+    year = rep(c(analysisYear, 2004), 4)) %>%
   group_by(year, stage) %>%
   # Create summary string
   mutate(string = paste0(toString(mean), " (", toString(lower), 
-                         "-", toString(upper), ")")) %>%
+    "-", toString(upper), ")")) %>%
   ungroup() %>%
   select(year, stage, string) %>%
   spread(year, string) %>%
   mutate(stage = factor(stage, 
-                          levels = c("undiagnosed", "diagnosed",      
-                                     "unsuppressed", "suppressed"))) %>%
+    levels = c("undiagnosed", "diagnosed",      
+      "unsuppressed", "suppressed"))) %>%
   arrange(stage) %>%
   tbl_df()
 
@@ -1157,23 +1270,23 @@ relBetaTable <- relBetaValues %>%
   group_by(beta) %>%
   # Calculate summary stats and round to 2 sig figs
   summarise(mean = signif(mean(value), digits = 2),
-            lower = signif(quantile(value, 0.025), digits = 2),
-            upper = signif(quantile(value, 0.975), digits = 2)) %>%
+    lower = signif(quantile(value, 0.025), digits = 2),
+    upper = signif(quantile(value, 0.975), digits = 2)) %>%
   ungroup() %>%
   # Add stage and year
   mutate(stage = rep(c("undiagnosed", "diagnosed",
-                       "unsuppressed", "suppressed"), each = 2),
-         year = rep(c(analysisYear, 2004), 4)) %>%
+    "unsuppressed", "suppressed"), each = 2),
+    year = rep(c(analysisYear, 2004), 4)) %>%
   group_by(year, stage) %>%
   # Create summary string
   mutate(string = paste0(toString(mean), " (", toString(lower), 
-                         "-", toString(upper), ")")) %>%
+    "-", toString(upper), ")")) %>%
   ungroup() %>%
   select(year, stage, string) %>%
   spread(year, string) %>%
   mutate(stage = factor(stage, 
-                          levels = c("undiagnosed", "diagnosed",      
-                                     "unsuppressed", "suppressed"))) %>%
+    levels = c("undiagnosed", "diagnosed",      
+      "unsuppressed", "suppressed"))) %>%
   arrange(stage) %>%
   tbl_df() 
 
@@ -1181,9 +1294,9 @@ relBetaTable <- relBetaValues %>%
 if (saveTables) {
   # Save beta summary stats
   write.csv(meanBetaTable, file.path(bayesResultsFolder,
-                                       "Beta_summary.csv"))
+    "Beta_summary.csv"))
   write.csv(relBetaTable, file.path(bayesResultsFolder,
-                                       "Beta_relative_summary.csv"))
+    "Beta_relative_summary.csv"))
 }
 
 
@@ -1194,23 +1307,18 @@ if (saveTables) {
 LoadLibrary(GGally)
 
 # Produce bivariate correlation plots between posterior parameter 
-# estimates aka a corner plot. We have four priors so this means 6 plots
+# estimates at the start and finisg=h aka a corner plot. 
 if (priorApproach == "independent") {
-  bivariateData <- posteriorFrameStart %>%
-    select(beta1, beta2, beta3, f4) %>%
-    rename(beta1start = beta1, beta2start = beta2, beta3start = beta3, 
-           f4start = f4) %>%
-    bind_cols(., posteriorFrameEnd) %>%
-    select(beta1start, beta2start, beta3start, f4start,
-           beta1, beta2, beta3, f4) %>%
-    rename(beta1end = beta1, beta2end = beta2, beta3end = beta3, 
-           f4end = f4) 
-    
+  bivariateDataStart <- posteriorFrameStart %>%
+    select(beta1, beta2, beta3, beta4) 
+  bivariateDataEnd <- posteriorFrameEnd %>%
+    select(beta1, beta2, beta3, beta4)
 } else {
   # relative approach
-  # bivariateData <- posteriorFrameStart %>%
-  #   select(beta, f1, f2, f3) %>%
-  #   rename(betastart = beta, f1start = f1, f2start = f2, f3start = f3) 
+  bivariateDataStart <- posteriorFrameStart %>%
+    select(beta, f1, f2, f3)
+  bivariateDataEnd <- posteriorFrameEnd %>%
+    select(beta, f1, f2, f3)
 }
 
 # Create a wrapper function for the lower plots
@@ -1222,7 +1330,12 @@ lowerFn <- function(data, mapping, method = "lm", ...) {
 }
 
 # Create corner plot
-cornerPlot <- ggpairs(bivariateData, 
+cornerPlotStart <- ggpairs(bivariateDataStart, 
+  lower = list(continuous = wrap(lowerFn, method = "lm")), 
+  title = "Bivariate correlations between posterior parameter estimates",
+  axisLabels = "none") +
+  plotOpts
+cornerPlotEnd <- ggpairs(bivariateDataEnd, 
   lower = list(continuous = wrap(lowerFn, method = "lm")), 
   title = "Bivariate correlations between posterior parameter estimates",
   axisLabels = "none") +
@@ -1231,10 +1344,10 @@ cornerPlot <- ggpairs(bivariateData,
 if (savePlots) {
   # Print figures to separate files -- can't use SaveFigure for ggpairs 
   # objects 
-  SaveFigure(outputFolder, "Bivariate_correlations", cornerPlot, 
-             width = 20, height = 20, 
-             units = "cm")
-  
+  SaveFigure(outputFolder, "Bivariate_correlations_start",
+    cornerPlotStart, width = 20, height = 20, units = "cm")
+  SaveFigure(outputFolder, "Bivariate_correlations_end", cornerPlotEnd, 
+    width = 20, height = 20, units = "cm")
 }
 ```
 

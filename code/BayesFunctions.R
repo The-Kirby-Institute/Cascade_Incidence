@@ -150,7 +150,15 @@ SuppressedOption <- function(option) {
   } else if (option == "option8"){
     return(list(dist = "truncln", params = c(log(0.25), 1.2)))
   } else if (option == "option9"){
-    return(list(dist = "exp", params = 1/0.0028)) # Beta 4 PARTNER study prior
+    # Beta 4 PARTNER study prior - params found manually through guess and 
+    # check and quantile(rexp(100000, value),0.95) ~ 0.0084
+    return(list(dist = "exp", params = 1/0.0028))
+  } else if (option == "option10"){
+    # Beta 4 Opposities Attract + Partners study prior (to be 
+    # confirmed) - params found 
+    # manually through guess and check and 
+    # quantile(rexp(100000, value),0.95) ~ 0.57
+    return(list(dist = "exp", params = 1/0.0019)) 
   } else if (option == "optionZero"){
     return(list(dist = "zero", params = 0)) # No suppressed transmission
   } else {
@@ -302,7 +310,7 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
   
   # Set defualts
   if (is.null(distLabels)) {
-    sampleLabels <- c("Prior (blue)", "Posterior (red)")
+    sampleLabels <- c("Prior (dot-dash, blue)", "Posterior (solid, red)")
   } else {
     sampleLabels <- distLabels
   }
@@ -364,7 +372,7 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
       # geom_density(data = priorsSamples, fill = "black", 
       #            alpha = 0.2)
       geom_line(data = priorsSamples, colour = "blue", size = 1.2, 
-                stat = "density")
+                stat = "density", linetype = "dotdash")
   }
   
   # Transform coordinates if required
@@ -389,10 +397,10 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
       postPlot <- postPlot + 
         geom_segment(aes(xend = median(postDist), x = median(postDist),
                          y = -Inf, yend = ymax), size = 1.1, 
-                         colour = "red3", linetype = "dashed") +
+                         colour = "red3", linetype = "dotted") +
         geom_segment(aes(xend = median(priorDist), x = median(priorDist),
                          y = -Inf, yend = ymax), size = 1.1, 
-                     colour = "blue", linetype = "dashed")
+                     colour = "blue", linetype = "dotted")
     } else {
       postPlot <- postPlot + 
         geom_segment(aes(xend = median(postDist), x = median(postDist),
@@ -430,7 +438,8 @@ ParameterPlot <- function(parameter, priorsSamples, posteriorSamples,
 }
 
 PercentInc <- function(cascadeStage, percentFrame, years = NULL, 
-                       xlimits = NULL, savefolder = NULL) {
+  xlimits = NULL, savefolder = NULL,
+  boxplot = FALSE) {
   # This function generates a plot of the distribution in the percentage of
   # infections acquired from each stage of the HIV cascade. This function 
   # is specifically set up for this project. Parameters and inputs 
@@ -447,6 +456,8 @@ PercentInc <- function(cascadeStage, percentFrame, years = NULL,
   #   xlimits: (Optional) Specify range of x values to plot.
   #   savefolder: (Optional) Specify if you want to save the plot by 
   #     setting to the folder where plot will be save.
+  #   boxplot: If TRUE and plotting more than one year plot resulst as a
+  #     box plot (with whiskers for 95% range). 
   # Returns:
   #   Plot handle corresponding to the created plot.
   #
@@ -470,28 +481,62 @@ PercentInc <- function(cascadeStage, percentFrame, years = NULL,
                      sep = "")
   }
   
+  # Set boxplot to FALSE if only one year
+  if (numYears == 1) { 
+    boxplot <- FALSE
+  }
+  
   # Setup xLimits
   if (!is.null(xlimits)) {
-    xRange <- xlimits / 100
+    if (boxplot) {
+      xRange <- xlimits
+    } else {
+      xRange <- xlimits / 100
+    }
   } else {
-    xRange <- c(0, 1)
+    if (boxplot) {
+      xRange <- xlimits
+    } else {
+      xRange <- c(0, 1)
+    }
   }
   
   # Set up colour palette
   getPalette = colorRampPalette(brewer.pal(11, "RdYlBu")) 
   
+  quantiles_95 <- function(x) {
+    r <- quantile(x, probs=c(0.025, 0.25, 0.5, 0.75, 0.975))
+    names(r) <- c("ymin", "lower", "middle", "upper", "ymax")
+    return(r)
+  }
+  
   # Create plot
   if (numYears != 1) {
-  distPlot <- ggplot(data = percentData, 
-                     aes(x = percentage / 100, group = year, 
-                         colour = factor(year))) + 
-    geom_line(size = 1.2, stat = "density") + 
-    scale_colour_manual(values = getPalette(12), name = "Year") +  
-    ylab("Density") + 
-    scale_x_continuous(labels = percent) +
-    xlab(paste("Percentage acquired from", cascadeStage)) +
-    coord_cartesian(xlim = xRange) +
-    plotOpts + theme(legend.position = "right")
+    # Depedning on parameters to box plot or all distributions
+    if (boxplot) {
+      distPlot <- ggplot(data = percentData, 
+        aes(x = year, y = percentage / 100, group = year)) +
+        stat_summary(fun.data = quantiles_95, geom= "boxplot", 
+          fill = "grey") +
+        # geom_boxplot(outlier.shape = NA) + 
+        xlab("Year") + 
+        scale_y_continuous(labels = percent) +
+        ylab(paste("Percentage acquired from", cascadeStage)) +
+        scale_x_continuous(breaks = xRange) + 
+        plotOpts + theme(legend.position = "right")
+    } else {
+      distPlot <- ggplot(data = percentData, 
+        aes(x = percentage / 100, group = year, 
+          colour = factor(year))) + 
+        geom_line(size = 1.2, stat = "density") + 
+        scale_colour_manual(values = getPalette(12), name = "Year") +  
+        ylab("Density") + 
+        scale_x_continuous(labels = percent) +
+        xlab(paste("Percentage acquired from", cascadeStage)) +
+        coord_cartesian(xlim = xRange) +
+        plotOpts + theme(legend.position = "right")
+    }
+    
   } else {
     # Only a single year plotted so remove legend and fix colour
     distPlot <- ggplot(data = percentData, aes(x = percentage / 100)) + 
