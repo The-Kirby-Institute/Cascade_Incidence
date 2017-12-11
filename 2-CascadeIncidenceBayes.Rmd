@@ -35,7 +35,7 @@ source(file.path(Rcode, "BayesFunctions.R"), echo = TRUE)
 ```{r loaddata}
 # Need to load previoulsy generated cascadeData
 analysisYear <- 2015 # or 2014
-incError <- TRUE # False if do not want to include cascade error
+includeError <- TRUE # False if do not want to include cascade error
 
 # Input data 
 inputFileTag <- "ecdc"
@@ -65,7 +65,7 @@ cascadeBest$infections <- (newInfects$infections +
 
 # Estimate error bounds - store information in a data frame for 
 # ease of extraction when creating priors
-if (incError) {
+if (includeError) {
   errorRange <- hivCascade %>%
     filter(stage %in% c("undiagnosed", "diagnosed", "unsuppressed",
                         "suppressed")) %>%
@@ -108,26 +108,29 @@ useSaved <- FALSE  # use previous set of sampled priors
 saveSims <- TRUE   # save sample priors and weights
 fileTag <- "ecdc"
 
-simsSeed <- 75321 #Set to an integer to reproduce results 
+simsSeed <- 54321 #Set to an integer to reproduce results 
                    #54321 - 2015Partner
                    #12345 - 2015Zero
                    #12357 - 2015Cohen
                    #75321 - 2015Noerror (Partner)
                    #2468  - 2014Cohen
+                   #25215 - 2015OppPartner
+                   
 if (!is.null(simsSeed)) {
   set.seed(simsSeed)
 } else {
   set.seed(NULL) # Clear current seed
 }
 
-# Specify f4 prior 
-suppressOption <- "option9" # option6 for Cohen 2011
-                               # option9 for PARTNER study
-                               # optionZero for no transmission
-
+# Specify f4 prior - # option6 for Cohen 2011, option9 for PARTNER study,
+# option10 for Opposites attract, optionZero for no transmission
+suppressOption <- "option9" 
+                             
+# For Bayesian melding we have a prior weight for the output
 priorWeight <- TRUE
-priorWeightValues <- c(500, 1300, -1000) # c(400. 1100, 0)
-# incidenceWeight <- seq(10, 25, length = numYears) 
+priorWeightValues <- c(500, 1300, -1000) # c(minimum value, maximum value, minimum gradient)
+
+# Weights on incidence output 
 incidenceWeight <- incError
 
 # Details of inputs if required ------------------------------------------
@@ -316,9 +319,10 @@ if (useSaved) {
       if ((minInc < priorWeightValues[1] || 
             maxInc > priorWeightValues[2]) || 
             trend < priorWeightValues[3]) {
+        # Zero if outside our prior specifications
         weights[bayesSample] <- 0
       } else {
-        # 10% error in incidence
+        # Error in incidence
         weights[bayesSample] <- WeightError(infectionsData,
                                             incidenceSample, 
                                             incidenceWeight) 
