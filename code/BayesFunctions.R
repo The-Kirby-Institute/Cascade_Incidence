@@ -521,7 +521,7 @@ PercentInc <- function(cascadeStage, percentFrame, years = NULL,
         # geom_boxplot(outlier.shape = NA) + 
         xlab("Year") + 
         scale_y_continuous(labels = percent) +
-        ylab(paste("Percentage acquired from", cascadeStage)) +
+        ylab(paste("Percentage acquired from\n", cascadeStage)) +
         scale_x_continuous(breaks = xRange) + 
         plotOpts + theme(legend.position = "right")
     } else {
@@ -532,7 +532,7 @@ PercentInc <- function(cascadeStage, percentFrame, years = NULL,
         scale_colour_manual(values = getPalette(12), name = "Year") +  
         ylab("Density") + 
         scale_x_continuous(labels = percent) +
-        xlab(paste("Percentage acquired from", cascadeStage)) +
+        xlab(paste("Percentage acquired from\n", cascadeStage)) +
         coord_cartesian(xlim = xRange) +
         plotOpts + theme(legend.position = "right")
     }
@@ -550,7 +550,7 @@ PercentInc <- function(cascadeStage, percentFrame, years = NULL,
                  linetype = "dashed", size = 1.1) +
       ylab("Density") + 
       scale_x_continuous(labels = percent) +
-      xlab(paste("Percentage acquired from", cascadeStage
+      xlab(paste("Percentage acquired from\n", cascadeStage
                  , "in", toString(years))) +
       coord_cartesian(xlim = xRange) +
       plotOpts

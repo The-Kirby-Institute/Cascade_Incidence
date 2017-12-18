@@ -634,7 +634,7 @@ betaTime <- function(betaName, title, boxplot = TRUE) {
         fill = "grey", aes(width = 0.6)) +
       scale_x_continuous(breaks = c(1, 2), 
         labels = c("2004", toString(analysisYear))) +
-      ylab("Transmissions per 1000 PLHIV") + xlab("Year") +
+      ylab("Transmissions per 1000 PLHIV\n ") + xlab("Year") +
       plotOpts + ggtitle(title) +
       theme(plot.title = element_text(hjust = 0.5))
     
@@ -683,7 +683,7 @@ plotBeta1time <- betaTime("beta1", "Undiagnosed", boxplot = pubBoxPlot)
 plotBeta2time <- betaTime("beta2", "Diagnosed", boxplot = pubBoxPlot)
 plotBeta3time <- betaTime("beta3", "Unsuppressed", boxplot = pubBoxPlot)
 plotBeta4time <- betaTime("beta4", "Suppressed", boxplot = pubBoxPlot) +
-  ylab("Transmissions per 1000 PLHIV \n(log10 scale)") +
+  ylab("Transmissions per 1000 PLHIV\n (log10 scale)") +
   scale_y_log10(limits = c(0.01, 100), breaks = c(0.01, 0.1, 1, 10, 100),
     labels = c("0.01", "0.1", "1", "10", "100"))
 
