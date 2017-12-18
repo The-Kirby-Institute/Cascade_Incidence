@@ -114,7 +114,7 @@ simsSeed <- 54321 #Set to an integer to reproduce results
                    #12357 - 2015Cohen
                    #75321 - 2015Noerror (Partner)
                    #2468  - 2014Cohen
-                   #25215 - 2015OppPartner
+                   #25215 - 2015OppPartner (Based on preliminary data)
                    
 if (!is.null(simsSeed)) {
   set.seed(simsSeed)
@@ -123,7 +123,8 @@ if (!is.null(simsSeed)) {
 }
 
 # Specify f4 prior - # option6 for Cohen 2011, option9 for PARTNER study,
-# option10 for Opposites attract, optionZero for no transmission
+# option10 for Opposites attract prelim data, optionZero for no 
+# transmission
 suppressOption <- "option9" 
                              
 # For Bayesian melding we have a prior weight for the output
@@ -204,7 +205,7 @@ if (useSaved) {
     f2start <- beta2start / beta2start
     f3start <- beta3start / beta2start
     
-    # Use same prior for end value
+    # Use same distribution for end value priors
     beta1end <- runif(numBayesSamples, 
                    beta1Rel[1] * betaRange[1] * errN1[1], 
                    beta1Rel[2] * betaRange[2] * errN1[2])
@@ -261,15 +262,16 @@ if (useSaved) {
     stop("Unspecified approach to generating priors")
   }
   
-  # Create f4 prior -- always relative to beta2
+  # Create f4 prior -- always 
   if (suppressOption == "option9") {
     f4Prior <- SuppressedOption(suppressOption) # really beta4 prior
     beta4start <- PriorSample(numBayesSamples, f4Prior$dist,
-                              f4Prior$params)
+      f4Prior$params) * runif(numBayesSamples, errN4[1], errN4[2])
     beta4end <- PriorSample(numBayesSamples, f4Prior$dist, 
-                            f4Prior$params)
+      f4Prior$params) * runif(numBayesSamples, errN4[1], errN4[2])
     f4 <- betastart / betastart
   } else {
+    # Relative to beta2
     f4Prior <- SuppressedOption(suppressOption)
     f4 <- PriorSample(numBayesSamples, f4Prior$dist, f4Prior$params) * 
       runif(numBayesSamples, errN4[1], errN4[2])
@@ -360,7 +362,7 @@ resamples <- 1e5 # Number of resamples - 2e4 is good for testing
 useSaved <- FALSE
 saveOutputs <- TRUE
 
-resampleSeed <- 10864 # Set to an integer to reproduce results 
+resampleSeed <- 2357 # Set to an integer to reproduce results 
                            #2357 - 2015Partner
                            #7532 - 2015Zero
                            #46810 - 2015Cohen
