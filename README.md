@@ -5,7 +5,7 @@ Funding for the project was provided as part of [_the COUNT study_](https://csrh
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.801900.svg)](https://doi.org/10.5281/zenodo.801900)
 
-All calculations are conducted using R (currently version 3.3.2) with associated packages (main packages: dplyr 0.5.0; tidyr 0.6.1; ggplot2 2.2.1; cowplot 0.7.0; gridExtra 2.2.1).
+All calculations are conducted using R (currently version 3.3.2) with associated packages (GGally 1.3.2; bindrcpp 0.2; cowplot 0.8.0; scales 0.5.0; gridExtra 2.3; knitr 1.17; Hmisc 4.0.3; Formula 1.2.2; survival 2.41.3; lattice 0.20.34; RColorBrewer 1.1.2; ggplot2 2.2.1; readxl 1.0.0; tidyr 0.7.2; dplyr 0.7.4).
 
 **Repository owner:** Richard T. Gray
 
