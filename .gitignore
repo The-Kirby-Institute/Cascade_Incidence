@@ -12,6 +12,7 @@ data/2015/HIVcascadeEstimates-2015.csv
 data/2015/ahod*.csv
 Archive
 output/Results_summary.md
+output/Cascade_Bayes_2015PartnerOrig/
 
 # Include-exclude output .csv result files
 output/Compare_figures/
