@@ -35,7 +35,8 @@ source(file.path(Rcode, "GetLegend.R"))
 mainPackages <- c("dplyr", "tidyr", "ggplot2", "markdown", "cowplot", 
   "gridExtra")
 source(file.path(Rcode, "FrontMatter.R"), echo = TRUE)
-fmStr <- FrontMatter(mainPackages, rstudio = "1.0.44")
+fmStr <- FrontMatter(packages = "all", rstudio = "1.1.383")
+# fmStr <- FrontMatter(mainPackages, rstudio = "1.1.383")
 cat(fmStr)
 ```
 
