@@ -12,7 +12,8 @@ FrontMatter <- function(packages = NULL, rstudio = NULL) {
   
   # Args:
   #   packages: List of packages we want to display. Default is NULL saying
-  #     we don't want to return any package information.
+  #     we don't want to return any package information. Otherwise it can 
+  #     be "all" to display information for all packages loaded. 
   #   rstudio: String specifying Rstudio version used. Default is NULL.
   #
   # Returns
@@ -36,14 +37,18 @@ FrontMatter <- function(packages = NULL, rstudio = NULL) {
   tstr <- paste("On:", time)
   
   # Setup package string
+  pstr <- ""
   if (!is.null(packages)) {
+    if (packages == "all") {
+      packages <- names(sessionInfo()$otherPkgs)
+    } 
     # loop through inputed list of packages
     pstr <- "With: "
     for (pkg in packages) {
       pstr <- paste(pstr, pkg, " ", packageVersion(pkg), "; ", sep = "")
+      
     }
   }
-  
   # Put everything together and return
   finalStr <- paste(rstr, "\n", tstr, "\n", pstr, sep = "")
   return(finalStr)
