@@ -3,7 +3,7 @@
 This project uses a simple HIV transmission model to estimate the contribution of the population at each step of the HIV diagnosis and care cascade to new infections. The project involves collaboration between the [_The Kirby Institute_](https://kirby.unsw.edu.au/) and the [_Centre for Social Research in Health (CSRH)_](https://csrh.arts.unsw.edu.au/), UNSW Sydney, Australia. 
 Funding for the project was provided as part of [_the COUNT study_](https://csrh.arts.unsw.edu.au/research/projects/the-count-study/). While the analyses has primarily focused on transmission from gay and bisexual men (GBM) nationally, the code has been designed to be as flexible as possible to facilitate future analyses. 
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.801900.svg)](https://doi.org/10.5281/zenodo.801900)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1117423.svg)](https://doi.org/10.5281/zenodo.1117423)
 
 All calculations are conducted using R (currently version 3.3.2) with associated packages (GGally 1.3.2; bindrcpp 0.2; cowplot 0.8.0; scales 0.5.0; gridExtra 2.3; knitr 1.17; Hmisc 4.0.3; Formula 1.2.2; survival 2.41.3; lattice 0.20.34; RColorBrewer 1.1.2; ggplot2 2.2.1; readxl 1.0.0; tidyr 0.7.2; dplyr 0.7.4).
 
@@ -78,6 +78,7 @@ Contains output files storing the results produced by the main directory scripts
 The following publication is associated with this project and used the code in this repository to generate all of the results and figures. 
 
 - Richard T. Gray, David P. Wilson, Rebecca Guy, Mark Stoove, Margaret Hellard, Garrett Prestage, Toby Lea, John de Wit, Martin Holt. Undiagnosed HIV infections among gay and bisexual men increasingly contribute to new infections in Australia. _In preparation_
-	- Submitted paper based on version [version 1.0-submission](https://github.com/leftygray/Cascade_Incidence/tree/v1.0-submission); doi:[10.5281/zenodo.801900](https://zenodo.org/record/801900#.WTEGoVV97RY)
+	- Submitted paper based on [version v1.0-submission](https://github.com/leftygray/Cascade_Incidence/releases/tag/v1.0-submission); doi:[10.5281/zenodo.801900](https://zenodo.org/record/801900#.WTEGoVV97RY)
+	- Final paper based on [version v1.1-final](https://github.com/leftygray/Cascade_Incidence/releases/tag/v1.1-final); doi:[10.5281/zenodo.1117423](https://zenodo.org/record/1117423#.WjcrA1WWbRY)
  
 
