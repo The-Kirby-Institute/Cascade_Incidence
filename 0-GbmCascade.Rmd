@@ -27,7 +27,7 @@ LoadLibrary(scales)
 
 ```{r script details}
 # Specify year of analysis
-analysisYear <- 2015
+analysisYear <- 2014
 
 # Script parameters
 startYear <- 2005 # minimum for plotting; miumum assumed to be 2004 in 
@@ -371,19 +371,19 @@ if (plotUndiagnosed) {
       aes(x = year, y = 100 * estimate, colour = "count")) +
     scale_colour_manual(name = "", 
       labels = c("ECDC HIV Modelling tool estimates", 
-        "Resulting cascade estimates (including uncertainty in diagnosed)",
+        "Resulting cascade estimates",
         "COUNT estimate and 95% CI"),
       values = c(asrcols[2], asrcols[5], "black"),
       limits = c("ecdc", "cascade", "count")) +
     scale_fill_manual(name = "", 
       labels = c("ECDC HIV Modelling tool estimates", 
-        "Resulting cascade estimates (including uncertainty in diagnosed)",
+        "Resulting cascade estimates",
         "COUNT estimate and 95% CI"),
       values = c(asrcols[2], asrcols[5], NA),
       limits = c("ecdc", "cascade", "count")) +
     scale_alpha_manual(name = "", 
       labels = c("ECDC HIV Modelling tool estimates", 
-        "Resulting cascade estimates (including uncertainty in diagnosed)",
+        "Resulting cascade estimates",
         "COUNT estimate and 95% CI"),
       values = c(0.4, 0.4, NA),
       limits = c("ecdc", "cascade", "count")) +
@@ -392,7 +392,7 @@ if (plotUndiagnosed) {
     coord_cartesian(ylim = c(0, 20)) +
     ylab("Percentage undiagnosed (%)") + xlab("Year") +
     plotOpts + theme(legend.justification = c(0, 0),
-      legend.position = c(0.05, 0))
+      legend.position = c(0.05, 0.05))
   
   if (savePlots) {
     # Plot specs
@@ -580,12 +580,13 @@ if (plotCascade) {
       guide = guide_legend(nrow = 3)) +
     expand_limits(y = 0) +
     ylab("Number") + xlab("Year") + 
-    plotOpts + theme(legend.justification=c(0,0), legend.position=c(0,0))
+    plotOpts + theme(legend.justification=c(0,0), 
+      legend.position=c(0.05,0.05))
   
   if (savePlots) {
       # Plot specs
-      plotWidth <- 10
-      plotHeight <- 10
+      plotWidth <- 11
+      plotHeight <- 11
       plotUnits <- "cm"
       
       ggsave(file.path(figFolder, toString(analysisYear),
@@ -658,7 +659,7 @@ if (savePlots) {
   ggsave(file.path(figFolder, toString(analysisYear),
                    paste0("Cascade_Combined-",
                                      toString(analysisYear), ".png")),
-         plot = cascadeFig1, width = 22, height = 20, 
+         plot = cascadeFig1, width = 24, height = 22, 
          units = "cm")
   
   # Save second cascade figure
