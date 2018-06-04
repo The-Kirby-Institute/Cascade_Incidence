@@ -17,6 +17,7 @@ output/Cascade_Bayes_2015PartnerOrig/
 # Include-exclude output .csv result files
 output/Compare_figures/
 output/Cascade_figures/
+output/Cascade_incidence_results_archive/
 output/*/*.rda
 output/*/figures/
 output/Cascade_incidence_backup - Shortcut.lnk
